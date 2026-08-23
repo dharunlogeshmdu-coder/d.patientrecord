@@ -555,6 +555,8 @@
     .btn-edit { background: var(--warning); color: #060913; }
     .btn-del { background: var(--danger); color: white; }
     .btn-ledger { background: #3b82f6; color: white; font-weight: 800; }
+    .btn-restore { background: #38bdf8; color: #060913; font-weight: 800; }
+    .btn-view-archive { background: #8b5cf6; color: white; font-weight: 800; }
 
     .controls-grid { display: grid; grid-template-columns: 2fr 1.2fr; gap: 16px; margin-bottom: 22px; align-items: center; }
     .control-field {
@@ -1295,6 +1297,39 @@
     </main>
   </div>
 
+  <!-- MODAL: LEAVE NOTICE / PROFESSIONAL LIVE UPDATE -->
+  <div class="modal-overlay" id="leaveModal">
+    <div class="modal-content" style="max-width: 480px;">
+      <div class="modal-header">
+        <h3 style="color: var(--warning);">🏖️ Professional Leave & Status Notice</h3>
+        <button class="close-modal" onclick="closeLeaveModal()">&times;</button>
+      </div>
+      <p style="font-size: 0.84rem; color: var(--text-muted); margin-bottom: 12px;">
+        Select template or write a custom professional update to broadcast via WhatsApp:
+      </p>
+      
+      <div class="form-group" style="margin-bottom: 12px;">
+        <label>Quick Professional Templates</label>
+        <select id="leave-template-select" onchange="applyLeaveTemplate(this.value)">
+          <option value="custom">-- Custom Message --</option>
+          <option value="leave">🏖️ Temporary Leave / Closure Notice</option>
+          <option value="reschedule">⏰ Timings & Schedule Adjustment Notice</option>
+          <option value="holiday">🎉 Festival / Holiday Greetings & Closure</option>
+        </select>
+      </div>
+
+      <div class="form-group" style="margin-bottom: 16px;">
+        <label>Notice Message *</label>
+        <textarea id="leave-msg-input" rows="4" placeholder="Enter professional leave or clinic update message..."></textarea>
+      </div>
+
+      <div style="display: flex; gap: 10px;">
+        <button class="btn btn-whatsapp" style="flex: 1;" onclick="submitLeaveNotice()">📲 Broadcast via WhatsApp</button>
+        <button class="btn btn-secondary" style="flex: 1;" onclick="closeLeaveModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
   <!-- MODAL: INTERACTIVE PLACE / MAP PICKER -->
   <div class="modal-overlay" id="locationPickerModal">
     <div class="modal-content" style="max-width: 480px;">
@@ -1860,6 +1895,46 @@
       window.open(`https://wa.me/?text=${msg}`, '_blank');
     };
 
+    // PROFESSIONAL LEAVE & STATUS UPDATE MODAL LOGIC
+    window.openLeaveModal = function() {
+      document.getElementById('leave-template-select').value = "leave";
+      window.applyLeaveTemplate("leave");
+      document.getElementById('leaveModal').classList.add('active');
+    };
+
+    window.closeLeaveModal = function() {
+      document.getElementById('leaveModal').classList.remove('active');
+    };
+
+    window.applyLeaveTemplate = function(val) {
+      const prof = typeof window.getActiveMemberProfile === 'function' ? window.getActiveMemberProfile() : null;
+      const clinicName = prof?.clinicName || "OUR CLINIC / CENTER";
+      const docName = prof?.doctorName || "Specialist";
+      const mobile = prof?.mobile || "8248090433";
+      
+      let templateText = "";
+      if (val === 'leave') {
+        templateText = `*NOTICE: TEMPORARY LEAVE & CLINIC CLOSURE*\n\nDear Valued Clients,\n\nPlease be informed that ${clinicName} under the care of *${docName}* will remain closed for upcoming scheduled leave / maintenance.\n\n📅 *Regular sessions and appointments will resume shortly.*\n\nFor any urgent queries or emergency bookings, you may contact us at: *${mobile}*.\n\nThank you for your understanding!\n*${docName}* (${clinicName})`;
+      } else if (val === 'reschedule') {
+        templateText = `*NOTICE: SCHEDULE & TIMINGS ADJUSTMENT*\n\nDear Valued Clients,\n\nPlease note that session timings at ${clinicName} (*${docName}*) are temporarily adjusted for upcoming dates.\n\n⏰ Kindly check your scheduled appointment timings or contact us at *${mobile}* to confirm your slot.\n\nThank you for your cooperation!\n*${docName}* (${clinicName})`;
+      } else if (val === 'holiday') {
+        templateText = `*FESTIVAL GREETINGS & HOLIDAY NOTICE*\n\nWishing you and your family a joyful season!\n\nKindly note that ${clinicName} (*${docName}*) will remain closed on account of holidays. Regular care and services will resume as usual following the break.\n\n📞 For prior scheduling, reach us at *${mobile}*.\n\nWarm regards,\n*${docName}* (${clinicName})`;
+      } else {
+        templateText = "";
+      }
+      document.getElementById('leave-msg-input').value = templateText;
+    };
+
+    window.submitLeaveNotice = function() {
+      const textMsg = document.getElementById('leave-msg-input').value.trim();
+      if (!textMsg) {
+        alert("Please enter a notice message.");
+        return;
+      }
+      window.open(`https://wa.me/?text=${encodeURIComponent(textMsg)}`, '_blank');
+      closeLeaveModal();
+    };
+
     window.renderRequestsPage = function() {
       const container = document.getElementById('incoming-requests-list');
       const badge = document.getElementById('badge-requests-count');
@@ -1995,7 +2070,7 @@
       const uidSuffix = activeFirebaseUser ? activeFirebaseUser.uid.slice(-6) : "GUEST";
       const timestamp = Date.now().toString().slice(-6);
       
-      // UNIQUE PAYMENT ID GENERATION (Added unique payment ID that you know)
+      // UNIQUE PAYMENT ID GENERATION
       currentSessionRef = `DPAY-${uidSuffix}-${timestamp}-${Math.floor(Math.random() * 900 + 100)}`;
 
       const userTag = userData?.displayName || (activeFirebaseUser?.email ? activeFirebaseUser.email.split('@')[0] : "USER");
@@ -2913,6 +2988,21 @@
       renderStats();
     }
 
+    // RESTORE ARCHIVED RECORD BACK TO ACTIVE WORKS
+    window.restorePatient = function(id) {
+      const p = patients.find(p => p.id === id);
+      if (!p) return;
+      if (confirm(`Restore ${p.name} back to Active Works?`)) {
+        p.isFinished = false;
+        delete p.finishStatus;
+        delete p.finishFeedback;
+        delete p.finishDate;
+        saveAndRender();
+        alert(`✅ ${p.name} has been restored to Active Works!`);
+        switchPageById('page-active-works');
+      }
+    };
+
     function renderArchiveTable() {
       const tbody = document.getElementById('archive-table-body');
       if (!tbody) return;
@@ -2936,7 +3026,11 @@
           <td><span class="badge badge-cured">${p.finishStatus || 'Completed'}</span></td>
           <td>${p.finishDate || 'N/A'}</td>
           <td>
-            <button class="action-btn btn-del" onclick="deletePatient(${p.id})">Del</button>
+            <div style="display:flex; gap:6px; flex-wrap:wrap;">
+              <button class="action-btn btn-view-archive" onclick="openPatientLedgerModal(${p.id})">👁️ View</button>
+              <button class="action-btn btn-restore" onclick="restorePatient(${p.id})">↩️ Restore</button>
+              <button class="action-btn btn-del" onclick="deletePatient(${p.id})">Del</button>
+            </div>
           </td>
         `;
         tbody.appendChild(tr);
