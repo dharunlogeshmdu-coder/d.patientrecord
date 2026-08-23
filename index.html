@@ -752,7 +752,7 @@
           <img id="paywall-upi-qr" src="" alt="Payment QR" style="width: 155px; height: 155px; display: block; margin: 0 auto;">
         </div>
         <p style="font-size: 0.85rem; color: #38bdf8; font-weight: 800; margin-top: 4px;">
-          Kotak Mahindra Bank • Dharun (8248090433)
+          mr Dharun • UPI ID: dharunlogeshmdu-2@okicici
         </p>
         <div class="meta-tag-pill" id="qr-session-ref-display">Session Ref: Generating...</div>
       </div>
@@ -1664,7 +1664,7 @@
 
     const SUPER_ADMIN_EMAIL = "dharunlogeshmdu@gmail.com";
     const APP_OWNER_PHONE = "8248090433"; 
-    const APP_OWNER_UPI_ID = "8248090433@okbizaxis"; 
+    const APP_OWNER_UPI_ID = "dharunlogeshmdu-2@okicici"; 
 
     let activeFirebaseUser = null;
     let activeUserRole = "member";
@@ -1994,14 +1994,16 @@
       const overlay = document.getElementById('subscription-lock-overlay');
       const uidSuffix = activeFirebaseUser ? activeFirebaseUser.uid.slice(-6) : "GUEST";
       const timestamp = Date.now().toString().slice(-6);
-      currentSessionRef = `RP-${uidSuffix}-${timestamp}`;
+      
+      // UNIQUE PAYMENT ID GENERATION (Added unique payment ID that you know)
+      currentSessionRef = `DPAY-${uidSuffix}-${timestamp}-${Math.floor(Math.random() * 900 + 100)}`;
 
       const userTag = userData?.displayName || (activeFirebaseUser?.email ? activeFirebaseUser.email.split('@')[0] : "USER");
-      const transactionNote = `Renewal-${userTag}-${currentSessionRef}`;
-      const uniqueUpiUrl = `upi://pay?pa=${APP_OWNER_UPI_ID}&pn=Dharun+Rend&am=599&cu=INR&tn=${encodeURIComponent(transactionNote)}&tr=${encodeURIComponent(currentSessionRef)}`;
+      const transactionNote = `PortalRenewal-${userTag}-${currentSessionRef}`;
+      const uniqueUpiUrl = `upi://pay?pa=${APP_OWNER_UPI_ID}&pn=mr+Dharun&am=599&cu=INR&tn=${encodeURIComponent(transactionNote)}&tr=${encodeURIComponent(currentSessionRef)}`;
       
       document.getElementById('paywall-upi-qr').src = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=4&data=${encodeURIComponent(uniqueUpiUrl)}`;
-      document.getElementById('qr-session-ref-display').innerText = `Ref: ${currentSessionRef} | Member: ${userTag}`;
+      document.getElementById('qr-session-ref-display').innerText = `Unique Payment ID: ${currentSessionRef} | Member: ${userTag}`;
 
       const isValid = expiryISO && (new Date(expiryISO) > new Date()) && userData?.paymentStatus !== 'stopped';
 
@@ -2016,7 +2018,7 @@
 
     window.notifySubscriptionPaid = function() {
       const userTag = activeFirebaseUser?.displayName || activeFirebaseUser?.email || 'Member';
-      const msg = encodeURIComponent(`Hello Dharun,\n\nI have sent the ₹599 renewal payment for my portal.\n\nBusiness: ${userTag}\nEmail: ${activeFirebaseUser?.email}\nSession Ref: ${currentSessionRef}`);
+      const msg = encodeURIComponent(`Hello Dharun,\n\nI have sent the ₹599 renewal payment for my portal.\n\nBusiness: ${userTag}\nEmail: ${activeFirebaseUser?.email}\nUnique Payment ID: ${currentSessionRef}`);
       window.open(`https://wa.me/91${APP_OWNER_PHONE}?text=${msg}`, '_blank');
     };
 
