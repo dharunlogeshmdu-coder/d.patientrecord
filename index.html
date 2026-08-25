@@ -583,13 +583,13 @@
 
     .table-container { overflow-x: auto; border-radius: 14px; border: 1px solid var(--border); background: var(--bg-card); }
     table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 0.88rem; min-width: 1250px; }
-    th { background-color: #0c1324; color: var(--text-muted); font-weight: 700; font-size: 0.75rem; text-transform: uppercase; padding: 15px 14px; border-bottom: 2px solid var(--border); }
+    th { background-color: #0c1324; color: #cbd5e1; font-weight: 800; font-size: 0.76rem; text-transform: uppercase; padding: 15px 14px; border-bottom: 2px solid var(--border); letter-spacing: 0.5px; }
     td { padding: 14px; border-bottom: 1px solid rgba(30, 42, 74, 0.6); vertical-align: middle; }
     tr:hover { background-color: rgba(37, 99, 235, 0.04); }
 
-    .uid-badge { display: inline-block; background: rgba(6, 214, 160, 0.1); color: var(--accent); border: 1px solid rgba(6, 214, 160, 0.35); padding: 3px 8px; border-radius: 6px; font-weight: 700; font-size: 0.78rem; }
-    .badge-cured { background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid #10b981; padding: 4px 8px; border-radius: 6px; font-weight: 700; }
-    .badge-not-cured { background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid #ef4444; padding: 4px 8px; border-radius: 6px; font-weight: 700; }
+    .uid-badge { display: inline-block; background: rgba(6, 214, 160, 0.15); color: #06d6a0; border: 1px solid rgba(6, 214, 160, 0.4); padding: 3px 8px; border-radius: 6px; font-weight: 800; font-size: 0.78rem; }
+    .badge-cured { background: rgba(16, 185, 129, 0.2); color: #10b981; border: 1px solid #10b981; padding: 4px 10px; border-radius: 6px; font-weight: 800; }
+    .badge-not-cured { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid #ef4444; padding: 4px 10px; border-radius: 6px; font-weight: 800; }
 
     .request-card-item {
       background: #11192e;
@@ -647,20 +647,31 @@
       background: rgba(56, 189, 248, 0.18);
     }
 
+    /* BRIGHT ADMIN TABLE & MEMBER IDENTITY STYLES */
+    .member-bright-title { color: #ffffff !important; font-weight: 800; font-size: 1rem; }
+    .member-bright-clinic { color: #f8fafc !important; font-weight: 700; }
+    .member-bright-email { color: #e2e8f0 !important; font-weight: 600; }
+    .member-bright-role { color: #38bdf8 !important; font-weight: 700; }
+    .member-bright-phone { color: #06d6a0 !important; font-weight: 800; }
+    .password-badge-pill { background: #0d1426; border: 1px solid rgba(56, 189, 248, 0.4); color: #f8fafc; padding: 2px 8px; border-radius: 6px; font-size: 0.78rem; font-weight: 700; display: inline-block; margin-top: 4px; }
+    .date-edit-input { background: #0d1426; border: 1px solid var(--border); color: #ffffff; padding: 6px 8px; border-radius: 6px; font-weight: 700; }
+    .pay-history-summary-box { background: #0c1324; border: 1px solid #1e293b; padding: 6px 10px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; }
+    .pay-history-modal-btn { background: #1e293b; border: 1px solid #3b82f6; color: #38bdf8; font-weight: 800; font-size: 0.72rem; padding: 4px 8px; border-radius: 6px; cursor: pointer; }
+
     /* PROFESSIONAL MEDICAL INVOICE BILL STYLING */
     #printable-receipt { display: none; position: fixed; inset: 0; z-index: 10001; background: rgba(0,0,0,0.85); overflow-y: auto; padding: 20px; }
     #printable-receipt.active { display: flex; justify-content: center; align-items: flex-start; }
-    .receipt-paper { background: #ffffff !important; color: #1e293b !important; width: 100%; max-width: 820px; border-radius: 12px; overflow: hidden; margin: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.6); }
+    .receipt-paper { background: #ffffff !important; color: #000000 !important; width: 100%; max-width: 820px; border-radius: 12px; overflow: hidden; margin: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.6); }
     .receipt-controls-bar { background: #0f172a; padding: 12px 24px; display: flex; justify-content: space-between; align-items: center; }
     .receipt-header-banner { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: #ffffff; padding: 26px 32px; display: flex; justify-content: space-between; border-bottom: 4px solid var(--primary); }
     .receipt-header-banner h1 { font-size: 1.7rem; font-weight: 800; color: #ffffff; letter-spacing: -0.02em; }
-    .receipt-header-banner p { font-size: 0.85rem; color: #94a3b8; }
+    .receipt-header-banner p { font-size: 0.85rem; color: #ffffff; }
     .receipt-body-content { padding: 32px; }
     .receipt-info-grid { display: grid; grid-template-columns: 1.2fr 1fr; gap: 24px; background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 12px; padding: 18px 22px; margin-bottom: 22px; }
-    .receipt-info-block h4 { font-size: 0.72rem; text-transform: uppercase; color: #64748b; font-weight: 800; margin-bottom: 6px; letter-spacing: 0.5px; }
+    .receipt-info-block h4 { font-size: 0.72rem; text-transform: uppercase; color: #000000; font-weight: 800; margin-bottom: 6px; letter-spacing: 0.5px; }
     .clean-invoice-table { width: 100%; border-collapse: collapse; margin: 18px 0; font-size: 0.9rem; }
-    .clean-invoice-table th { background: #f1f5f9; color: #334155; font-weight: 800; font-size: 0.75rem; text-transform: uppercase; padding: 12px; border-top: 1.5px solid #cbd5e1; border-bottom: 1.5px solid #cbd5e1; }
-    .clean-invoice-table td { padding: 14px 12px; border-bottom: 1px solid #e2e8f0; color: #1e293b; }
+    .clean-invoice-table th { background: #f1f5f9; color: #000000; font-weight: 800; font-size: 0.75rem; text-transform: uppercase; padding: 12px; border-top: 1.5px solid #cbd5e1; border-bottom: 1.5px solid #cbd5e1; }
+    .clean-invoice-table td { padding: 14px 12px; border-bottom: 1px solid #e2e8f0; color: #000000; }
     .receipt-summary-ledger { background: #f8fafc; border: 1.5px solid #cbd5e1; border-radius: 12px; padding: 18px 24px; margin-top: 18px; margin-bottom: 24px; }
     .summary-ledger-row { display: flex; justify-content: space-between; font-size: 0.95rem; margin-bottom: 8px; }
     .receipt-footer-sign { display: flex; justify-content: space-between; align-items: flex-end; padding-top: 24px; border-top: 1px dashed #cbd5e1; margin-top: 24px; }
@@ -671,6 +682,12 @@
       #printable-receipt { position: absolute; left: 0; top: 0; width: 100%; background: transparent !important; padding: 0; margin: 0; }
       .receipt-controls-bar { display: none !important; }
       .receipt-paper { box-shadow: none !important; border: 1px solid #000; border-radius: 0; width: 100%; max-width: 100%; }
+      
+      /* FIXED: Ensure header text and elements render as solid black in print mode 
+         instead of fading to grey when the background is stripped by the browser. */
+      .receipt-header-banner { background: transparent !important; border-bottom: 4px solid var(--primary) !important; }
+      .receipt-header-banner, .receipt-header-banner * { color: #000000 !important; }
+      #receipt-number-display, #receipt-doctor-phone-sub { color: #000000 !important; }
     }
 
     @media (max-width: 900px) {
@@ -979,7 +996,7 @@
           </div>
         </header>
 
-        <!-- PAGE: ADMIN MESSAGES (NEW) -->
+        <!-- PAGE: ADMIN MESSAGES -->
         <section id="page-admin-messages" class="page-view">
           <div class="card" style="border-color: #3b82f6;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:10px;">
@@ -1619,7 +1636,7 @@
     </div>
   </div>
 
-  <!-- MODAL: ADMIN EDIT MEMBER (WITH REGISTRATION AND RENEWAL FEE FIELDS) -->
+  <!-- MODAL: ADMIN EDIT MEMBER -->
   <div class="modal-overlay" id="adminEditMemberModal">
     <div class="modal-content">
       <div class="modal-header">
@@ -1765,11 +1782,11 @@
         <div>
           <h1 id="receipt-clinic-title">SIPI REHAB CENTER</h1>
           <p id="receipt-doctor-subtitle">Dr. Kishore PT | Lead Physiotherapist (IAP Reg No: 878)</p>
-          <p id="receipt-doctor-phone-sub" style="color: #60a5fa; font-size: 0.8rem; margin-top: 2px;">Contact: 8248090433</p>
+          <p id="receipt-doctor-phone-sub" style="color: #ffffff; font-size: 0.8rem; margin-top: 2px;">Contact: 8248090433</p>
         </div>
         <div style="text-align: right;">
-          <div style="font-weight: 800; font-size: 1.15rem; color: #60a5fa;" id="receipt-number-display">BILL #UID-1001</div>
-          <small style="color: #94a3b8; letter-spacing: 0.5px;" id="receipt-type-banner">OFFICIAL INVOICE</small>
+          <div style="font-weight: 800; font-size: 1.15rem; color: #ffffff;" id="receipt-number-display">BILL #UID-1001</div>
+          <small style="color: #ffffff; letter-spacing: 0.5px;" id="receipt-type-banner">OFFICIAL INVOICE</small>
         </div>
       </div>
 
@@ -1777,15 +1794,16 @@
         <div class="receipt-info-grid">
           <div class="receipt-info-block">
             <h4>Client Information</h4>
-            <p id="rcpt-name" style="font-size: 1.15rem; color: #0f172a; font-weight: 800;"></p>
-            <p id="rcpt-mobile" style="color: #475569; font-weight: 600;"></p>
-            <p id="rcpt-address" style="color: #64748b; font-size: 0.85rem; margin-top: 4px;"></p>
+            <p id="rcpt-name" style="font-size: 1.15rem; color: #000000; font-weight: 800;"></p>
+            <p id="rcpt-mobile" style="color: #000000; font-weight: 600;"></p>
+            <p id="rcpt-address" style="color: #000000; font-size: 0.85rem; margin-top: 4px;"></p>
           </div>
           <div class="receipt-info-block" style="text-align: right;">
             <h4 id="rcpt-block-service-title">Work & Service Details</h4>
-            <p id="rcpt-diagnosis" style="font-weight: 700; color: #0f172a; font-size: 0.95rem;"></p>
-            <p id="rcpt-treatment" style="color: #475569; font-size: 0.85rem; margin-top: 2px;"></p>
-            <p id="rcpt-date" style="color: #64748b; font-size: 0.8rem; margin-top: 6px;"></p>
+            <p id="rcpt-diagnosis" style="font-weight: 700; color: #000000; font-size: 0.95rem;"></p>
+            <p id="rcpt-treatment" style="color: #000000; font-size: 0.85rem; margin-top: 2px;"></p>
+            <p id="rcpt-date" style="color: #000000; font-size: 0.8rem; margin-top: 6px;"></p>
+            <p id="rcpt-session-periods" style="color: #000000; font-size: 0.88rem; font-weight: 800; margin-top: 6px; background: #e0f2fe; padding: 4px 8px; border-radius: 6px; display: inline-block; border: 1px solid #bae6fd;"></p>
           </div>
         </div>
 
@@ -1794,7 +1812,7 @@
             <tr>
               <th style="width: 40px;">#</th>
               <th id="rcpt-th-desc">Service / Treatment Description</th>
-              <th style="text-align: center; width: 140px;">Sessions / Visits</th>
+              <th style="text-align: center; width: 170px;">Sessions / Days Count</th>
               <th style="text-align: right; width: 120px;">Rate (₹)</th>
               <th style="text-align: right; width: 140px;">Total (₹)</th>
             </tr>
@@ -1804,8 +1822,12 @@
 
         <div class="receipt-summary-ledger">
           <div class="summary-ledger-row">
-            <span style="color: #475569; font-weight: 600;">Total Billed Value:</span>
-            <strong id="rcpt-ledger-billed" style="color: #0f172a; font-size: 1rem;">₹0.00</strong>
+            <span style="color: #000000; font-weight: 600;">Total Days / Sessions Visited:</span>
+            <strong id="rcpt-summary-days-count" style="color: #0284c7; font-size: 1.05rem;">0 Days (0 Sessions)</strong>
+          </div>
+          <div class="summary-ledger-row">
+            <span style="color: #000000; font-weight: 600;">Total Billed Value:</span>
+            <strong id="rcpt-ledger-billed" style="color: #000000; font-size: 1rem;">₹0.00</strong>
           </div>
           <div class="summary-ledger-row">
             <span style="color: #059669; font-weight: 700;">Total Amount Paid:</span>
@@ -1819,20 +1841,20 @@
 
         <div class="receipt-footer-sign">
           <div>
-            <p style="font-size: 0.78rem; color: #64748b; font-weight: 600;">Thank you for your trust!</p>
-            <p style="font-size: 0.72rem; color: #94a3b8;">Computer Generated Service Receipt</p>
+            <p style="font-size: 0.78rem; color: #000000; font-weight: 600;">Thank you for your trust!</p>
+            <p style="font-size: 0.72rem; color: #000000;">Computer Generated Service Receipt</p>
           </div>
           <div style="text-align: right;">
-            <div style="margin-bottom: 36px; border-bottom: 1.5px solid #0f172a; width: 220px;"></div>
-            <p id="receipt-practitioner-signature" style="font-weight: 800; color: #0f172a;">Authorized Signature</p>
-            <p id="receipt-practitioner-role" style="font-size: 0.8rem; color: #64748b;">Specialist Practitioner</p>
+            <div style="margin-bottom: 36px; border-bottom: 1.5px solid #000000; width: 220px;"></div>
+            <p id="receipt-practitioner-signature" style="font-weight: 800; color: #000000;">Authorized Signature</p>
+            <p id="receipt-practitioner-role" style="font-size: 0.8rem; color: #000000;">Specialist Practitioner</p>
           </div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- FIREBASE DATA LAYER (MODULE) -->
+  <!-- FIREBASE DATA LAYER -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { 
@@ -1955,7 +1977,7 @@
       }
     };
 
-    // Broadcast Modal Logic Injections
+    // Broadcast Modal Logic
     window.sendBroadcastToAll = async function() {
       const msg = document.getElementById('broadcast-msg-input').value.trim();
       if (!msg) return alert("Please enter a message.");
@@ -2767,7 +2789,6 @@
       document.getElementById('edit-member-doctor-name').value = user.doctorName || '';
       document.getElementById('edit-member-role').value = user.doctorRole || '';
       
-      // POPULATE REGISTRATION AND RENEWAL FIELDS
       document.getElementById('edit-member-reg-amount').value = user.regAmount || 0;
       document.getElementById('edit-member-rental-fee').value = user.rentalFee || 599; 
       
@@ -2810,7 +2831,6 @@
       const docName = document.getElementById('edit-member-doctor-name').value.trim();
       const docRole = document.getElementById('edit-member-role').value.trim();
       
-      // FETCH REGISTRATION AND RENEWAL AMOUNTS
       const regAmount = parseFloat(document.getElementById('edit-member-reg-amount').value) || 0;
       const rentalFee = parseFloat(document.getElementById('edit-member-rental-fee').value) || 599; 
       
@@ -2825,8 +2845,8 @@
           displayName: siteName,
           doctorName: docName,
           doctorRole: docRole,
-          regAmount: regAmount, // NEW: SAVE REG AMOUNT
-          rentalFee: rentalFee, // SAVE RENTAL AMOUNT
+          regAmount: regAmount,
+          rentalFee: rentalFee,
           identity: email,
           plainPassword: pwd,
           mobile: mobile,
@@ -2866,7 +2886,7 @@
 
         let paidCount = 0;
         let totalRevenue = 0;
-        let activeMRR = 0; // Dynamic MRR based on individual rental fees
+        let activeMRR = 0;
 
         allUsersList.forEach((usr) => {
           const isSuper = (usr.identity || "").toLowerCase() === SUPER_ADMIN_EMAIL.toLowerCase();
@@ -2950,11 +2970,11 @@
           }
         }
 
-        let statusBadge = isStopped ? `<span class="badge badge-not-cured" style="background:#7f1d1d; border-color:#ef4444; color:#fca5a5;">🛑 Suspended</span>` 
-                          : (!isExpired ? `<span class="badge badge-cured">🟢 Active Subscription</span>` 
-                          : `<span class="badge badge-not-cured">🔴 Expired / Unpaid</span>`);
+        let statusBadge = isStopped ? `<span class="badge badge-not-cured" style="background:#7f1d1d; border-color:#ef4444; color:#ffffff; font-weight:800;">🛑 Suspended</span>` 
+                          : (!isExpired ? `<span class="badge badge-cured" style="background:rgba(16, 185, 129, 0.25); color:#10b981; font-weight:800;">🟢 Active Subscription</span>` 
+                          : `<span class="badge badge-not-cured" style="background:rgba(239, 68, 68, 0.25); color:#fca5a5; font-weight:800;">🔴 Expired / Unpaid</span>`);
 
-        let paymentHistoryDisplay = "<span style='color:var(--text-muted); font-size:0.82rem;'>No Rental Paid</span>";
+        let paymentHistoryDisplay = "<span style='color:#cbd5e1; font-weight:600; font-size:0.84rem;'>No Rental Paid</span>";
         const histCount = usr.paymentHistoryList ? usr.paymentHistoryList.length : (usr.lastPaymentDate ? 1 : 0);
         
         const memFee = usr.rentalFee || 599;
@@ -2965,10 +2985,10 @@
           paymentHistoryDisplay = `
             <div class="pay-history-summary-box">
               <div>
-                <span style="color:#06d6a0; font-weight:800; font-size:0.88rem;">₹${latest.amount || memFee}</span>
-                <span style="font-size:0.72rem; color:#94a3b8; margin-left:4px;">(${latest.method})</span>
+                <span style="color:#06d6a0; font-weight:900; font-size:0.95rem;">₹${latest.amount || memFee}</span>
+                <span style="font-size:0.75rem; color:#f8fafc; font-weight:700; margin-left:4px;">(${latest.method})</span>
                 <br>
-                <small style="color:#38bdf8;">📅 ${pDate.toLocaleDateString('en-GB')}</small>
+                <small style="color:#38bdf8; font-weight:700;">📅 ${pDate.toLocaleDateString('en-GB')}</small>
               </div>
               <button class="pay-history-modal-btn" onclick="openHistoryModal('${usr.id}')">📜 Statement (${histCount})</button>
             </div>
@@ -2983,7 +3003,7 @@
         const categoryTag = (usr.businessCategory === 'parlor') ? '💇 Beauty Parlor' : '🏥 Physiotherapy';
         const shortMemberUid = usr.id ? usr.id.slice(-6).toUpperCase() : "UID";
         
-        let replyAlert = usr.memberReply ? `<div style="margin-top:6px; padding:6px; background:rgba(16, 185, 129, 0.1); border:1px solid #10b981; border-radius:6px; font-size:0.75rem; color:#86efac; max-width:200px; word-wrap: break-word;"><strong>Reply:</strong> ${usr.memberReply}</div>` : '';
+        let replyAlert = usr.memberReply ? `<div style="margin-top:6px; padding:6px; background:rgba(16, 185, 129, 0.15); border:1.5px solid #10b981; border-radius:6px; font-size:0.78rem; color:#86efac; font-weight:700; max-width:220px; word-wrap: break-word;"><strong>Reply:</strong> ${usr.memberReply}</div>` : '';
 
         let actions = `
           <div style="display: flex; gap: 4px; flex-wrap: wrap;">
@@ -3003,17 +3023,17 @@
 
         const tr = document.createElement('tr');
         tr.innerHTML = `
-          <td>${idx + 1}</td>
+          <td><strong style="color:#ffffff;">${idx + 1}</strong></td>
           <td>
-            <strong style="color:var(--text-main); font-size:0.95rem;">${usr.doctorName || 'Specialist'}</strong> <span class="uid-badge" style="font-size:0.7rem;">UID: ${shortMemberUid} (${daysLeftText})</span><br>
-            <span class="uid-badge" style="font-size:0.68rem; margin:2px 0;">${categoryTag} • ${usr.clinicName || 'Center'}</span><br>
-            <small style="color:var(--text-muted);">📧 ${usr.identity || usr.id}</small><br>
-            <small style="color:#38bdf8;">${usr.doctorRole || 'Specialist'}</small>
+            <div class="member-bright-title">${usr.doctorName || 'Specialist'} <span class="uid-badge" style="font-size:0.75rem; margin-left:4px;">UID: ${shortMemberUid} (${daysLeftText})</span></div>
+            <div class="member-bright-clinic" style="margin-top:3px;"><span style="color:#fbbf24; font-weight:800;">${categoryTag}</span> • <strong>${usr.clinicName || 'Center'}</strong></div>
+            <div class="member-bright-email" style="font-size:0.84rem; margin-top:2px;">📧 ${usr.identity || usr.id}</div>
+            <div class="member-bright-role" style="font-size:0.84rem;">🎓 ${usr.doctorRole || 'Specialist'}</div>
             ${replyAlert}
           </td>
           <td>
-            <small style="color:#38bdf8; font-weight:700;">📞 ${usr.mobile || 'No Mobile'}</small><br>
-            <span class="password-badge-pill">🔑 ${usr.plainPassword || '••••••'}</span>
+            <div class="member-bright-phone" style="font-size:0.9rem;">📞 ${usr.mobile || 'No Mobile'}</div>
+            <div class="password-badge-pill">🔑 <strong>${usr.plainPassword || '••••••'}</strong></div>
           </td>
           <td>${statusBadge}</td>
           <td style="min-width: 200px;">${paymentHistoryDisplay}</td>
@@ -3065,7 +3085,6 @@
       const mobile = document.getElementById('reg-mobile').value.trim();
 
       try {
-        // FETCH GLOBAL SETTINGS INSTEAD OF HARDCODING 0 AND 599
         let defaultRegAmt = 0;
         let defaultRentalFee = 599;
         try {
@@ -3106,8 +3125,8 @@
           displayName: clinicName,
           mobile: mobile,
           plainPassword: password,
-          regAmount: defaultRegAmt, // ASSIGN GLOBAL REG AMOUNT
-          rentalFee: defaultRentalFee, // ASSIGN GLOBAL RENTAL FEE
+          regAmount: defaultRegAmt,
+          rentalFee: defaultRentalFee,
           role: isSuper ? 'super_admin' : 'member',
           subscriptionExpiry: initialExpiry,
           paymentStatus: isSuper ? 'free_admin' : 'unpaid',
@@ -3233,7 +3252,6 @@
           updateClinicalHeaderBadges(doctorName, doctorRole, isParlor, user.uid);
           window.applyCategoryFormLabels(isParlor);
           
-          // Show dynamic renewal badge & admin msg for logged-in member
           window.updateRenewalBadge(memberData);
           window.checkAdminMessages(memberData);
 
@@ -3246,7 +3264,7 @@
           if (topMemberButtons) topMemberButtons.style.display = 'flex';
           if (sidebarFooterControls) sidebarFooterControls.style.display = 'flex';
 
-          switchPage('page-active-works', memberNavItems[5]); // Default to Active Works
+          switchPage('page-active-works', memberNavItems[5]);
           await loadFromCloud(user.uid);
         }
       } else {
@@ -3444,10 +3462,10 @@
           <td>${index + 1}</td>
           <td><span class="uid-badge">${p.uid}</span></td>
           <td>
-            <strong>${p.name}</strong><br>
-            <small style="color:var(--text-muted);">📞 ${p.mobile}</small><br>
-            <small style="color:#94a3b8;">📍 ${p.address || 'In Store'}</small>
-            ${hasGps ? `<br><a href="${p.location}" target="_blank" style="font-size:0.75rem; color:#38bdf8; font-weight:700; text-decoration:none;">📍 Map GPS</a>` : ''}
+            <strong style="color:#ffffff; font-size:0.95rem;">${p.name}</strong><br>
+            <small style="color:#38bdf8; font-weight:700;">📞 ${p.mobile}</small><br>
+            <small style="color:#cbd5e1;">📍 ${p.address || 'In Store'}</small>
+            ${hasGps ? `<br><a href="${p.location}" target="_blank" style="font-size:0.75rem; color:#06d6a0; font-weight:800; text-decoration:none;">📍 Map GPS</a>` : ''}
           </td>
           <td><span class="uid-badge" style="background:#1e293b; color:#38bdf8;">${p.reminderTime || '09:00'}</span></td>
           <td>${p.packageType === 'daily' ? 'Daily' : p.packageType}</td>
@@ -3474,8 +3492,6 @@
           </td>
           <td>
             <div style="display:flex; gap:4px; flex-wrap:wrap;">
-              
-              <!-- 1-CLICK NATIVE DATE PICKER FOR + VISIT (Replaces Modal) -->
               <label class="action-btn btn-item" style="position: relative; overflow: hidden; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; margin: 0; padding: 6px 10px;">
                 + Visit
                 <input type="date" onchange="quickAddVisit(${p.id}, this.value); this.value='';" style="position: absolute; left: 0; top: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer;" title="Select date to add visit">
@@ -3502,7 +3518,6 @@
       renderStats();
     }
 
-    // New highly-optimized logic for 1-Click date selection to add visit
     window.quickAddVisit = function(id, visitDate) {
       if (!visitDate) return;
       const p = patients.find(p => p.id === id);
@@ -3591,9 +3606,9 @@
         tr.innerHTML = `
           <td>${idx + 1}</td>
           <td><span class="uid-badge">${p.uid}</span></td>
-          <td><strong>${p.name}</strong><br><small style="color:var(--text-muted);">${p.mobile}</small></td>
+          <td><strong style="color:#ffffff;">${p.name}</strong><br><small style="color:#38bdf8; font-weight:700;">${p.mobile}</small></td>
           <td>${p.diagnosis}</td>
-          <td>${p.daysVisited || 1}</td>
+          <td><strong style="color:#38bdf8;">${p.daysVisited || 1} Days</strong></td>
           <td style="color:var(--success); font-weight:bold;">₹${getBilledTotal(p)}</td>
           <td><span class="badge badge-cured">${p.finishStatus || 'Completed'}</span></td>
           <td>${p.finishDate || 'N/A'}</td>
@@ -3633,8 +3648,8 @@
         item.style.cssText = "display:flex; justify-content:space-between; align-items:center; background:#11192e; padding:14px 16px; border-radius:12px; border:1px solid var(--border);";
         item.innerHTML = `
           <div>
-            <strong style="color:var(--text-main);">${p.name}</strong> <span class="uid-badge">${p.uid}</span><br>
-            <span style="font-size:0.85rem; color:#38bdf8;">⏰ Time: ${p.reminderTime || '09:00 AM'}</span> | <span style="font-size:0.85rem; color:var(--text-muted);">${p.diagnosis}</span>
+            <strong style="color:var(--text-main); font-size:1rem;">${p.name}</strong> <span class="uid-badge">${p.uid}</span><br>
+            <span style="font-size:0.85rem; color:#38bdf8; font-weight:700;">⏰ Time: ${p.reminderTime || '09:00 AM'}</span> | <span style="font-size:0.85rem; color:#f8fafc;">${p.diagnosis}</span>
           </div>
           <a href="${waUrl}" target="_blank" class="btn btn-whatsapp" style="text-decoration:none; padding:8px 14px; font-size:0.82rem;">📲 Send Alert</a>
         `;
@@ -3656,10 +3671,10 @@
         tr.innerHTML = `
           <td>${idx + 1}</td>
           <td><span class="uid-badge">${p.uid}</span></td>
-          <td><strong>${p.name}</strong> (${p.mobile})</td>
+          <td><strong style="color:#ffffff;">${p.name}</strong> (<span style="color:#38bdf8; font-weight:700;">${p.mobile}</span>)</td>
           <td>${p.diagnosis}</td>
           <td>₹${totalBilled}</td>
-          <td style="color:var(--success);">₹${amountPaid}</td>
+          <td style="color:var(--success); font-weight:700;">₹${amountPaid}</td>
           <td style="color:${outstanding > 0 ? 'var(--danger)' : 'var(--success)'}; font-weight:800;">₹${outstanding}</td>
           <td><button class="action-btn btn-del" onclick="deletePatient(${p.id})">Del</button></td>
         `;
@@ -3675,7 +3690,6 @@
       const manualLocation = document.getElementById('manual-patient-location').value.trim();
 
       if (editId) {
-        // UPDATE EXISTING PATIENT (No overrides on old history logic)
         const index = patients.findIndex(p => p.id == editId);
         if (index !== -1) {
           patients[index].name = document.getElementById('name').value.trim();
@@ -3690,7 +3704,6 @@
           patients[index].location = manualLocation || '';
         }
       } else {
-        // CREATE COMPLETELY NEW PATIENT
         const patientData = {
           id: Date.now(),
           uid: `UID-${patients.length + 1001}`,
@@ -3722,7 +3735,6 @@
       switchPageById('page-active-works');
     }
 
-    // Keeping lateEntry modal logic intact in case it is called programmatically from elsewhere
     window.promptLateEntryVisit = function(id) {
       document.getElementById('late-entry-patient-id').value = id;
       document.getElementById('late-entry-date-picker').value = new Date().toISOString().slice(0, 10);
@@ -4137,7 +4149,7 @@
                   `Specialist: *${docName}* (${docRole})\n` +
                   `Client: *${p.name}*\n` +
                   `Work / Service: ${p.diagnosis}\n` +
-                  `Sessions Completed: ${p.daysVisited}\n\n` +
+                  `Total Days Visited: *${p.daysVisited || 1} Day(s) (${p.daysVisited || 1} Sessions)*\n\n` +
                   `*Total Billed:* ₹${billed}\n` +
                   `*Amount Paid:* ₹${paid}\n` +
                   `*Outstanding Due:* ₹${due}\n\n` +
@@ -4164,24 +4176,47 @@
       document.getElementById('receipt-clinic-title').innerText = clinicName.toUpperCase();
       document.getElementById('receipt-doctor-subtitle').innerText = `${doctorName} | ${doctorRole}`;
       document.getElementById('receipt-doctor-phone-sub').innerText = `Contact: ${mobile}`;
+      document.getElementById('receipt-doctor-phone-sub').style.color = '#ffffff';
       document.getElementById('receipt-practitioner-signature').innerText = `${doctorName} (${clinicName})`;
       document.getElementById('receipt-practitioner-role').innerText = `${doctorRole} (Phone: ${mobile})`;
+      document.getElementById('receipt-practitioner-role').style.color = '#000000';
       document.getElementById('receipt-number-display').innerText = `BILL #${p.uid || '1001'}`;
+      document.getElementById('receipt-number-display').style.color = '#ffffff';
 
       document.getElementById('rcpt-name').innerText = p.name;
       document.getElementById('rcpt-mobile').innerText = `Mobile: ${p.mobile}`;
+      document.getElementById('rcpt-mobile').style.color = '#000000';
       document.getElementById('rcpt-address').innerText = `Location: ${p.address || 'In Store'}`;
+      document.getElementById('rcpt-address').style.color = '#000000';
       document.getElementById('rcpt-diagnosis').innerText = `${isParlor ? 'Work:' : 'Assessment:'} ${p.diagnosis}`;
       document.getElementById('rcpt-treatment').innerText = `${isParlor ? 'Services:' : 'Plan:'} ${p.treatment}`;
-      document.getElementById('rcpt-date').innerText = `Date: ${new Date().toLocaleDateString('en-GB')}`;
+      document.getElementById('rcpt-date').innerText = `Invoice Date: ${new Date().toLocaleDateString('en-GB')}`;
+
+      const totalDaysCount = parseInt(p.daysVisited) || (p.visitHistory ? p.visitHistory.length : 1);
+
+      let sessionDates = 'N/A';
+      if (p.visitHistory && p.visitHistory.length > 0) {
+        const firstVisit = new Date(p.visitHistory[0].date).toLocaleDateString('en-GB');
+        const lastVisit = new Date(p.visitHistory[p.visitHistory.length - 1].date).toLocaleDateString('en-GB');
+        sessionDates = firstVisit === lastVisit ? firstVisit : `${firstVisit} to ${lastVisit}`;
+      } else if (p.recordDate) {
+        sessionDates = new Date(p.recordDate).toLocaleDateString('en-GB');
+      }
+
+      document.getElementById('rcpt-session-periods').innerHTML = `📅 <strong>Total Count:</strong> ${totalDaysCount} Day${totalDaysCount > 1 ? 's' : ''} (${totalDaysCount} Session${totalDaysCount > 1 ? 's' : ''}) | Period: ${sessionDates}`;
+      
+      const elSummaryDays = document.getElementById('rcpt-summary-days-count');
+      if (elSummaryDays) {
+        elSummaryDays.innerText = `${totalDaysCount} Day${totalDaysCount > 1 ? 's' : ''} (${totalDaysCount} Session${totalDaysCount > 1 ? 's' : ''})`;
+      }
 
       let itemsHtml = `
         <tr>
           <td>1</td>
-          <td><strong>${p.treatment || (isParlor ? 'Spa Treatment & Package' : 'Professional Care')}</strong><br><small style="color:#64748b;">${p.diagnosis}</small></td>
-          <td style="text-align: center;">${p.daysVisited || 1} Sessions</td>
+          <td><strong>${p.treatment || (isParlor ? 'Spa Treatment & Package' : 'Professional Care')}</strong><br><small style="color:#000000;">${p.diagnosis}</small></td>
+          <td style="text-align: center; font-weight:800; color:#0284c7;">${totalDaysCount} Day${totalDaysCount > 1 ? 's' : ''} (${totalDaysCount} Session${totalDaysCount > 1 ? 's' : ''})</td>
           <td style="text-align: right;">₹${parseFloat(p.dailyCharge).toFixed(2)}</td>
-          <td style="text-align: right; font-weight:700;">₹${((p.daysVisited || 1) * parseFloat(p.dailyCharge)).toFixed(2)}</td>
+          <td style="text-align: right; font-weight:700;">₹${(totalDaysCount * parseFloat(p.dailyCharge)).toFixed(2)}</td>
         </tr>
       `;
 
@@ -4247,9 +4282,10 @@
     }
 
     function exportCSV() {
-      let csv = 'UID,Name,Mobile,Work_Service,Treatment_Plan,Sessions,Total_Billed,Total_Received,Balance\n';
+      let csv = 'UID,Name,Mobile,Work_Service,Treatment_Plan,Days_Count,Sessions_Count,Total_Billed,Total_Received,Balance\n';
       patients.forEach(p => {
-        csv += `"${p.uid}","${p.name}","${p.mobile}","${p.diagnosis}","${p.treatment}",${p.daysVisited || 1},${getBilledTotal(p)},${getPaidTotal(p)},${getBilledTotal(p) - getPaidTotal(p)}\n`;
+        const count = p.daysVisited || 1;
+        csv += `"${p.uid}","${p.name}","${p.mobile}","${p.diagnosis}","${p.treatment}",${count},${count},${getBilledTotal(p)},${getPaidTotal(p)},${getBilledTotal(p) - getPaidTotal(p)}\n`;
       });
       const a = document.createElement('a');
       a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
