@@ -732,7 +732,6 @@
           <input type="text" id="public-patient-address" placeholder="e.g. KK Nagar, Madurai">
         </div>
 
-        <!-- OPTIONAL LIVE / CHOOSE LOCATION PICKER FOR REG LINK -->
         <div class="auth-input-group" style="margin-top: 6px; background: rgba(37, 99, 235, 0.1); border: 1px dashed var(--border); padding: 12px; border-radius: 10px;">
           <label style="color: var(--accent); display: flex; align-items: center; gap: 6px; margin-bottom: 6px;">📍 Map Location Option (Optional)</label>
           <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 6px;">
@@ -766,7 +765,7 @@
       <div class="offer-box">
         <p style="font-size: 0.72rem; color: #fbbf24; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px;">🔥 Special Rental Renewal Offer</p>
         <span class="price-strike">₹2,000</span>
-        <span class="price-active">₹599</span>
+        <span class="price-active" id="paywall-price-display">₹599</span>
         <span style="font-size: 0.85rem; color: var(--text-muted); margin-left: 4px;">/ Month</span>
       </div>
 
@@ -927,6 +926,12 @@
           <span>Overall Directory</span>
           <span class="nav-badge" id="badge-overall-total-count">0</span>
         </div>
+        <!-- NEW ADMIN MESSAGES TAB -->
+        <div class="nav-item member-item" id="nav-admin-messages" onclick="switchPage('page-admin-messages', this)">
+          <span class="nav-icon">💬</span>
+          <span>Admin Messages</span>
+          <span class="nav-badge alert-badge" id="badge-admin-msg" style="display:none;">1</span>
+        </div>
 
         <div class="nav-item admin-only" id="admin-nav-item" onclick="switchPage('page-admin-portal', this)">
           <span class="nav-icon">👑</span>
@@ -951,11 +956,17 @@
             <button class="mobile-menu-btn" onclick="toggleSidebarMenu(true)">☰</button>
             <div class="page-title-group">
               <h1 id="screen-heading-title">Active Works & Ongoing Appointments</h1>
-              <div id="top-physio-lead-display" class="doctor-professional-card">
-                <div class="doctor-avatar-circle" id="lead-avatar-icon">🩺</div>
-                <div>
-                  <span class="doctor-name-highlight" id="doc-badge-name">Dharun</span>
-                  <span class="iap-reg-badge" id="doc-badge-iap">🎓 Professional Specialist</span>
+              <div id="top-physio-lead-display" style="display: inline-flex; flex-direction: column; align-items: flex-start; gap: 8px;">
+                <div class="doctor-professional-card">
+                  <div class="doctor-avatar-circle" id="lead-avatar-icon">🩺</div>
+                  <div>
+                    <span class="doctor-name-highlight" id="doc-badge-name">Dharun</span>
+                    <span class="iap-reg-badge" id="doc-badge-iap">🎓 Professional Specialist</span>
+                  </div>
+                </div>
+                <!-- RENEWAL DAYS INDICATION BADGE FOR MEMBER LOGIN -->
+                <div id="renewal-days-container" style="display: none; margin-top: -2px;">
+                  <span class="uid-badge" id="renewal-days-text" style="font-size: 0.78rem; border-width: 1.5px; font-weight: 800;">⏳ 0 Days Left for Renewal</span>
                 </div>
               </div>
             </div>
@@ -967,6 +978,28 @@
             <button class="btn btn-primary" onclick="markAllVisitedToday()">⚡ Check-In All</button>
           </div>
         </header>
+
+        <!-- PAGE: ADMIN MESSAGES (NEW) -->
+        <section id="page-admin-messages" class="page-view">
+          <div class="card" style="border-color: #3b82f6;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:10px;">
+              <div>
+                <h2 style="color: #60a5fa; margin-bottom: 4px; border:none; padding:0;">👑 Messages from Master Admin</h2>
+                <p style="font-size: 0.85rem; color: var(--text-muted);">Important announcements and direct replies</p>
+              </div>
+              <button class="btn btn-secondary" onclick="clearAdminMessage()">🗑️ Clear Messages</button>
+            </div>
+            <div style="background: #0d1426; border: 1px solid var(--border); padding: 18px; border-radius: 12px; margin-bottom: 20px;">
+              <h4 style="color:#60a5fa; font-size:0.8rem; text-transform:uppercase; font-weight:800; margin-bottom:8px;">Latest Received Message</h4>
+              <p id="page-admin-msg-content" style="color:#f8fafc; font-size:0.95rem; white-space: pre-wrap;">No new messages.</p>
+            </div>
+            <div style="display: flex; gap: 10px; max-width: 600px;">
+              <input type="text" id="page-member-reply-input" placeholder="Type your reply to admin here..." style="flex:1; background:var(--bg-input); border:1px solid var(--border); color:#ffffff; padding:10px 14px; border-radius:8px; font-size:0.9rem; outline:none;">
+              <button class="btn btn-primary" onclick="sendReplyToAdminFromPage()">Send Reply</button>
+            </div>
+            <div id="page-member-reply-status" style="font-size:0.8rem; color:#10b981; font-weight:700; margin-top:8px; display:none;">✅ Reply sent to Admin successfully!</div>
+          </div>
+        </section>
 
         <!-- PAGE: INCOMING ONLINE REQUESTS -->
         <section id="page-patient-requests" class="page-view">
@@ -1138,6 +1171,7 @@
               <div class="btn-group">
                 <button type="submit" class="btn" id="save-btn">Register Record</button>
                 <button type="button" class="btn btn-secondary" id="cancel-btn" style="display:none;" onclick="resetForm()">Cancel</button>
+                <button type="button" class="btn btn-notify" onclick="switchPageById('page-active-works')">⚡ View Active Works</button>
               </div>
             </form>
           </div>
@@ -1282,7 +1316,11 @@
                 <h2>👑 Platform Owner Rental Control Hub</h2>
                 <p style="font-size:0.8rem; color:var(--text-muted);">Master Admin: <strong>Dharun (8248090433)</strong></p>
               </div>
-              <button class="btn btn-admin" onclick="loadAllRegisteredUsers()">🔄 Refresh Directory</button>
+              <div style="display: flex; gap: 10px;">
+                <button class="btn btn-secondary" onclick="openGlobalSettingsModal()">⚙️ Global Settings</button>
+                <button class="btn btn-notify" onclick="openBroadcastModal()">📣 Broadcast All Msg</button>
+                <button class="btn btn-admin" onclick="loadAllRegisteredUsers()">🔄 Refresh Directory</button>
+              </div>
             </div>
 
             <div class="controls-grid" style="grid-template-columns: 2fr 1.2fr; margin-bottom: 16px;">
@@ -1581,7 +1619,7 @@
     </div>
   </div>
 
-  <!-- MODAL: ADMIN EDIT MEMBER -->
+  <!-- MODAL: ADMIN EDIT MEMBER (WITH REGISTRATION AND RENEWAL FEE FIELDS) -->
   <div class="modal-overlay" id="adminEditMemberModal">
     <div class="modal-content">
       <div class="modal-header">
@@ -1601,6 +1639,18 @@
         <label>Unique Designation & Reg Title *</label>
         <input type="text" id="edit-member-role" required>
       </div>
+      
+      <div class="form-grid" style="margin-bottom: 12px; gap: 10px;">
+        <div class="form-group">
+          <label>Registration Amount (₹)</label>
+          <input type="number" id="edit-member-reg-amount" placeholder="0">
+        </div>
+        <div class="form-group">
+          <label>Renewal Amount (₹) *</label>
+          <input type="number" id="edit-member-rental-fee" required placeholder="599">
+        </div>
+      </div>
+
       <div class="form-group" style="margin-bottom: 12px;">
         <label>Login Email ID *</label>
         <input type="email" id="edit-member-email" required>
@@ -1620,6 +1670,33 @@
     </div>
   </div>
 
+  <!-- MODAL: GLOBAL PORTAL SETTINGS -->
+  <div class="modal-overlay" id="globalSettingsModal">
+    <div class="modal-content" style="max-width: 480px;">
+      <div class="modal-header">
+        <h3 style="color: #fbbf24;">⚙️ Global Portal Settings</h3>
+        <button class="close-modal" onclick="closeGlobalSettingsModal()">&times;</button>
+      </div>
+      <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 14px;">
+        Set the default pricing for <strong>newly registered members</strong>.
+      </p>
+      <div class="form-grid" style="margin-bottom: 18px; gap: 10px;">
+        <div class="form-group">
+          <label>Default Registration Amount (₹) *</label>
+          <input type="number" id="global-reg-amount" placeholder="0">
+        </div>
+        <div class="form-group">
+          <label>Default Renewal Amount (₹) *</label>
+          <input type="number" id="global-rental-fee" placeholder="599">
+        </div>
+      </div>
+      <div style="display: flex; gap: 10px;">
+        <button class="btn btn-notify" style="flex: 1;" onclick="saveGlobalSettings()">💾 Save Defaults</button>
+        <button class="btn btn-secondary" style="flex: 1;" onclick="closeGlobalSettingsModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
   <!-- MODAL: STATEMENT -->
   <div class="modal-overlay" id="historyDetailsModal">
     <div class="modal-content" style="max-width: 580px;">
@@ -1629,6 +1706,47 @@
       </div>
       <div id="historyModalBody" style="display: flex; flex-direction: column; gap: 8px; max-height: 380px; overflow-y: auto;"></div>
       <button class="btn btn-secondary" style="width: 100%; margin-top: 14px;" onclick="closeHistoryModal()">Close Statement</button>
+    </div>
+  </div>
+  
+  <!-- MODAL: ADMIN BROADCAST MESSAGE -->
+  <div class="modal-overlay" id="adminBroadcastModal">
+    <div class="modal-content" style="max-width: 480px;">
+      <div class="modal-header">
+        <h3 style="color: #38bdf8;">📣 Broadcast Message to All</h3>
+        <button class="close-modal" onclick="closeBroadcastModal()">&times;</button>
+      </div>
+      <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 14px;">
+        This message will appear prominently on the dashboard for <strong>ALL registered members</strong> when they log in.
+      </p>
+      <div class="form-group" style="margin-bottom: 18px;">
+        <label>Broadcast Message *</label>
+        <textarea id="broadcast-msg-input" rows="4" placeholder="Enter announcement or message to all members..."></textarea>
+      </div>
+      <div style="display: flex; gap: 10px;">
+        <button class="btn btn-notify" style="flex: 1;" onclick="sendBroadcastToAll()">🚀 Push to All Portals</button>
+        <button class="btn btn-secondary" style="flex: 1;" onclick="closeBroadcastModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: ADMIN SINGLE MESSAGE -->
+  <div class="modal-overlay" id="adminSingleMsgModal">
+    <div class="modal-content" style="max-width: 480px;">
+      <div class="modal-header">
+        <h3 id="single-msg-title" style="color: #38bdf8;">💬 Message Member</h3>
+        <button class="close-modal" onclick="closeSingleMsgModal()">&times;</button>
+      </div>
+      <input type="hidden" id="single-msg-uid">
+      <div id="single-msg-history"></div>
+      <div class="form-group" style="margin-bottom: 18px;">
+        <label>New Message to Member</label>
+        <textarea id="single-msg-input" rows="3" placeholder="Type your message here..."></textarea>
+      </div>
+      <div style="display: flex; gap: 10px;">
+        <button class="btn btn-primary" style="flex: 1;" onclick="sendSingleMessage()">✉️ Send Message</button>
+        <button class="btn btn-secondary" style="flex: 1;" onclick="closeSingleMsgModal()">Cancel</button>
+      </div>
     </div>
   </div>
 
@@ -1793,6 +1911,194 @@
     } else {
       document.getElementById('patient-self-reg-view').classList.remove('active');
     }
+    
+    // Global Settings Modal Logic
+    window.openGlobalSettingsModal = async function() {
+      document.getElementById('globalSettingsModal').classList.add('active');
+      document.getElementById('global-reg-amount').value = 'Loading...';
+      document.getElementById('global-rental-fee').value = 'Loading...';
+      try {
+        const snap = await getDoc(doc(db, "system_config", "rentals"));
+        if (snap.exists()) {
+          document.getElementById('global-reg-amount').value = snap.data().regAmount || 0;
+          document.getElementById('global-rental-fee').value = snap.data().rentalFee || 599;
+        } else {
+          document.getElementById('global-reg-amount').value = 0;
+          document.getElementById('global-rental-fee').value = 599;
+        }
+      } catch(err) {
+        console.error(err);
+        document.getElementById('global-reg-amount').value = 0;
+        document.getElementById('global-rental-fee').value = 599;
+      }
+    };
+
+    window.closeGlobalSettingsModal = function() {
+      document.getElementById('globalSettingsModal').classList.remove('active');
+    };
+
+    window.saveGlobalSettings = async function() {
+      const regAmount = parseFloat(document.getElementById('global-reg-amount').value) || 0;
+      const rentalFee = parseFloat(document.getElementById('global-rental-fee').value) || 599;
+      
+      try {
+        await setDoc(doc(db, "system_config", "rentals"), {
+          regAmount: regAmount,
+          rentalFee: rentalFee,
+          lastUpdated: new Date().toISOString()
+        }, { merge: true });
+        
+        alert("✅ Global default amounts updated successfully!");
+        closeGlobalSettingsModal();
+      } catch(err) {
+        alert("Failed to save global settings: " + err.message);
+      }
+    };
+
+    // Broadcast Modal Logic Injections
+    window.sendBroadcastToAll = async function() {
+      const msg = document.getElementById('broadcast-msg-input').value.trim();
+      if (!msg) return alert("Please enter a message.");
+      if (!confirm("Push this announcement to ALL members?")) return;
+
+      try {
+        const promises = allUsersList.map(usr => {
+          if (usr.identity && usr.identity.toLowerCase() !== SUPER_ADMIN_EMAIL.toLowerCase()) {
+            const userRef = doc(db, "registered_members", usr.id);
+            return updateDoc(userRef, {
+              adminMessage: msg,
+              memberReply: "" 
+            });
+          }
+        });
+        await Promise.all(promises);
+        alert("✅ Broadcast alert pushed to all member portals successfully!");
+        closeBroadcastModal();
+        window.loadAllRegisteredUsers();
+      } catch (err) {
+        alert("Error broadcasting: " + err.message);
+      }
+    };
+
+    window.sendSingleMessage = async function() {
+      const uid = document.getElementById('single-msg-uid').value;
+      const msg = document.getElementById('single-msg-input').value.trim();
+      if (!msg) return alert("Please enter a message.");
+
+      try {
+        const userRef = doc(db, "registered_members", uid);
+        await updateDoc(userRef, {
+          adminMessage: msg,
+          memberReply: "" 
+        });
+        alert("✅ Direct message sent to member!");
+        closeSingleMsgModal();
+        window.loadAllRegisteredUsers();
+      } catch(err) {
+        alert("Error sending message: " + err.message);
+      }
+    };
+
+    window.sendReplyToAdminFromPage = async function() {
+      const replyText = document.getElementById('page-member-reply-input').value.trim();
+      if (!replyText) return;
+      const targetUid = isImpersonating ? impersonatedMemberId : (activeFirebaseUser ? activeFirebaseUser.uid : null);
+      if (!targetUid) return;
+
+      try {
+        const userRef = doc(db, "registered_members", targetUid);
+        await updateDoc(userRef, { memberReply: replyText });
+        document.getElementById('page-member-reply-status').style.display = 'block';
+        document.getElementById('page-member-reply-input').value = '';
+        setTimeout(() => { document.getElementById('page-member-reply-status').style.display = 'none'; }, 3500);
+        
+        if(activeMemberProfile) activeMemberProfile.memberReply = replyText;
+        
+      } catch(err) {
+        alert("Error sending reply: " + err.message);
+      }
+    };
+    
+    window.clearAdminMessage = async function() {
+      if (!confirm("Are you sure you want to clear the message history?")) return;
+      const targetUid = isImpersonating ? impersonatedMemberId : (activeFirebaseUser ? activeFirebaseUser.uid : null);
+      if (!targetUid) return;
+
+      try {
+        const userRef = doc(db, "registered_members", targetUid);
+        await updateDoc(userRef, { adminMessage: "", memberReply: "" });
+        
+        if(activeMemberProfile) {
+          activeMemberProfile.adminMessage = "";
+          activeMemberProfile.memberReply = "";
+        }
+        window.checkAdminMessages(activeMemberProfile);
+        alert("✅ Messages cleared.");
+      } catch(err) {
+        alert("Error clearing messages: " + err.message);
+      }
+    };
+
+    window.updateRenewalBadge = function(memberData) {
+      const container = document.getElementById('renewal-days-container');
+      const badge = document.getElementById('renewal-days-text');
+      if (!container || !badge) return;
+
+      if (activeUserRole === 'super_admin' && !isImpersonating) {
+         container.style.display = 'none';
+         return;
+      }
+
+      let daysLeftNum = 0;
+      let daysLeftText = "Expired";
+      let badgeColor = "#ef4444"; 
+      let badgeBg = "rgba(239, 68, 68, 0.15)";
+
+      if (memberData && memberData.subscriptionExpiry) {
+        const expDate = new Date(memberData.subscriptionExpiry);
+        const now = new Date();
+        const timeDiff = expDate.getTime() - now.getTime();
+        daysLeftNum = Math.ceil(timeDiff / (1000 * 3600 * 24));
+        
+        if (daysLeftNum > 0) {
+          daysLeftText = `${daysLeftNum} Days Left for Renewal`;
+          if (daysLeftNum <= 5) {
+            badgeColor = "#fbbf24"; 
+            badgeBg = "rgba(245, 158, 11, 0.15)";
+          } else {
+            badgeColor = "#10b981"; 
+            badgeBg = "rgba(16, 185, 129, 0.15)";
+          }
+        } else {
+          daysLeftText = `Subscription Expired`;
+        }
+      }
+
+      badge.innerText = `⏳ ${daysLeftText}`;
+      badge.style.color = badgeColor;
+      badge.style.borderColor = badgeColor;
+      badge.style.background = badgeBg;
+      container.style.display = 'block';
+    };
+
+    window.checkAdminMessages = function(memberData) {
+      const badge = document.getElementById('badge-admin-msg');
+      const content = document.getElementById('page-admin-msg-content');
+      if (!badge || !content) return;
+      
+      if (activeUserRole === 'super_admin' && !isImpersonating) {
+        badge.style.display = 'none';
+        return;
+      }
+      if (memberData && memberData.adminMessage) {
+        content.innerText = memberData.adminMessage;
+        badge.style.display = 'inline-block';
+        badge.innerText = "1";
+      } else {
+        content.innerText = "No new messages.";
+        badge.style.display = 'none';
+      }
+    };
 
     window.captureLiveLocation = function(btnEl) {
       if (!navigator.geolocation) {
@@ -2108,7 +2414,6 @@
     };
 
     window.checkSubscriptionStatus = function(userData) {
-      // FIXED: Safely clean email check against SUPER_ADMIN_EMAIL removing typos like .coma
       const rawEmail = (activeFirebaseUser?.email || "").toLowerCase();
       const userEmail = rawEmail.replace(/\.com[a-zA-Z]*$/, '.com');
       
@@ -2122,11 +2427,12 @@
       const uidSuffix = activeFirebaseUser ? activeFirebaseUser.uid.slice(-6) : "GUEST";
       const timestamp = Date.now().toString().slice(-6);
       
-      currentSessionRef = `DPAY-${uidSuffix}-${timestamp}-${Math.floor(Math.random() * 900 + 100)}`;
+      const rentalFee = userData?.rentalFee || 599; 
+      document.getElementById('paywall-price-display').innerText = `₹${rentalFee}`;
 
       const userTag = userData?.displayName || (activeFirebaseUser?.email ? activeFirebaseUser.email.split('@')[0] : "USER");
       const transactionNote = `PortalRenewal-${userTag}-${currentSessionRef}`;
-      const uniqueUpiUrl = `upi://pay?pa=${APP_OWNER_UPI_ID}&pn=mr+Dharun&am=599&cu=INR&tn=${encodeURIComponent(transactionNote)}&tr=${encodeURIComponent(currentSessionRef)}`;
+      const uniqueUpiUrl = `upi://pay?pa=${APP_OWNER_UPI_ID}&pn=mr+Dharun&am=${rentalFee}&cu=INR&tn=${encodeURIComponent(transactionNote)}&tr=${encodeURIComponent(currentSessionRef)}`;
       
       document.getElementById('paywall-upi-qr').src = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=4&data=${encodeURIComponent(uniqueUpiUrl)}`;
       document.getElementById('qr-session-ref-display').innerText = `Unique Payment ID: ${currentSessionRef} | Member: ${userTag}`;
@@ -2143,8 +2449,9 @@
     };
 
     window.notifySubscriptionPaid = function() {
+      const rentalFee = activeMemberProfile?.rentalFee || 599;
       const userTag = activeFirebaseUser?.displayName || activeFirebaseUser?.email || 'Member';
-      const msg = encodeURIComponent(`Hello Dharun,\n\nI have sent the ₹599 renewal payment for my portal.\n\nBusiness: ${userTag}\nEmail: ${activeFirebaseUser?.email}\nUnique Payment ID: ${currentSessionRef}`);
+      const msg = encodeURIComponent(`Hello Dharun,\n\nI have sent the ₹${rentalFee} renewal payment for my portal.\n\nBusiness: ${userTag}\nEmail: ${activeFirebaseUser?.email}\nUnique Payment ID: ${currentSessionRef}`);
       window.open(`https://wa.me/91${APP_OWNER_PHONE}?text=${msg}`, '_blank');
     };
 
@@ -2238,6 +2545,9 @@
         
         updateClinicalHeaderBadges(doctorName, doctorRole, isParlor, targetUid);
         window.applyCategoryFormLabels(isParlor);
+        
+        window.updateRenewalBadge(memberData);
+        window.checkAdminMessages(memberData);
 
         document.querySelectorAll('.member-item').forEach(i => i.style.display = 'flex');
         document.getElementById('top-member-buttons').style.display = 'flex';
@@ -2267,6 +2577,7 @@
       document.getElementById('doc-badge-name').innerText = "Dharun (8248090433)";
       document.getElementById('doc-badge-iap').innerText = "👑 Master Admin";
       document.getElementById('nav-section-title').innerText = "Owner Hub";
+      document.getElementById('renewal-days-container').style.display = 'none'; 
 
       document.querySelectorAll('.member-item').forEach(item => item.style.display = 'none');
       if (adminNavItem) adminNavItem.style.display = 'flex';
@@ -2286,6 +2597,7 @@
         const currentData = userDoc.exists() ? userDoc.data() : {};
         const previousExpiry = currentData.subscriptionExpiry || null;
         const previousStatus = currentData.paymentStatus || 'unpaid';
+        const rentalFee = currentData.rentalFee || 599;
 
         if (currentData.subscriptionExpiry) {
           const curExp = new Date(currentData.subscriptionExpiry);
@@ -2299,7 +2611,7 @@
         let payHistory = currentData.paymentHistoryList || [];
         payHistory.unshift({ 
           id: Date.now(), 
-          amount: 599, 
+          amount: rentalFee, 
           method: method, 
           paidAt: paidTimestamp, 
           adminRef: "8248090433" 
@@ -2310,7 +2622,7 @@
           paymentStatus: "paid",
           lastPaymentDate: paidTimestamp,
           lastPaymentMethod: method,
-          lastPaymentAmount: 599,
+          lastPaymentAmount: rentalFee,
           previousExpiryBackup: previousExpiry,
           previousStatusBackup: previousStatus,
           paymentHistoryList: payHistory
@@ -2454,11 +2766,38 @@
       document.getElementById('edit-member-site-name').value = user.clinicName || '';
       document.getElementById('edit-member-doctor-name').value = user.doctorName || '';
       document.getElementById('edit-member-role').value = user.doctorRole || '';
+      
+      // POPULATE REGISTRATION AND RENEWAL FIELDS
+      document.getElementById('edit-member-reg-amount').value = user.regAmount || 0;
+      document.getElementById('edit-member-rental-fee').value = user.rentalFee || 599; 
+      
       document.getElementById('edit-member-email').value = user.identity || '';
       document.getElementById('edit-member-password').value = user.plainPassword || '';
       document.getElementById('edit-member-mobile').value = user.mobile || '';
 
       document.getElementById('adminEditMemberModal').classList.add('active');
+    };
+    
+    // Broadcast & Message Modal Launchers
+    window.openBroadcastModal = function() {
+      document.getElementById('broadcast-msg-input').value = '';
+      document.getElementById('adminBroadcastModal').classList.add('active');
+    };
+    window.closeBroadcastModal = function() {
+      document.getElementById('adminBroadcastModal').classList.remove('active');
+    };
+
+    window.openSingleMsgModal = function(userId) {
+      const usr = allUsersList.find(u => u.id === userId);
+      if (!usr) return;
+      document.getElementById('single-msg-uid').value = usr.id;
+      document.getElementById('single-msg-title').innerText = `💬 Message: ${usr.clinicName || usr.doctorName}`;
+      document.getElementById('single-msg-history').innerHTML = usr.memberReply ? `<div style="padding:10px; background:#0d1426; border-radius:8px; margin-bottom:12px;"><strong style="color:#10b981; font-size:0.8rem;">Their Last Reply:</strong><br><span style="color:var(--text-main); font-size:0.95rem; display:block; margin-top:4px;">${usr.memberReply}</span></div>` : '<p style="color:var(--text-muted); font-size:0.8rem; margin-bottom:12px;">No replies from this member.</p>';
+      document.getElementById('single-msg-input').value = usr.adminMessage || '';
+      document.getElementById('adminSingleMsgModal').classList.add('active');
+    };
+    window.closeSingleMsgModal = function() {
+      document.getElementById('adminSingleMsgModal').classList.remove('active');
     };
 
     window.closeAdminEditMemberModal = function() {
@@ -2470,7 +2809,12 @@
       const siteName = document.getElementById('edit-member-site-name').value.trim().toUpperCase();
       const docName = document.getElementById('edit-member-doctor-name').value.trim();
       const docRole = document.getElementById('edit-member-role').value.trim();
-      const email = document.getElementById('edit-member-email').value.trim().toLowerCase().replace(/\.com[a-zA-Z]*$/, '.com'); // FIXED: sanitize email typo
+      
+      // FETCH REGISTRATION AND RENEWAL AMOUNTS
+      const regAmount = parseFloat(document.getElementById('edit-member-reg-amount').value) || 0;
+      const rentalFee = parseFloat(document.getElementById('edit-member-rental-fee').value) || 599; 
+      
+      const email = document.getElementById('edit-member-email').value.trim().toLowerCase().replace(/\.com[a-zA-Z]*$/, '.com'); 
       const pwd = document.getElementById('edit-member-password').value.trim();
       const mobile = document.getElementById('edit-member-mobile').value.trim();
 
@@ -2481,6 +2825,8 @@
           displayName: siteName,
           doctorName: docName,
           doctorRole: docRole,
+          regAmount: regAmount, // NEW: SAVE REG AMOUNT
+          rentalFee: rentalFee, // SAVE RENTAL AMOUNT
           identity: email,
           plainPassword: pwd,
           mobile: mobile,
@@ -2495,6 +2841,21 @@
       }
     };
 
+    window.sendRenewalWhatsApp = function(mobile, memberId, daysLeft) {
+      if (!mobile || mobile.trim() === '' || mobile.toLowerCase() === 'no mobile') {
+        alert("No mobile number available for this member.");
+        return;
+      }
+      const cleanPhone = mobile.replace(/\D/g, '');
+      let msg = "";
+      if (daysLeft > 0) {
+        msg = `Hello! Your portal subscription (Member ID: ${memberId}) will expire in ${daysLeft} days. Please renew your rental soon to continue uninterrupted access.`;
+      } else {
+        msg = `Hello! Your portal subscription (Member ID: ${memberId}) has expired. Please renew your rental to restore your access immediately.`;
+      }
+      window.open(`https://wa.me/${cleanPhone.length === 10 ? '91' + cleanPhone : cleanPhone}?text=${encodeURIComponent(msg)}`, '_blank');
+    };
+
     window.loadAllRegisteredUsers = async function() {
       try {
         const regSnap = await getDocs(collection(db, "registered_members"));
@@ -2505,6 +2866,7 @@
 
         let paidCount = 0;
         let totalRevenue = 0;
+        let activeMRR = 0; // Dynamic MRR based on individual rental fees
 
         allUsersList.forEach((usr) => {
           const isSuper = (usr.identity || "").toLowerCase() === SUPER_ADMIN_EMAIL.toLowerCase();
@@ -2512,17 +2874,20 @@
           const hasPaidHistory = (usr.paymentHistoryList && usr.paymentHistoryList.length > 0) || usr.lastPaymentDate;
           const isExpired = !expiryDate || expiryDate < new Date() || (!hasPaidHistory && !isSuper);
           const isStopped = usr.paymentStatus === 'stopped';
+          
+          const memFee = usr.rentalFee || 599;
 
           if (isSuper || (!isExpired && !isStopped)) {
             paidCount++;
-            totalRevenue += (usr.paymentHistoryList?.length ? usr.paymentHistoryList.length * 599 : (hasPaidHistory ? 599 : 0));
+            activeMRR += parseFloat(memFee);
+            totalRevenue += (usr.paymentHistoryList?.length ? usr.paymentHistoryList.length * memFee : (hasPaidHistory ? memFee : 0));
           }
         });
 
         document.getElementById('admin-total-users-kpi').innerText = allUsersList.length;
         document.getElementById('admin-paid-users-kpi').innerText = paidCount;
         document.getElementById('admin-total-collected-kpi').innerText = `₹${totalRevenue.toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
-        document.getElementById('admin-mrr-kpi').innerText = `₹${(paidCount * 599).toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
+        document.getElementById('admin-mrr-kpi').innerText = `₹${activeMRR.toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
         document.getElementById('badge-admin-count').innerText = allUsersList.length;
 
         renderAdminTableFull();
@@ -2574,6 +2939,16 @@
         const hasPaidHistory = (usr.paymentHistoryList && usr.paymentHistoryList.length > 0) || usr.lastPaymentDate;
         const isExpired = !expiryDate || expiryDate < new Date() || !hasPaidHistory;
         const isStopped = usr.paymentStatus === 'stopped';
+        
+        let daysLeftText = "Expired";
+        let daysLeftNum = 0;
+        if (expiryDate) {
+          const timeDiff = expiryDate.getTime() - new Date().getTime();
+          daysLeftNum = Math.ceil(timeDiff / (1000 * 3600 * 24));
+          if (daysLeftNum > 0) {
+            daysLeftText = `${daysLeftNum} days left`;
+          }
+        }
 
         let statusBadge = isStopped ? `<span class="badge badge-not-cured" style="background:#7f1d1d; border-color:#ef4444; color:#fca5a5;">🛑 Suspended</span>` 
                           : (!isExpired ? `<span class="badge badge-cured">🟢 Active Subscription</span>` 
@@ -2581,14 +2956,16 @@
 
         let paymentHistoryDisplay = "<span style='color:var(--text-muted); font-size:0.82rem;'>No Rental Paid</span>";
         const histCount = usr.paymentHistoryList ? usr.paymentHistoryList.length : (usr.lastPaymentDate ? 1 : 0);
+        
+        const memFee = usr.rentalFee || 599;
 
         if (histCount > 0) {
-          const latest = usr.paymentHistoryList?.[0] || { amount: 599, method: usr.lastPaymentMethod || 'UPI/QR', paidAt: usr.lastPaymentDate };
+          const latest = usr.paymentHistoryList?.[0] || { amount: memFee, method: usr.lastPaymentMethod || 'UPI/QR', paidAt: usr.lastPaymentDate };
           const pDate = new Date(latest.paidAt);
           paymentHistoryDisplay = `
             <div class="pay-history-summary-box">
               <div>
-                <span style="color:#06d6a0; font-weight:800; font-size:0.88rem;">₹${latest.amount || 599}</span>
+                <span style="color:#06d6a0; font-weight:800; font-size:0.88rem;">₹${latest.amount || memFee}</span>
                 <span style="font-size:0.72rem; color:#94a3b8; margin-left:4px;">(${latest.method})</span>
                 <br>
                 <small style="color:#38bdf8;">📅 ${pDate.toLocaleDateString('en-GB')}</small>
@@ -2605,12 +2982,18 @@
 
         const categoryTag = (usr.businessCategory === 'parlor') ? '💇 Beauty Parlor' : '🏥 Physiotherapy';
         const shortMemberUid = usr.id ? usr.id.slice(-6).toUpperCase() : "UID";
+        
+        let replyAlert = usr.memberReply ? `<div style="margin-top:6px; padding:6px; background:rgba(16, 185, 129, 0.1); border:1px solid #10b981; border-radius:6px; font-size:0.75rem; color:#86efac; max-width:200px; word-wrap: break-word;"><strong>Reply:</strong> ${usr.memberReply}</div>` : '';
 
         let actions = `
           <div style="display: flex; gap: 4px; flex-wrap: wrap;">
+            <button class="btn btn-item" style="padding: 4px 8px; font-size: 0.72rem; position:relative;" onclick="openSingleMsgModal('${usr.id}')">
+              💬 Message ${usr.memberReply ? '<span style="position:absolute; top:-3px; right:-3px; background:#ef4444; width:10px; height:10px; border-radius:50%; box-shadow:0 0 5px rgba(0,0,0,0.5);"></span>' : ''}
+            </button>
             <button class="btn btn-notify" style="padding: 4px 8px; font-size: 0.72rem;" onclick="loginAsMember('${usr.id}')">🔑 Login</button>
             <button class="btn btn-primary" style="padding: 4px 8px; font-size: 0.72rem;" onclick="extendUserRental('${usr.id}', 30, 'UPI/QR')">⚡ Unlock (QR)</button>
             <button class="btn btn-secondary" style="padding: 4px 8px; font-size: 0.72rem;" onclick="extendUserRental('${usr.id}', 30, 'Cash')">💵 Cash</button>
+            <button class="btn btn-whatsapp" style="padding: 4px 8px; font-size: 0.72rem;" onclick="sendRenewalWhatsApp('${usr.mobile}', '${shortMemberUid}', ${daysLeftNum})">📲 WA Reminder</button>
             <button class="btn btn-admin" style="padding: 4px 8px; font-size: 0.72rem;" onclick="openAdminEditModal('${usr.id}')">✏️ Edit</button>
             ${usr.previousExpiryBackup ? `<button class="btn btn-undo" style="padding: 4px 8px; font-size: 0.72rem;" onclick="undoUserUnlock('${usr.id}')">↩️ Undo</button>` : ''}
             ${!isExpired && !isStopped ? `<button class="btn btn-stop" style="padding: 4px 8px; font-size: 0.72rem;" onclick="stopUserAccess('${usr.id}')">🛑 Stop</button>` : ''}
@@ -2622,10 +3005,11 @@
         tr.innerHTML = `
           <td>${idx + 1}</td>
           <td>
-            <strong style="color:var(--text-main); font-size:0.95rem;">${usr.doctorName || 'Specialist'}</strong> <span class="uid-badge" style="font-size:0.7rem;">UID: ${shortMemberUid}</span><br>
+            <strong style="color:var(--text-main); font-size:0.95rem;">${usr.doctorName || 'Specialist'}</strong> <span class="uid-badge" style="font-size:0.7rem;">UID: ${shortMemberUid} (${daysLeftText})</span><br>
             <span class="uid-badge" style="font-size:0.68rem; margin:2px 0;">${categoryTag} • ${usr.clinicName || 'Center'}</span><br>
             <small style="color:var(--text-muted);">📧 ${usr.identity || usr.id}</small><br>
             <small style="color:#38bdf8;">${usr.doctorRole || 'Specialist'}</small>
+            ${replyAlert}
           </td>
           <td>
             <small style="color:#38bdf8; font-weight:700;">📞 ${usr.mobile || 'No Mobile'}</small><br>
@@ -2642,7 +3026,6 @@
 
     window.handleLoginSubmit = async function(e) {
       e.preventDefault();
-      // FIXED: Automatically sanitize and correct accidental typo suffixes like .coma or trailing spaces on login email ID input
       const rawEmail = document.getElementById('login-email').value.trim().toLowerCase();
       const cleanEmail = rawEmail.replace(/\.com[a-zA-Z]*$/, '.com');
       const cleanPassword = document.getElementById('login-password').value.trim();
@@ -2656,7 +3039,6 @@
 
     window.handleRegisterSubmit = async function(e) {
       e.preventDefault();
-      // FIXED: Automatically sanitize and correct accidental typo suffixes like .coma on registration email ID inputs
       const rawEmail = document.getElementById('reg-email').value.trim().toLowerCase();
       const rawEmailConfirm = document.getElementById('reg-email-confirm').value.trim().toLowerCase();
       
@@ -2683,6 +3065,17 @@
       const mobile = document.getElementById('reg-mobile').value.trim();
 
       try {
+        // FETCH GLOBAL SETTINGS INSTEAD OF HARDCODING 0 AND 599
+        let defaultRegAmt = 0;
+        let defaultRentalFee = 599;
+        try {
+          const confSnap = await getDoc(doc(db, "system_config", "rentals"));
+          if(confSnap.exists()) {
+            defaultRegAmt = parseFloat(confSnap.data().regAmount) || 0;
+            defaultRentalFee = parseFloat(confSnap.data().rentalFee) || 599;
+          }
+        } catch(e) { console.log(e); }
+
         let userCredential;
         try {
           userCredential = await createUserWithEmailAndPassword(auth, email, password);
@@ -2713,6 +3106,8 @@
           displayName: clinicName,
           mobile: mobile,
           plainPassword: password,
+          regAmount: defaultRegAmt, // ASSIGN GLOBAL REG AMOUNT
+          rentalFee: defaultRentalFee, // ASSIGN GLOBAL RENTAL FEE
           role: isSuper ? 'super_admin' : 'member',
           subscriptionExpiry: initialExpiry,
           paymentStatus: isSuper ? 'free_admin' : 'unpaid',
@@ -2816,6 +3211,7 @@
           if (adminNavItem) adminNavItem.style.display = 'flex';
           if (topMemberButtons) topMemberButtons.style.display = 'none';
           if (sidebarFooterControls) sidebarFooterControls.style.display = 'none';
+          document.getElementById('renewal-days-container').style.display = 'none';
 
           switchPage('page-admin-portal', adminNavItem);
           window.loadAllRegisteredUsers();
@@ -2836,6 +3232,10 @@
           
           updateClinicalHeaderBadges(doctorName, doctorRole, isParlor, user.uid);
           window.applyCategoryFormLabels(isParlor);
+          
+          // Show dynamic renewal badge & admin msg for logged-in member
+          window.updateRenewalBadge(memberData);
+          window.checkAdminMessages(memberData);
 
           if (navSectionTitle) navSectionTitle.innerText = "Navigation Hub";
           memberNavItems.forEach(item => {
@@ -2846,7 +3246,7 @@
           if (topMemberButtons) topMemberButtons.style.display = 'flex';
           if (sidebarFooterControls) sidebarFooterControls.style.display = 'flex';
 
-          switchPage('page-active-works', memberNavItems[5]);
+          switchPage('page-active-works', memberNavItems[5]); // Default to Active Works
           await loadFromCloud(user.uid);
         }
       } else {
@@ -2886,6 +3286,7 @@
       const isParlor = (typeof window.getActiveMemberProfile === 'function' ? window.getActiveMemberProfile() : null)?.businessCategory === 'parlor';
 
       const titles = {
+        'page-admin-messages': 'Admin Communication Hub',
         'page-patient-requests': isParlor ? 'Incoming Online Spa Bookings' : 'Incoming Patient Online Booking Requests',
         'page-dashboard': '1-Click Revenue Hub',
         'page-general-calendar': 'Overall Master Calendar & Daily Revenue',
@@ -3073,7 +3474,13 @@
           </td>
           <td>
             <div style="display:flex; gap:4px; flex-wrap:wrap;">
-              <button class="action-btn btn-item" onclick="promptLateEntryVisit(${p.id})">+ Visit</button>
+              
+              <!-- 1-CLICK NATIVE DATE PICKER FOR + VISIT (Replaces Modal) -->
+              <label class="action-btn btn-item" style="position: relative; overflow: hidden; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; margin: 0; padding: 6px 10px;">
+                + Visit
+                <input type="date" onchange="quickAddVisit(${p.id}, this.value); this.value='';" style="position: absolute; left: 0; top: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer;" title="Select date to add visit">
+              </label>
+              
               <button class="action-btn btn-item" onclick="openExtraModal(${p.id})">+ Extra</button>
               <button class="action-btn btn-pay" onclick="openPayModal(${p.id})">+ Pay</button>
               <button class="action-btn btn-ledger" onclick="openPatientLedgerModal(${p.id})">📅 Ledger</button>
@@ -3094,6 +3501,24 @@
 
       renderStats();
     }
+
+    // New highly-optimized logic for 1-Click date selection to add visit
+    window.quickAddVisit = function(id, visitDate) {
+      if (!visitDate) return;
+      const p = patients.find(p => p.id === id);
+      if (!p) return;
+
+      if (!p.visitHistory) p.visitHistory = [];
+      const alreadyExists = p.visitHistory.some(v => v.date === visitDate);
+      
+      if (!alreadyExists) {
+        p.daysVisited = (p.daysVisited || 0) + 1;
+        p.visitHistory.push({ date: visitDate, visitNum: p.daysVisited });
+        saveAndRender();
+      } else {
+        alert("A visit for this member on " + visitDate + " is already recorded.");
+      }
+    };
 
     window.undoLastVisit = function(id) {
       const p = patients.find(p => p.id === id);
@@ -3249,39 +3674,55 @@
       const pkg = document.getElementById('package-type').value;
       const manualLocation = document.getElementById('manual-patient-location').value.trim();
 
-      const patientData = {
-        id: editId ? parseInt(editId) : Date.now(),
-        uid: `UID-${patients.length + 1001}`,
-        name: document.getElementById('name').value.trim(),
-        mobile: document.getElementById('mobile').value.trim(),
-        recordDate: recordDate,
-        reminderTime: document.getElementById('reminderTime').value,
-        packageType: pkg,
-        dailyCharge: parseFloat(document.getElementById('dailyCharge').value) || 0,
-        diagnosis: document.getElementById('diagnosis').value.trim(),
-        treatment: document.getElementById('treatment').value.trim(),
-        address: document.getElementById('address').value.trim(),
-        location: manualLocation || '',
-        daysVisited: 1,
-        visitHistory: [{ date: recordDate, visitNum: 1 }],
-        paymentHistory: [],
-        extraCharges: [],
-        isFinished: false
-      };
-
       if (editId) {
+        // UPDATE EXISTING PATIENT (No overrides on old history logic)
         const index = patients.findIndex(p => p.id == editId);
-        if (index !== -1) patients[index] = { ...patients[index], ...patientData };
+        if (index !== -1) {
+          patients[index].name = document.getElementById('name').value.trim();
+          patients[index].mobile = document.getElementById('mobile').value.trim();
+          patients[index].recordDate = recordDate;
+          patients[index].reminderTime = document.getElementById('reminderTime').value;
+          patients[index].packageType = pkg;
+          patients[index].dailyCharge = parseFloat(document.getElementById('dailyCharge').value) || 0;
+          patients[index].diagnosis = document.getElementById('diagnosis').value.trim();
+          patients[index].treatment = document.getElementById('treatment').value.trim();
+          patients[index].address = document.getElementById('address').value.trim();
+          patients[index].location = manualLocation || '';
+        }
       } else {
+        // CREATE COMPLETELY NEW PATIENT
+        const patientData = {
+          id: Date.now(),
+          uid: `UID-${patients.length + 1001}`,
+          name: document.getElementById('name').value.trim(),
+          mobile: document.getElementById('mobile').value.trim(),
+          recordDate: recordDate,
+          reminderTime: document.getElementById('reminderTime').value,
+          packageType: pkg,
+          dailyCharge: parseFloat(document.getElementById('dailyCharge').value) || 0,
+          diagnosis: document.getElementById('diagnosis').value.trim(),
+          treatment: document.getElementById('treatment').value.trim(),
+          address: document.getElementById('address').value.trim(),
+          location: manualLocation || '',
+          daysVisited: 1,
+          visitHistory: [{ date: recordDate, visitNum: 1 }],
+          paymentHistory: [],
+          extraCharges: [],
+          isFinished: false
+        };
         patients.unshift(patientData);
       }
 
       saveAndRender(true);
       document.getElementById('patient-form').reset();
       document.getElementById('manual-patient-location').value = '';
+      document.getElementById('edit-id').value = '';
+      document.getElementById('save-btn').innerText = "Register Record";
+      document.getElementById('cancel-btn').style.display = "none";
       switchPageById('page-active-works');
     }
 
+    // Keeping lateEntry modal logic intact in case it is called programmatically from elsewhere
     window.promptLateEntryVisit = function(id) {
       document.getElementById('late-entry-patient-id').value = id;
       document.getElementById('late-entry-date-picker').value = new Date().toISOString().slice(0, 10);
