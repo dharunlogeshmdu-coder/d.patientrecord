@@ -10,6 +10,11 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@600;700;800&family=Outfit:wght@700;800;900&display=swap" rel="stylesheet">
+  
+  <!-- HTML2PDF Library for Invoice PDF Generation -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <!-- Official Razorpay Checkout SDK -->
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 
   <script>
     window.generateUniqueLogo = function(name) {
@@ -85,6 +90,36 @@
         lblRole.innerText = "Designation & IAP Registration No *";
         inRole.placeholder = "e.g. Lead Physiotherapist | IAP Reg No: 878";
       }
+    };
+
+    window.toggleNavLayout = function() {
+      const nav = document.getElementById('main-sidebar-nav');
+      if (nav) {
+        nav.classList.toggle('grid-view');
+      }
+    };
+
+    window.downloadReceiptPDF = function() {
+      const element = document.querySelector('.receipt-paper');
+      const controlsBar = document.querySelector('.receipt-controls-bar');
+      const patientUid = document.getElementById('receipt-number-display')?.innerText || 'INVOICE';
+      
+      if (controlsBar) controlsBar.style.display = 'none';
+
+      const opt = {
+        margin:       [0.2, 0.2, 0.2, 0.2],
+        filename:     `${patientUid.replace(/[^a-zA-Z0-9-_]/g, '_')}_Bill.pdf`,
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
+        jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
+      };
+
+      html2pdf().set(opt).from(element).save().then(() => {
+        if (controlsBar) controlsBar.style.display = 'flex';
+      }).catch((err) => {
+        console.error(err);
+        if (controlsBar) controlsBar.style.display = 'flex';
+      });
     };
   </script>
 
@@ -243,6 +278,18 @@
     .qr-container { background: #ffffff; padding: 10px; border-radius: 14px; display: inline-block; margin: 6px 0; border: 2px solid var(--border); }
     .meta-tag-pill { background: #0d1426; border: 1px solid var(--border); padding: 6px 12px; border-radius: 8px; font-size: 0.75rem; color: #94a3b8; word-break: break-all; margin: 4px 0 10px 0; }
 
+    .btn-razorpay {
+      background: linear-gradient(135deg, #0284c7 0%, #2563eb 100%);
+      color: #ffffff !important;
+      font-weight: 800;
+      box-shadow: 0 4px 15px rgba(37, 99, 235, 0.4);
+      border: 1px solid rgba(56, 189, 248, 0.5);
+    }
+    .btn-razorpay:hover {
+      background: linear-gradient(135deg, #0369a1 0%, #1d4ed8 100%);
+      transform: translateY(-2px);
+    }
+
     #auth-screen-overlay {
       position: fixed;
       inset: 0;
@@ -391,8 +438,33 @@
     .sidebar-brand-text h2 { font-size: 1.05rem; font-weight: 800; color: var(--text-main); line-height: 1.2; word-break: break-word; }
     .sidebar-brand-text p { font-size: 0.72rem; color: var(--accent); font-weight: 700; text-transform: uppercase; }
 
-    .nav-section-title { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1.2px; color: var(--text-muted); font-weight: 700; margin: 12px 8px 8px 8px; }
+    .nav-section-title { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1.2px; color: var(--text-muted); font-weight: 700; }
     .sidebar-nav { display: flex; flex-direction: column; gap: 6px; flex: 1; overflow-y: auto; }
+
+    .sidebar-nav.grid-view {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    .sidebar-nav.grid-view .nav-item {
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 10px 4px;
+      min-height: 75px;
+    }
+    .sidebar-nav.grid-view .nav-item span:not(.nav-icon):not(.nav-badge) {
+      font-size: 0.72rem;
+      margin-top: 4px;
+      line-height: 1.2;
+    }
+    .sidebar-nav.grid-view .nav-badge {
+      margin-left: 0;
+      position: absolute;
+      top: 4px;
+      right: 4px;
+    }
 
     .nav-item {
       display: flex;
@@ -407,6 +479,7 @@
       border: 1px solid transparent;
       transition: all 0.2s;
       min-height: 44px;
+      position: relative;
     }
 
     .nav-item:hover { background: var(--sidebar-hover); color: var(--text-main); }
@@ -610,7 +683,6 @@
     .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 14px; margin-bottom: 18px; }
     .close-modal { background: transparent; border: none; color: var(--text-muted); font-size: 1.6rem; cursor: pointer; }
 
-    /* MASTER CALENDAR GRID SYSTEM */
     .gen-cal-wrapper { display: flex; flex-direction: column; gap: 16px; margin-top: 14px; }
     .gen-cal-header-bar { display: flex; justify-content: space-between; align-items: center; background: #0d1426; padding: 12px 20px; border-radius: 12px; border: 1px solid var(--border); }
     .gen-cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; margin-top: 8px; }
@@ -619,7 +691,6 @@
     .gen-cal-card.is-today { border: 1.5px solid var(--accent); box-shadow: 0 0 12px var(--accent-glow); }
     .gen-cal-card-head { display: flex; justify-content: space-between; border-bottom: 1px solid rgba(30, 42, 74, 0.5); padding-bottom: 4px; font-size: 0.85rem; font-weight: 800; }
 
-    /* INDIVIDUAL PATIENT CALENDAR */
     .patient-cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; margin: 10px 0; }
     .patient-cal-day-header { text-align: center; font-size: 0.7rem; font-weight: 700; color: var(--text-muted); padding: 4px; background: #090e1c; border-radius: 4px; }
     .patient-cal-day-box {
@@ -647,7 +718,6 @@
       background: rgba(56, 189, 248, 0.18);
     }
 
-    /* BRIGHT ADMIN TABLE & MEMBER IDENTITY STYLES */
     .member-bright-title { color: #ffffff !important; font-weight: 800; font-size: 1rem; }
     .member-bright-clinic { color: #f8fafc !important; font-weight: 700; }
     .member-bright-email { color: #e2e8f0 !important; font-weight: 600; }
@@ -658,7 +728,6 @@
     .pay-history-summary-box { background: #0c1324; border: 1px solid #1e293b; padding: 6px 10px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; }
     .pay-history-modal-btn { background: #1e293b; border: 1px solid #3b82f6; color: #38bdf8; font-weight: 800; font-size: 0.72rem; padding: 4px 8px; border-radius: 6px; cursor: pointer; }
 
-    /* PROFESSIONAL MEDICAL INVOICE BILL STYLING */
     #printable-receipt { display: none; position: fixed; inset: 0; z-index: 10001; background: rgba(0,0,0,0.85); overflow-y: auto; padding: 20px; }
     #printable-receipt.active { display: flex; justify-content: center; align-items: flex-start; }
     .receipt-paper { background: #ffffff !important; color: #000000 !important; width: 100%; max-width: 820px; border-radius: 12px; overflow: hidden; margin: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.6); }
@@ -682,9 +751,6 @@
       #printable-receipt { position: absolute; left: 0; top: 0; width: 100%; background: transparent !important; padding: 0; margin: 0; }
       .receipt-controls-bar { display: none !important; }
       .receipt-paper { box-shadow: none !important; border: 1px solid #000; border-radius: 0; width: 100%; max-width: 100%; }
-      
-      /* FIXED: Ensure header text and elements render as solid black in print mode 
-         instead of fading to grey when the background is stripped by the browser. */
       .receipt-header-banner { background: transparent !important; border-bottom: 4px solid var(--primary) !important; }
       .receipt-header-banner, .receipt-header-banner * { color: #000000 !important; }
       #receipt-number-display, #receipt-doctor-phone-sub { color: #000000 !important; }
@@ -704,11 +770,8 @@
 </head>
 <body>
 
-  <!-- PUBLIC PATIENT SELF REGISTRATION VIEW -->
   <div id="patient-self-reg-view">
     <div class="auth-card" style="max-width: 540px;">
-      
-      <!-- DOCTOR & CLINIC INFORMATION HEADER BANNER -->
       <div class="doctor-booking-banner">
         <div class="doc-main-row">
           <div class="doctor-avatar-circle" id="public-avatar-icon">🩺</div>
@@ -772,18 +835,32 @@
 
   <div class="sidebar-overlay-backdrop" id="sidebarBackdrop" onclick="toggleSidebarMenu(false)"></div>
 
-  <!-- SUBSCRIPTION PAYWALL OVERLAY -->
   <div id="subscription-lock-overlay">
     <div class="paywall-card">
-      <span class="paywall-badge">⚠️ Plan Expired</span>
-      <h2 style="font-size: 1.35rem; color: #ffffff; margin-bottom: 4px;">Subscription Renewal Required</h2>
-      <p style="font-size: 0.82rem; color: var(--text-muted);">Please complete the monthly rental payment to unlock your portal.</p>
+      <span class="paywall-badge" id="paywall-badge-text">⚠️ Plan Expired</span>
+      <h2 style="font-size: 1.35rem; color: #ffffff; margin-bottom: 4px;" id="paywall-title-text">Subscription Renewal Required</h2>
+      <p style="font-size: 0.82rem; color: var(--text-muted);" id="paywall-desc-text">Please complete the payment to auto-unlock your portal instantly for 30 days.</p>
 
       <div class="offer-box">
-        <p style="font-size: 0.72rem; color: #fbbf24; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px;">🔥 Special Rental Renewal Offer</p>
+        <p style="font-size: 0.72rem; color: #fbbf24; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px;" id="paywall-offer-label">🔥 Special 30-Day Portal Access Offer</p>
         <span class="price-strike">₹2,000</span>
         <span class="price-active" id="paywall-price-display">₹599</span>
-        <span style="font-size: 0.85rem; color: var(--text-muted); margin-left: 4px;">/ Month</span>
+        <span style="font-size: 0.85rem; color: var(--text-muted); margin-left: 4px;">/ 30 Days</span>
+      </div>
+
+      <div style="margin: 14px 0 10px 0;">
+        <button class="btn btn-razorpay" style="width: 100%; font-size: 0.95rem; padding: 12px;" onclick="payWithRazorpayAndAutoUnlock()">
+          💳 Pay & Auto Unlock with Razorpay
+        </button>
+        <div style="display:flex; justify-content:center; align-items:center; gap:8px; margin-top:8px;">
+          <span style="font-size:0.72rem; color:var(--text-muted);">Supports UPI, GPay, PhonePe, Cards, NetBanking</span>
+        </div>
+      </div>
+
+      <div style="display:flex; align-items:center; text-align:center; margin:10px 0;">
+        <hr style="flex:1; border:none; border-top:1px solid var(--border);">
+        <span style="padding:0 10px; font-size:0.75rem; color:var(--text-muted); font-weight:700;">OR PAY VIA MANUAL UPI QR</span>
+        <hr style="flex:1; border:none; border-top:1px solid var(--border);">
       </div>
 
       <div style="background: #0c1324; border: 1px solid var(--border); padding: 14px; border-radius: 12px; margin: 10px 0;">
@@ -807,7 +884,6 @@
     </div>
   </div>
 
-  <!-- AUTHENTICATION OVERLAY -->
   <div id="auth-screen-overlay">
     <div class="auth-corner-ad-badge" id="auth-top-right-ad">
       <div class="ad-title">👑 Dharun Portal Manager</div>
@@ -819,7 +895,7 @@
 
     <div class="auth-card">
       <div class="auth-brand">
-        <h2>Dharun Portal Manager</h2>
+        <h2>(patient records)</h2>
         <p>Physiotherapy Rehab & Beauty Parlor Hub</p>
       </div>
 
@@ -831,7 +907,7 @@
       <form id="login-form" class="auth-form-section active" onsubmit="handleLoginSubmit(event)">
         <div class="auth-input-group">
           <label>Email ID / Admin ID</label>
-          <input type="email" id="login-email" required placeholder="Enter login email ID">
+          <input type="text" id="login-email" required placeholder="Enter login email ID or 'admin'">
         </div>
         <div class="auth-input-group">
           <label>Password</label>
@@ -882,13 +958,12 @@
           <input type="password" id="reg-password-confirm" required minlength="6" placeholder="Re-enter password">
         </div>
         <div id="reg-msg"></div>
-        <button type="submit" class="btn btn-notify" style="width: 100%; margin-top: 6px;">Register Member Account</button>
+        <button type="submit" class="btn btn-notify" style="width: 100%; margin-top: 6px;">Register & Unlock Account</button>
       </form>
     </div>
   </div>
 
   <div class="app-layout">
-    <!-- SIDEBAR -->
     <aside class="sidebar" id="sidebarMenu">
       <div class="sidebar-brand">
         <div id="admin-custom-badge" style="display:none;" class="brand-glow-tag">👑 DHARUN (OWNER)</div>
@@ -904,50 +979,61 @@
         <button onclick="handleLogout()" style="background: none; border: none; color: var(--danger); font-size: 0.78rem; font-weight: 700; cursor: pointer;">Logout</button>
       </div>
 
-      <div class="nav-section-title" id="nav-section-title">Navigation Hub</div>
-      <nav class="sidebar-nav">
-        <div class="nav-item member-item" onclick="switchPage('page-patient-requests', this)">
-          <span class="nav-icon">📥</span>
-          <span>Online Requests</span>
-          <span class="nav-badge alert-badge" id="badge-requests-count">0</span>
-        </div>
-        <div class="nav-item member-item" onclick="switchPage('page-dashboard', this)">
-          <span class="nav-icon">📊</span>
-          <span>1-Click Revenue Hub</span>
-        </div>
-        <div class="nav-item member-item" onclick="switchPage('page-general-calendar', this)">
-          <span class="nav-icon">🗓️</span>
-          <span>Overall Master Calendar</span>
-        </div>
-        <div class="nav-item member-item" onclick="switchPage('page-reminders', this)">
-          <span class="nav-icon">📲</span>
-          <span>Morning Reminders</span>
-          <span class="nav-badge" id="badge-reminder-count">0</span>
-        </div>
-        <div class="nav-item member-item" onclick="switchPage('page-registration', this)">
-          <span class="nav-icon">📝</span>
-          <span id="nav-reg-label">Manual Registration</span>
-        </div>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin: 12px 8px 8px 8px;">
+        <div class="nav-section-title" id="nav-section-title" style="margin: 0;">Navigation Hub</div>
+        <button type="button" onclick="toggleNavLayout()" style="background: #11192e; border: 1px solid var(--border); border-radius: 6px; color: var(--accent); cursor: pointer; padding: 2px 7px; font-size: 0.72rem; font-weight: 800;" title="Toggle 1-Column or 2-Column Grid Layout">🔲 Grid</button>
+      </div>
+
+      <nav class="sidebar-nav" id="main-sidebar-nav">
         <div class="nav-item member-item active" onclick="switchPage('page-active-works', this)">
           <span class="nav-icon">⚡</span>
           <span>Active Works</span>
           <span class="nav-badge" id="badge-active-count">0</span>
         </div>
+
+        <div class="nav-item member-item" onclick="switchPage('page-registration', this)">
+          <span class="nav-icon">📝</span>
+          <span id="nav-reg-label">Manual Registration</span>
+        </div>
+
+        <div class="nav-item member-item" onclick="switchPage('page-general-calendar', this)">
+          <span class="nav-icon">🗓️</span>
+          <span>Overall Master Calendar</span>
+        </div>
+
+        <div class="nav-item member-item" onclick="switchPage('page-patient-requests', this)">
+          <span class="nav-icon">📥</span>
+          <span>Online Requests</span>
+          <span class="nav-badge alert-badge" id="badge-requests-count">0</span>
+        </div>
+        
+        <div class="nav-item member-item" onclick="switchPage('page-dashboard', this)">
+          <span class="nav-icon">📊</span>
+          <span>1-Click Revenue Hub</span>
+        </div>
+        
         <div class="nav-item member-item" onclick="switchPage('page-completed-works', this)">
           <span class="nav-icon">📁</span>
           <span>Completed Works</span>
           <span class="nav-badge" id="badge-completed-count">0</span>
         </div>
+        
         <div class="nav-item member-item" onclick="switchPage('page-overall-directory', this)">
           <span class="nav-icon">👥</span>
           <span>Overall Directory</span>
           <span class="nav-badge" id="badge-overall-total-count">0</span>
         </div>
-        <!-- NEW ADMIN MESSAGES TAB -->
+        
         <div class="nav-item member-item" id="nav-admin-messages" onclick="switchPage('page-admin-messages', this)">
           <span class="nav-icon">💬</span>
           <span>Admin Messages</span>
           <span class="nav-badge alert-badge" id="badge-admin-msg" style="display:none;">1</span>
+        </div>
+
+        <div class="nav-item member-item" onclick="switchPage('page-reminders', this)">
+          <span class="nav-icon">📲</span>
+          <span>Morning Reminders</span>
+          <span class="nav-badge" id="badge-reminder-count">0</span>
         </div>
 
         <div class="nav-item admin-only" id="admin-nav-item" onclick="switchPage('page-admin-portal', this)">
@@ -964,7 +1050,6 @@
       </div>
     </aside>
 
-    <!-- MAIN VIEWPORT -->
     <main class="main-viewport">
       <div class="page-content-wrapper">
 
@@ -981,7 +1066,6 @@
                     <span class="iap-reg-badge" id="doc-badge-iap">🎓 Professional Specialist</span>
                   </div>
                 </div>
-                <!-- RENEWAL DAYS INDICATION BADGE FOR MEMBER LOGIN -->
                 <div id="renewal-days-container" style="display: none; margin-top: -2px;">
                   <span class="uid-badge" id="renewal-days-text" style="font-size: 0.78rem; border-width: 1.5px; font-weight: 800;">⏳ 0 Days Left for Renewal</span>
                 </div>
@@ -996,7 +1080,6 @@
           </div>
         </header>
 
-        <!-- PAGE: ADMIN MESSAGES -->
         <section id="page-admin-messages" class="page-view">
           <div class="card" style="border-color: #3b82f6;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:10px;">
@@ -1018,7 +1101,6 @@
           </div>
         </section>
 
-        <!-- PAGE: INCOMING ONLINE REQUESTS -->
         <section id="page-patient-requests" class="page-view">
           <div class="card">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
@@ -1032,7 +1114,6 @@
           </div>
         </section>
 
-        <!-- PAGE 1: REVENUE HUB -->
         <section id="page-dashboard" class="page-view">
           <div class="top-pro-stats">
             <div class="pro-kpi-card kpi-received">
@@ -1076,7 +1157,6 @@
           </div>
         </section>
 
-        <!-- PAGE 2: GENERAL CALENDAR -->
         <section id="page-general-calendar" class="page-view">
           <div class="top-pro-stats" style="margin-bottom: 22px;">
             <div class="pro-kpi-card kpi-count">
@@ -1105,7 +1185,6 @@
           </div>
         </section>
 
-        <!-- PAGE 3: REMINDERS -->
         <section id="page-reminders" class="page-view">
           <div class="card">
             <h2>📲 Morning WhatsApp Session Reminders</h2>
@@ -1113,7 +1192,6 @@
           </div>
         </section>
 
-        <!-- PAGE 4: REGISTRATION -->
         <section id="page-registration" class="page-view">
           <div class="card">
             <h2 id="form-title">Patient / Client Registration</h2>
@@ -1158,7 +1236,6 @@
                 </div>
               </div>
 
-              <!-- MANUAL REGISTRATION MAP LOCATION OPTIONAL PICKER -->
               <div class="form-grid" style="margin-bottom: 20px;">
                 <div class="form-group" style="grid-column: span 2; background: rgba(37, 99, 235, 0.1); border: 1px dashed var(--border); padding: 14px; border-radius: 10px;">
                   <label style="color: var(--accent); display: flex; align-items: center; gap: 6px; margin-bottom: 6px;">📍 Map Location Option (Optional)</label>
@@ -1194,7 +1271,6 @@
           </div>
         </section>
 
-        <!-- PAGE 5: ACTIVE WORKS -->
         <section id="page-active-works" class="page-view active-page">
           <div class="top-pro-stats" style="margin-bottom: 22px;">
             <div class="pro-kpi-card kpi-count">
@@ -1257,7 +1333,6 @@
           </div>
         </section>
 
-        <!-- PAGE 6: COMPLETED WORKS -->
         <section id="page-completed-works" class="page-view">
           <div class="card">
             <h2>📁 Completed & Discharged Records</h2>
@@ -1282,7 +1357,6 @@
           </div>
         </section>
 
-        <!-- PAGE 7: OVERALL DIRECTORY -->
         <section id="page-overall-directory" class="page-view">
           <div class="card">
             <h2>👥 Overall Directory</h2>
@@ -1306,7 +1380,6 @@
           </div>
         </section>
 
-        <!-- PAGE 8: ADMIN CONTROL -->
         <section id="page-admin-portal" class="page-view">
           <div class="top-pro-stats">
             <div class="pro-kpi-card kpi-gold">
@@ -1381,7 +1454,6 @@
     </main>
   </div>
 
-  <!-- MODAL: LEAVE NOTICE / PROFESSIONAL LIVE UPDATE -->
   <div class="modal-overlay" id="leaveModal">
     <div class="modal-content" style="max-width: 480px;">
       <div class="modal-header">
@@ -1414,7 +1486,6 @@
     </div>
   </div>
 
-  <!-- MODAL: INTERACTIVE PLACE / MAP PICKER -->
   <div class="modal-overlay" id="locationPickerModal">
     <div class="modal-content" style="max-width: 480px;">
       <div class="modal-header">
@@ -1442,7 +1513,6 @@
     </div>
   </div>
 
-  <!-- MODAL: LATE ENTRY VISIT DATE PROMPT -->
   <div class="modal-overlay" id="lateEntryModal">
     <div class="modal-content" style="max-width: 420px;">
       <div class="modal-header">
@@ -1481,11 +1551,13 @@
           <span>Received: <strong id="pl-received-display" style="color: var(--success);">₹0</strong></span>
           <span>Due: <strong id="pl-due-display" style="color: var(--danger);">₹0</strong></span>
         </div>
+        <div id="pl-advance-info" style="display: none; justify-content: space-between; align-items: center; margin-top: 10px; padding-top: 10px; border-top: 1px dashed rgba(56, 189, 248, 0.4); font-size: 0.85rem;">
+        </div>
       </div>
 
       <div style="background: #090e1c; border: 1px solid var(--border); border-radius: 12px; padding: 12px; margin-bottom: 14px;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-          <h4 style="font-size: 0.85rem; color: var(--accent); text-transform: uppercase;">🗓️ Session Calendar</h4>
+          <h4 style="font-size: 0.85rem; color: var(--accent); text-transform: uppercase;">🗓️ Session Calendar (Click box to toggle Paid/Unpaid)</h4>
           <span id="pl-cal-month-label" style="font-size: 0.8rem; color: #38bdf8; font-weight: 700;"></span>
         </div>
         <div class="patient-cal-grid" id="pl-calendar-grid"></div>
@@ -1505,7 +1577,6 @@
     </div>
   </div>
 
-  <!-- MODAL: ADD EXTRA SERVICE CHARGE -->
   <div class="modal-overlay" id="extraModal">
     <div class="modal-content">
       <div class="modal-header">
@@ -1525,7 +1596,6 @@
     </div>
   </div>
 
-  <!-- MODAL: RECORD PAYMENT -->
   <div class="modal-overlay" id="payModal">
     <div class="modal-content">
       <div class="modal-header">
@@ -1545,7 +1615,6 @@
     </div>
   </div>
 
-  <!-- MODAL: FINISH & ARCHIVE -->
   <div class="modal-overlay" id="finishModal">
     <div class="modal-content">
       <div class="modal-header">
@@ -1569,7 +1638,6 @@
     </div>
   </div>
 
-  <!-- MODAL: SHARE REGISTRATION LINK -->
   <div class="modal-overlay" id="shareLinkModal">
     <div class="modal-content">
       <div class="modal-header">
@@ -1591,7 +1659,6 @@
     </div>
   </div>
 
-  <!-- MODAL: ACCEPT PATIENT REQUEST -->
   <div class="modal-overlay" id="acceptRequestModal">
     <div class="modal-content">
       <div class="modal-header">
@@ -1636,7 +1703,6 @@
     </div>
   </div>
 
-  <!-- MODAL: ADMIN EDIT MEMBER -->
   <div class="modal-overlay" id="adminEditMemberModal">
     <div class="modal-content">
       <div class="modal-header">
@@ -1687,7 +1753,6 @@
     </div>
   </div>
 
-  <!-- MODAL: GLOBAL PORTAL SETTINGS -->
   <div class="modal-overlay" id="globalSettingsModal">
     <div class="modal-content" style="max-width: 480px;">
       <div class="modal-header">
@@ -1695,7 +1760,7 @@
         <button class="close-modal" onclick="closeGlobalSettingsModal()">&times;</button>
       </div>
       <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 14px;">
-        Set the default pricing for <strong>newly registered members</strong>.
+        Set the default pricing and member portal unlock amounts.
       </p>
       <div class="form-grid" style="margin-bottom: 18px; gap: 10px;">
         <div class="form-group">
@@ -1703,7 +1768,7 @@
           <input type="number" id="global-reg-amount" placeholder="0">
         </div>
         <div class="form-group">
-          <label>Default Renewal Amount (₹) *</label>
+          <label>Member Unlock Portal Amount (₹) *</label>
           <input type="number" id="global-rental-fee" placeholder="599">
         </div>
       </div>
@@ -1714,7 +1779,6 @@
     </div>
   </div>
 
-  <!-- MODAL: STATEMENT -->
   <div class="modal-overlay" id="historyDetailsModal">
     <div class="modal-content" style="max-width: 580px;">
       <div class="modal-header">
@@ -1726,7 +1790,6 @@
     </div>
   </div>
   
-  <!-- MODAL: ADMIN BROADCAST MESSAGE -->
   <div class="modal-overlay" id="adminBroadcastModal">
     <div class="modal-content" style="max-width: 480px;">
       <div class="modal-header">
@@ -1747,7 +1810,6 @@
     </div>
   </div>
 
-  <!-- MODAL: ADMIN SINGLE MESSAGE -->
   <div class="modal-overlay" id="adminSingleMsgModal">
     <div class="modal-content" style="max-width: 480px;">
       <div class="modal-header">
@@ -1767,12 +1829,12 @@
     </div>
   </div>
 
-  <!-- PROFESSIONAL INVOICE & BILL -->
   <div id="printable-receipt">
     <div class="receipt-paper">
       <div class="receipt-controls-bar">
         <span style="color: #94a3b8; font-weight: 700; font-size: 0.85rem;">Official Service Invoice & Bill</span>
         <div style="display: flex; gap: 10px;">
+          <button class="btn btn-notify" onclick="downloadReceiptPDF()">📄 Download PDF</button>
           <button class="btn btn-primary" onclick="window.print()">🖨️ Print Invoice</button>
           <button class="btn btn-secondary" onclick="closeReceiptPreview()">✕ Close</button>
         </div>
@@ -1854,7 +1916,6 @@
     </div>
   </div>
 
-  <!-- FIREBASE DATA LAYER -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { 
@@ -1891,6 +1952,7 @@
     const SUPER_ADMIN_EMAIL = "dharunlogeshmdu@gmail.com";
     const APP_OWNER_PHONE = "8248090433"; 
     const APP_OWNER_UPI_ID = "dharunlogeshmdu-2@okicici"; 
+    const RAZORPAY_KEY_ID = "rzp_live_TUPuy45h1NrJg4";
 
     let activeFirebaseUser = null;
     let activeUserRole = "member";
@@ -1934,7 +1996,6 @@
       document.getElementById('patient-self-reg-view').classList.remove('active');
     }
     
-    // Global Settings Modal Logic
     window.openGlobalSettingsModal = async function() {
       document.getElementById('globalSettingsModal').classList.add('active');
       document.getElementById('global-reg-amount').value = 'Loading...';
@@ -1970,14 +2031,110 @@
           lastUpdated: new Date().toISOString()
         }, { merge: true });
         
-        alert("✅ Global default amounts updated successfully!");
+        alert("✅ Global member unlock amount & settings updated successfully!");
         closeGlobalSettingsModal();
       } catch(err) {
         alert("Failed to save global settings: " + err.message);
       }
     };
 
-    // Broadcast Modal Logic
+    window.payWithRazorpayAndAutoUnlock = function() {
+      const targetUid = activeFirebaseUser ? activeFirebaseUser.uid : null;
+      if (!targetUid) {
+        alert("Session expired. Please sign in again.");
+        return;
+      }
+
+      const isNewMember = !activeMemberProfile?.lastPaymentDate && (!activeMemberProfile?.paymentHistoryList || activeMemberProfile.paymentHistoryList.length === 0);
+      const chargeFee = isNewMember ? (activeMemberProfile?.regAmount || activeMemberProfile?.rentalFee || 599) : (activeMemberProfile?.rentalFee || 599);
+      
+      const userTag = activeMemberProfile?.displayName || activeMemberProfile?.clinicName || "Member";
+      const userPhone = activeMemberProfile?.mobile?.replace(/\D/g, '') || "";
+      const userEmail = activeFirebaseUser?.email || "";
+
+      const options = {
+        key: RAZORPAY_KEY_ID,
+        amount: Math.round(chargeFee * 100),
+        currency: "INR",
+        name: "Dharun Portal Manager",
+        description: isNewMember ? `Portal Activation - ${userTag}` : `Portal 30-Day Renewal - ${userTag}`,
+        image: "https://cdn-icons-png.flaticon.com/512/3135/3135715.png",
+        handler: async function (response) {
+          try {
+            const paymentId = response.razorpay_payment_id || `RZP-${Date.now()}`;
+            const userRef = doc(db, "registered_members", targetUid);
+            const userDoc = await getDoc(userRef);
+            
+            let baseDate = new Date();
+            const currentData = userDoc.exists() ? userDoc.data() : {};
+            const previousExpiry = currentData.subscriptionExpiry || null;
+            const previousStatus = currentData.paymentStatus || 'unpaid';
+
+            if (currentData.subscriptionExpiry) {
+              const curExp = new Date(currentData.subscriptionExpiry);
+              if (curExp > baseDate) baseDate = curExp;
+            }
+
+            baseDate.setDate(baseDate.getDate() + 30);
+            const newExpiryISO = baseDate.toISOString();
+            const paidTimestamp = new Date().toISOString();
+
+            let payHistory = currentData.paymentHistoryList || [];
+            payHistory.unshift({ 
+              id: paymentId, 
+              amount: chargeFee, 
+              method: "Razorpay (Auto-Unlock)", 
+              paidAt: paidTimestamp, 
+              adminRef: "Auto Gateway"
+            });
+
+            await updateDoc(userRef, { 
+              subscriptionExpiry: newExpiryISO,
+              paymentStatus: "paid",
+              lastPaymentDate: paidTimestamp,
+              lastPaymentMethod: "Razorpay",
+              lastPaymentAmount: chargeFee,
+              previousExpiryBackup: previousExpiry,
+              previousStatusBackup: previousStatus,
+              paymentHistoryList: payHistory
+            });
+
+            if (activeMemberProfile) {
+              activeMemberProfile.subscriptionExpiry = newExpiryISO;
+              activeMemberProfile.paymentStatus = "paid";
+              activeMemberProfile.paymentHistoryList = payHistory;
+            }
+
+            document.getElementById('subscription-lock-overlay').classList.remove('active');
+            window.updateRenewalBadge(activeMemberProfile);
+            alert(`🎉 Payment of ₹${chargeFee} Successful!\n\nTransaction ID: ${paymentId}\nYour portal has been unlocked for 30 days.`);
+            
+            await loadFromCloud(targetUid);
+          } catch (err) {
+            alert("Payment recorded (" + response.razorpay_payment_id + "), but failed to unlock automatically: " + err.message);
+          }
+        },
+        prefill: {
+          name: activeMemberProfile?.doctorName || userTag,
+          email: userEmail.includes('@') ? userEmail : "member@portal.com",
+          contact: (userPhone.length === 10) ? userPhone : "8248090433"
+        },
+        theme: {
+          color: "#2563eb"
+        }
+      };
+
+      try {
+        const rzp = new Razorpay(options);
+        rzp.on('payment.failed', function (response) {
+          alert("❌ Payment Failed: " + (response.error.description || "Transaction declined."));
+        });
+        rzp.open();
+      } catch (err) {
+        alert("Could not initialize Razorpay checkout. Please check your internet connection.");
+      }
+    };
+
     window.sendBroadcastToAll = async function() {
       const msg = document.getElementById('broadcast-msg-input').value.trim();
       if (!msg) return alert("Please enter a message.");
@@ -2147,6 +2304,7 @@
     };
 
     window.captureManualRegistrationLocation = function(btnEl) {
+      if (!window.checkSubscriptionStatus(activeMemberProfile)) return;
       if (!navigator.geolocation) {
         alert("Geolocation is not supported by your browser");
         return;
@@ -2171,6 +2329,7 @@
     };
 
     window.openLocationPickerModal = function(context) {
+      if (context === 'manual' && !window.checkSubscriptionStatus(activeMemberProfile)) return;
       document.getElementById('location-target-context').value = context;
       document.getElementById('picker-landmark-input').value = '';
       document.getElementById('locationPickerModal').classList.add('active');
@@ -2244,6 +2403,7 @@
     };
 
     window.openShareLinkModal = function() {
+      if (!window.checkSubscriptionStatus(activeMemberProfile)) return;
       const activeUid = isImpersonating ? impersonatedMemberId : (activeFirebaseUser ? activeFirebaseUser.uid : '');
       if (!activeUid) {
         alert("Please login first to generate registration link!");
@@ -2275,6 +2435,7 @@
     };
 
     window.openLeaveModal = function() {
+      if (!window.checkSubscriptionStatus(activeMemberProfile)) return;
       document.getElementById('leave-template-select').value = "leave";
       window.applyLeaveTemplate("leave");
       document.getElementById('leaveModal').classList.add('active');
@@ -2351,6 +2512,7 @@
     };
 
     window.openAcceptRequestModal = function(reqId) {
+      if (!window.checkSubscriptionStatus(activeMemberProfile)) return;
       const req = incomingRequests.find(r => r.id === reqId);
       if (!req) return;
 
@@ -2377,6 +2539,7 @@
     };
 
     window.confirmAcceptPatientRequest = function() {
+      if (!window.checkSubscriptionStatus(activeMemberProfile)) return;
       const reqId = parseInt(document.getElementById('accept-req-id').value);
       const req = incomingRequests.find(r => r.id === reqId);
       if (!req) return;
@@ -2400,7 +2563,7 @@
         address: req.address || '',
         location: req.location || '',
         daysVisited: 1,
-        visitHistory: [{ date: req.preferredDate || new Date().toISOString().slice(0,10), visitNum: 1 }],
+        visitHistory: [{ date: req.preferredDate || new Date().toISOString().slice(0,10), visitNum: 1, status: 'paid' }],
         paymentHistory: [],
         extraCharges: [],
         isFinished: false
@@ -2418,6 +2581,7 @@
     };
 
     window.deletePatientRequest = function(reqId) {
+      if (!window.checkSubscriptionStatus(activeMemberProfile)) return;
       if (confirm("Decline and remove this request?")) {
         incomingRequests = incomingRequests.filter(r => r.id !== reqId);
         window.syncRequestsToCloud();
@@ -2448,13 +2612,33 @@
       const overlay = document.getElementById('subscription-lock-overlay');
       const uidSuffix = activeFirebaseUser ? activeFirebaseUser.uid.slice(-6) : "GUEST";
       const timestamp = Date.now().toString().slice(-6);
+      currentSessionRef = `${uidSuffix}-${timestamp}`;
       
-      const rentalFee = userData?.rentalFee || 599; 
-      document.getElementById('paywall-price-display').innerText = `₹${rentalFee}`;
+      const isNewMember = !userData?.lastPaymentDate && (!userData?.paymentHistoryList || userData.paymentHistoryList.length === 0);
+      const chargeFee = isNewMember ? (userData?.regAmount || userData?.rentalFee || 599) : (userData?.rentalFee || 599); 
+      
+      document.getElementById('paywall-price-display').innerText = `₹${chargeFee}`;
+
+      const titleEl = document.getElementById('paywall-title-text');
+      const descEl = document.getElementById('paywall-desc-text');
+      const badgeEl = document.getElementById('paywall-badge-text');
+      const offerLabelEl = document.getElementById('paywall-offer-label');
+
+      if (isNewMember) {
+        if (badgeEl) badgeEl.innerText = "🔒 Account Locked";
+        if (titleEl) titleEl.innerText = "Welcome! Unlock Your Portal Access";
+        if (descEl) descEl.innerText = "Please complete your registration payment below to activate and unlock your 30-day member portal access.";
+        if (offerLabelEl) offerLabelEl.innerText = "✨ New Member Portal Activation";
+      } else {
+        if (badgeEl) badgeEl.innerText = "⚠️ 30 Days Finished";
+        if (titleEl) titleEl.innerText = "30-Day Plan Finished - Renewal Required";
+        if (descEl) descEl.innerText = "Your 30-day active period has completed. Please complete monthly renewal to continue uninterrupted access.";
+        if (offerLabelEl) offerLabelEl.innerText = "🔥 30-Day Renewal Offer";
+      }
 
       const userTag = userData?.displayName || (activeFirebaseUser?.email ? activeFirebaseUser.email.split('@')[0] : "USER");
-      const transactionNote = `PortalRenewal-${userTag}-${currentSessionRef}`;
-      const uniqueUpiUrl = `upi://pay?pa=${APP_OWNER_UPI_ID}&pn=mr+Dharun&am=${rentalFee}&cu=INR&tn=${encodeURIComponent(transactionNote)}&tr=${encodeURIComponent(currentSessionRef)}`;
+      const transactionNote = `${isNewMember ? 'PortalUnlock' : 'PortalRenewal'}-${userTag}-${currentSessionRef}`;
+      const uniqueUpiUrl = `upi://pay?pa=${APP_OWNER_UPI_ID}&pn=mr+Dharun&am=${chargeFee}&cu=INR&tn=${encodeURIComponent(transactionNote)}&tr=${encodeURIComponent(currentSessionRef)}`;
       
       document.getElementById('paywall-upi-qr').src = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=4&data=${encodeURIComponent(uniqueUpiUrl)}`;
       document.getElementById('qr-session-ref-display').innerText = `Unique Payment ID: ${currentSessionRef} | Member: ${userTag}`;
@@ -2471,9 +2655,11 @@
     };
 
     window.notifySubscriptionPaid = function() {
-      const rentalFee = activeMemberProfile?.rentalFee || 599;
+      const isNewMember = !activeMemberProfile?.lastPaymentDate && (!activeMemberProfile?.paymentHistoryList || activeMemberProfile.paymentHistoryList.length === 0);
+      const chargeFee = isNewMember ? (activeMemberProfile?.regAmount || activeMemberProfile?.rentalFee || 599) : (activeMemberProfile?.rentalFee || 599);
       const userTag = activeFirebaseUser?.displayName || activeFirebaseUser?.email || 'Member';
-      const msg = encodeURIComponent(`Hello Dharun,\n\nI have sent the ₹${rentalFee} renewal payment for my portal.\n\nBusiness: ${userTag}\nEmail: ${activeFirebaseUser?.email}\nUnique Payment ID: ${currentSessionRef}`);
+      const typeLabel = isNewMember ? 'Activation & Unlock' : '30-Day Renewal';
+      const msg = encodeURIComponent(`Hello Dharun,\n\nI have sent the ₹${chargeFee} payment for my portal ${typeLabel}.\n\nBusiness: ${userTag}\nEmail: ${activeFirebaseUser?.email}\nUnique Payment ID: ${currentSessionRef}`);
       window.open(`https://wa.me/91${APP_OWNER_PHONE}?text=${msg}`, '_blank');
     };
 
@@ -2578,7 +2764,7 @@
         document.getElementById('nav-section-title').innerText = "Navigation Hub";
 
         await loadFromCloud(targetUid);
-        switchPage('page-active-works', document.querySelectorAll('.member-item')[5]);
+        switchPage('page-active-works', document.querySelectorAll('.member-item')[0]);
       } catch (err) {
         alert("Failed to access member portal: " + err.message);
       }
@@ -2758,11 +2944,12 @@
         user.paymentHistoryList.forEach((item, index) => {
           const pDate = new Date(item.paidAt);
           const card = document.createElement('div');
+          const isRazorpay = item.method && item.method.includes('Razorpay');
           card.style.cssText = "background:#0a0f1d; border:1px solid #1e293b; padding:12px 14px; border-radius:10px; display:flex; justify-content:space-between; align-items:center;";
           card.innerHTML = `
             <div>
-              <div style="font-weight:800; color:#06d6a0; font-size:1rem;">₹${item.amount} <span class="uid-badge" style="font-size:0.75rem; margin-left:6px;">${item.method}</span></div>
-              <small style="color:var(--text-muted);">Ref: #${item.id || (index+1)} • Admin: Dharun (8248090433)</small>
+              <div style="font-weight:800; color:#06d6a0; font-size:1rem;">₹${item.amount} <span class="uid-badge" style="font-size:0.75rem; margin-left:6px; background:${isRazorpay ? 'rgba(37,99,235,0.2)' : 'rgba(6,214,160,0.15)'}; color:${isRazorpay ? '#38bdf8' : '#06d6a0'}; border-color:${isRazorpay ? '#3b82f6' : 'rgba(6,214,160,0.4)'};">${item.method}</span></div>
+              <small style="color:var(--text-muted);">ID: #${item.id || (index+1)} • Ref: ${item.adminRef || '8248090433'}</small>
             </div>
             <div style="text-align:right;">
               <strong style="color:#38bdf8; font-size:0.85rem;">📅 ${pDate.toLocaleDateString('en-GB')}</strong><br>
@@ -2799,7 +2986,6 @@
       document.getElementById('adminEditMemberModal').classList.add('active');
     };
     
-    // Broadcast & Message Modal Launchers
     window.openBroadcastModal = function() {
       document.getElementById('broadcast-msg-input').value = '';
       document.getElementById('adminBroadcastModal').classList.add('active');
@@ -2900,7 +3086,7 @@
           if (isSuper || (!isExpired && !isStopped)) {
             paidCount++;
             activeMRR += parseFloat(memFee);
-            totalRevenue += (usr.paymentHistoryList?.length ? usr.paymentHistoryList.length * memFee : (hasPaidHistory ? memFee : 0));
+            totalRevenue += (usr.paymentHistoryList?.length ? usr.paymentHistoryList.reduce((sum, item) => sum + (parseFloat(item.amount) || memFee), 0) : (hasPaidHistory ? memFee : 0));
           }
         });
 
@@ -2982,11 +3168,14 @@
         if (histCount > 0) {
           const latest = usr.paymentHistoryList?.[0] || { amount: memFee, method: usr.lastPaymentMethod || 'UPI/QR', paidAt: usr.lastPaymentDate };
           const pDate = new Date(latest.paidAt);
+          const isRazorpayLatest = latest.method && latest.method.includes('Razorpay');
+
           paymentHistoryDisplay = `
             <div class="pay-history-summary-box">
               <div>
                 <span style="color:#06d6a0; font-weight:900; font-size:0.95rem;">₹${latest.amount || memFee}</span>
-                <span style="font-size:0.75rem; color:#f8fafc; font-weight:700; margin-left:4px;">(${latest.method})</span>
+                <span style="font-size:0.75rem; color:${isRazorpayLatest ? '#38bdf8' : '#f8fafc'}; font-weight:700; margin-left:4px;">(${latest.method})</span>
+                ${isRazorpayLatest ? `<span class="uid-badge" style="background:rgba(56,189,248,0.2); color:#38bdf8; font-size:0.68rem; margin-left:4px; padding:1px 6px;">⚡ Auto-Unlocked</span>` : ''}
                 <br>
                 <small style="color:#38bdf8; font-weight:700;">📅 ${pDate.toLocaleDateString('en-GB')}</small>
               </div>
@@ -3046,12 +3235,40 @@
 
     window.handleLoginSubmit = async function(e) {
       e.preventDefault();
-      const rawEmail = document.getElementById('login-email').value.trim().toLowerCase();
-      const cleanEmail = rawEmail.replace(/\.com[a-zA-Z]*$/, '.com');
+      let rawEmail = document.getElementById('login-email').value.trim().toLowerCase();
+      
+      if (rawEmail === "admin" || rawEmail === "dharun") {
+        rawEmail = SUPER_ADMIN_EMAIL.toLowerCase();
+      }
+      
+      const cleanEmail = rawEmail.includes('@') ? rawEmail.replace(/\.com[a-zA-Z]*$/, '.com') : (rawEmail + '@gmail.com');
       const cleanPassword = document.getElementById('login-password').value.trim();
 
       try {
-        await signInWithEmailAndPassword(auth, cleanEmail, cleanPassword);
+        try {
+          await signInWithEmailAndPassword(auth, cleanEmail, cleanPassword);
+        } catch (authErr) {
+          if ((authErr.code === 'auth/user-not-found' || authErr.code === 'auth/invalid-credential') && cleanEmail === SUPER_ADMIN_EMAIL.toLowerCase()) {
+            const newCred = await createUserWithEmailAndPassword(auth, cleanEmail, cleanPassword);
+            await setDoc(doc(db, "registered_members", newCred.user.uid), {
+              uid: newCred.user.uid,
+              identity: cleanEmail,
+              businessCategory: 'physio',
+              doctorName: "Dharun",
+              clinicName: "DHARUN RENTALS",
+              doctorRole: "Master Owner Admin",
+              displayName: "DHARUN RENTALS",
+              mobile: APP_OWNER_PHONE,
+              plainPassword: cleanPassword,
+              role: 'super_admin',
+              subscriptionExpiry: new Date(2099, 1, 1).toISOString(),
+              paymentStatus: 'free_admin',
+              registeredAt: new Date().toISOString()
+            }, { merge: true });
+          } else {
+            throw authErr;
+          }
+        }
       } catch (err) {
         showAuthMsg('login-msg', err.message, 'error');
       }
@@ -3133,7 +3350,7 @@
           registeredAt: new Date().toISOString()
         });
 
-        showAuthMsg('reg-msg', `Account Registered for ${clinicName}! Please sign in.`, 'success');
+        showAuthMsg('reg-msg', `Account Registered! Loading payment unlock...`, 'success');
       } catch (err) {
         showAuthMsg('reg-msg', err.message, 'error');
       }
@@ -3264,7 +3481,7 @@
           if (topMemberButtons) topMemberButtons.style.display = 'flex';
           if (sidebarFooterControls) sidebarFooterControls.style.display = 'flex';
 
-          switchPage('page-active-works', memberNavItems[5]);
+          switchPage('page-active-works', memberNavItems[0]);
           await loadFromCloud(user.uid);
         }
       } else {
@@ -3288,12 +3505,16 @@
     };
   </script>
 
-  <!-- WORKFLOW LOGIC -->
   <script>
     let patients = JSON.parse(localStorage.getItem('raghav_physio_pro_v23')) || [];
     let generalCalendarMonthOffset = 0;
 
     function switchPage(pageId, navElement) {
+      if (typeof window.checkSubscriptionStatus === "function") {
+        const prof = typeof window.getActiveMemberProfile === "function" ? window.getActiveMemberProfile() : null;
+        if (!window.checkSubscriptionStatus(prof)) return;
+      }
+
       document.querySelectorAll('.page-view').forEach(p => p.classList.remove('active-page'));
       document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
 
@@ -3519,6 +3740,8 @@
     }
 
     window.quickAddVisit = function(id, visitDate) {
+      const prof = typeof window.getActiveMemberProfile === 'function' ? window.getActiveMemberProfile() : null;
+      if (!window.checkSubscriptionStatus(prof)) return;
       if (!visitDate) return;
       const p = patients.find(p => p.id === id);
       if (!p) return;
@@ -3528,7 +3751,7 @@
       
       if (!alreadyExists) {
         p.daysVisited = (p.daysVisited || 0) + 1;
-        p.visitHistory.push({ date: visitDate, visitNum: p.daysVisited });
+        p.visitHistory.push({ date: visitDate, visitNum: p.daysVisited, status: 'paid' });
         saveAndRender();
       } else {
         alert("A visit for this member on " + visitDate + " is already recorded.");
@@ -3536,6 +3759,8 @@
     };
 
     window.undoLastVisit = function(id) {
+      const prof = typeof window.getActiveMemberProfile === 'function' ? window.getActiveMemberProfile() : null;
+      if (!window.checkSubscriptionStatus(prof)) return;
       const p = patients.find(p => p.id === id);
       if (!p) return;
       if (!p.visitHistory || p.visitHistory.length <= 1) {
@@ -3548,6 +3773,8 @@
     };
 
     window.undoLastPayment = function(id) {
+      const prof = typeof window.getActiveMemberProfile === 'function' ? window.getActiveMemberProfile() : null;
+      if (!window.checkSubscriptionStatus(prof)) return;
       const p = patients.find(p => p.id === id);
       if (!p) return;
       if (!p.paymentHistory || p.paymentHistory.length === 0) {
@@ -3559,6 +3786,8 @@
     };
 
     window.updateReceivedDirectly = function(id, val) {
+      const prof = typeof window.getActiveMemberProfile === 'function' ? window.getActiveMemberProfile() : null;
+      if (!window.checkSubscriptionStatus(prof)) return;
       const p = patients.find(p => p.id === id);
       if (!p) return;
       const newPaid = parseFloat(val) || 0;
@@ -3567,6 +3796,8 @@
     };
 
     window.updateBalanceDirectly = function(id, val) {
+      const prof = typeof window.getActiveMemberProfile === 'function' ? window.getActiveMemberProfile() : null;
+      if (!window.checkSubscriptionStatus(prof)) return;
       const p = patients.find(p => p.id === id);
       if (!p) return;
       const newDue = parseFloat(val) || 0;
@@ -3577,6 +3808,8 @@
     };
 
     window.restorePatient = function(id) {
+      const prof = typeof window.getActiveMemberProfile === 'function' ? window.getActiveMemberProfile() : null;
+      if (!window.checkSubscriptionStatus(prof)) return;
       const p = patients.find(p => p.id === id);
       if (!p) return;
       if (confirm(`Restore ${p.name} back to Active Works?`)) {
@@ -3684,6 +3917,9 @@
 
     function handleManualPatientSubmit(e) {
       e.preventDefault();
+      const prof = typeof window.getActiveMemberProfile === 'function' ? window.getActiveMemberProfile() : null;
+      if (!window.checkSubscriptionStatus(prof)) return;
+
       const editId = document.getElementById('edit-id').value;
       const recordDate = document.getElementById('recordDate').value;
       const pkg = document.getElementById('package-type').value;
@@ -3718,7 +3954,7 @@
           address: document.getElementById('address').value.trim(),
           location: manualLocation || '',
           daysVisited: 1,
-          visitHistory: [{ date: recordDate, visitNum: 1 }],
+          visitHistory: [{ date: recordDate, visitNum: 1, status: 'paid' }],
           paymentHistory: [],
           extraCharges: [],
           isFinished: false
@@ -3735,48 +3971,16 @@
       switchPageById('page-active-works');
     }
 
-    window.promptLateEntryVisit = function(id) {
-      document.getElementById('late-entry-patient-id').value = id;
-      document.getElementById('late-entry-date-picker').value = new Date().toISOString().slice(0, 10);
-      document.getElementById('lateEntryModal').classList.add('active');
-    };
-
-    window.closeLateEntryModal = function() {
-      document.getElementById('lateEntryModal').classList.remove('active');
-    };
-
-    window.confirmLateEntryVisit = function() {
-      const id = parseInt(document.getElementById('late-entry-patient-id').value);
-      const visitDate = document.getElementById('late-entry-date-picker').value;
-      if (!visitDate) {
-        alert("Please select a valid visit date.");
-        return;
-      }
-
-      const p = patients.find(p => p.id === id);
-      if (!p) return;
-
-      if (!p.visitHistory) p.visitHistory = [];
-      const alreadyExists = p.visitHistory.some(v => v.date === visitDate);
-      if (!alreadyExists) {
-        p.daysVisited = (p.daysVisited || 0) + 1;
-        p.visitHistory.push({ date: visitDate, visitNum: p.daysVisited });
-      } else {
-        alert("A visit for this member on this exact date is already recorded.");
-      }
-
-      closeLateEntryModal();
-      saveAndRender();
-    };
-
     window.markAllVisitedToday = function() {
+      const prof = typeof window.getActiveMemberProfile === 'function' ? window.getActiveMemberProfile() : null;
+      if (!window.checkSubscriptionStatus(prof)) return;
       const todayStr = new Date().toISOString().slice(0, 10);
       patients.filter(p => !p.isFinished).forEach(p => {
         if (!p.visitHistory) p.visitHistory = [];
         const alreadyVisited = p.visitHistory.some(v => v.date === todayStr);
         if (!alreadyVisited) {
           p.daysVisited = (p.daysVisited || 0) + 1;
-          p.visitHistory.push({ date: todayStr, visitNum: p.daysVisited });
+          p.visitHistory.push({ date: todayStr, visitNum: p.daysVisited, status: 'paid' });
         }
       });
       saveAndRender();
@@ -3784,9 +3988,11 @@
     }
 
     function openExtraModal(id) {
+      const prof = typeof window.getActiveMemberProfile === 'function' ? window.getActiveMemberProfile() : null;
+      if (!window.checkSubscriptionStatus(prof)) return;
       const p = patients.find(p => p.id === id);
       if (!p) return;
-      const isParlor = (typeof window.getActiveMemberProfile === 'function' ? window.getActiveMemberProfile() : null)?.businessCategory === 'parlor';
+      const isParlor = prof?.businessCategory === 'parlor';
       
       document.getElementById('extra-patient-id').value = p.id;
       document.getElementById('extra-title').value = '';
@@ -3807,6 +4013,8 @@
     function closeExtraModal() { document.getElementById('extraModal').classList.remove('active'); }
 
     function confirmAddExtra() {
+      const prof = typeof window.getActiveMemberProfile === 'function' ? window.getActiveMemberProfile() : null;
+      if (!window.checkSubscriptionStatus(prof)) return;
       const id = parseInt(document.getElementById('extra-patient-id').value);
       const title = document.getElementById('extra-title').value.trim();
       const amount = parseFloat(document.getElementById('extra-amount').value);
@@ -3822,6 +4030,8 @@
     }
 
     function openPayModal(id) {
+      const prof = typeof window.getActiveMemberProfile === 'function' ? window.getActiveMemberProfile() : null;
+      if (!window.checkSubscriptionStatus(prof)) return;
       const p = patients.find(p => p.id === id);
       if (!p) return;
       const due = Math.max(0, getBilledTotal(p) - getPaidTotal(p));
@@ -3833,6 +4043,8 @@
     function closePayModal() { document.getElementById('payModal').classList.remove('active'); }
 
     function confirmPayment() {
+      const prof = typeof window.getActiveMemberProfile === 'function' ? window.getActiveMemberProfile() : null;
+      if (!window.checkSubscriptionStatus(prof)) return;
       const id = parseInt(document.getElementById('pay-patient-id').value);
       const dateVal = document.getElementById('pay-date-picker').value;
       const amount = parseFloat(document.getElementById('pay-amount').value);
@@ -3848,6 +4060,8 @@
     }
 
     function openFinishModal(id) {
+      const prof = typeof window.getActiveMemberProfile === 'function' ? window.getActiveMemberProfile() : null;
+      if (!window.checkSubscriptionStatus(prof)) return;
       const p = patients.find(p => p.id === id);
       if (!p) return;
       document.getElementById('finish-patient-id').value = p.id;
@@ -3856,6 +4070,8 @@
     function closeFinishModal() { document.getElementById('finishModal').classList.remove('active'); }
 
     function confirmFinishPatient() {
+      const prof = typeof window.getActiveMemberProfile === 'function' ? window.getActiveMemberProfile() : null;
+      if (!window.checkSubscriptionStatus(prof)) return;
       const id = parseInt(document.getElementById('finish-patient-id').value);
       const p = patients.find(p => p.id === id);
       if (p) {
@@ -3870,12 +4086,15 @@
     }
 
     window.openPatientLedgerModal = function(id) {
+      const prof = typeof window.getActiveMemberProfile === 'function' ? window.getActiveMemberProfile() : null;
+      if (!window.checkSubscriptionStatus(prof)) return;
       const p = patients.find(p => p.id === id);
       if (!p) return;
 
       const billed = getBilledTotal(p);
       const paid = getPaidTotal(p);
       const due = billed - paid;
+      const dailyRate = parseFloat(p.dailyCharge) || 0;
 
       document.getElementById('patientLedgerModalTitle').innerText = `${p.name} (UID: ${p.uid})`;
       document.getElementById('patientLedgerModalSubtitle').innerText = `Phone: ${p.mobile} | Service: ${p.diagnosis}`;
@@ -3883,13 +4102,29 @@
       document.getElementById('pl-received-display').innerText = `₹${paid.toLocaleString('en-IN')}`;
       
       const dueDisplayEl = document.getElementById('pl-due-display');
+      const advanceInfoEl = document.getElementById('pl-advance-info');
+      
       if (paid > billed) {
         const advanceAmt = paid - billed;
         dueDisplayEl.innerText = `Advance: ₹${advanceAmt.toLocaleString('en-IN')}`;
         dueDisplayEl.style.color = "#38bdf8"; 
+        
+        let remainingSessions = 0;
+        if (dailyRate > 0) {
+            remainingSessions = Math.floor(advanceAmt / dailyRate);
+        }
+        
+        if (advanceInfoEl) {
+            advanceInfoEl.style.display = "flex";
+            advanceInfoEl.innerHTML = `
+              <span style="color:#06d6a0; font-weight:700;">✨ Advance Available: ₹${advanceAmt.toLocaleString('en-IN')}</span> 
+              <span style="color:#fbbf24; font-weight:800; background:rgba(245, 158, 11, 0.15); padding:4px 10px; border-radius:6px; border:1px solid rgba(245, 158, 11, 0.4);">🔄 Covers ${remainingSessions} future visit(s)</span>
+            `;
+        }
       } else {
         dueDisplayEl.innerText = `₹${due.toLocaleString('en-IN')}`;
         dueDisplayEl.style.color = "var(--danger)";
+        if (advanceInfoEl) advanceInfoEl.style.display = "none";
       }
 
       renderPatientIndividualCalendar(p);
@@ -3900,6 +4135,10 @@
         visitsContainer.innerHTML = '<p style="color:var(--text-muted); font-size:0.85rem;">No appointments logged yet.</p>';
       } else {
         p.visitHistory.forEach((v, index) => {
+          const statusBadge = v.status === 'unpaid' 
+            ? `<span class="uid-badge" style="background:rgba(239, 68, 68, 0.15); color:#ef4444; border:1px solid rgba(239,68,68,0.4);">✖ Unpaid</span>`
+            : `<span class="uid-badge" style="background:rgba(16, 185, 129, 0.15); color:#10b981; border:1px solid rgba(16,185,129,0.4);">✔ Paid</span>`;
+
           const div = document.createElement('div');
           div.style.cssText = "background:#11192e; border:1px solid var(--border); padding:8px 12px; border-radius:8px; display:flex; justify-content:space-between; align-items:center;";
           div.innerHTML = `
@@ -3908,8 +4147,8 @@
               <span style="color:#38bdf8; font-size:0.8rem; margin-left:8px;">📅 ${v.date}</span>
             </div>
             <div style="display:flex; align-items:center; gap:8px;">
-              <span class="uid-badge" style="background:rgba(56, 189, 248, 0.15); color:#38bdf8;">Completed</span>
-              <button class="action-btn btn-undo" style="padding:3px 8px; font-size:0.72rem;" onclick="removeVisitEntry(${p.id}, ${index})">❌ Undo Visit</button>
+              ${statusBadge}
+              <button class="action-btn btn-undo" style="padding:3px 8px; font-size:0.72rem;" onclick="toggleVisitPaymentStatus(${p.id}, '${v.date}')">🔄 Toggle Paid/Unpaid</button>
             </div>
           `;
           visitsContainer.appendChild(div);
@@ -3941,16 +4180,22 @@
       document.getElementById('patientLedgerModal').classList.add('active');
     };
 
-    window.removeVisitEntry = function(patientId, visitIndex) {
+    window.toggleVisitPaymentStatus = function(patientId, dateStr) {
+      const prof = typeof window.getActiveMemberProfile === 'function' ? window.getActiveMemberProfile() : null;
+      if (!window.checkSubscriptionStatus(prof)) return;
       const p = patients.find(x => x.id === patientId);
       if (!p || !p.visitHistory) return;
-      p.visitHistory.splice(visitIndex, 1);
-      p.daysVisited = Math.max(1, p.visitHistory.length);
-      saveAndRender();
-      openPatientLedgerModal(patientId);
+      const visit = p.visitHistory.find(v => v.date === dateStr);
+      if (visit) {
+        visit.status = visit.status === 'unpaid' ? 'paid' : 'unpaid';
+        saveAndRender();
+        openPatientLedgerModal(patientId);
+      }
     };
 
     window.removePaymentEntry = function(patientId, payIndex) {
+      const prof = typeof window.getActiveMemberProfile === 'function' ? window.getActiveMemberProfile() : null;
+      if (!window.checkSubscriptionStatus(prof)) return;
       const p = patients.find(x => x.id === patientId);
       if (!p || !p.paymentHistory) return;
       p.paymentHistory.splice(payIndex, 1);
@@ -3980,22 +4225,16 @@
       const totalDays = new Date(year, month + 1, 0).getDate();
 
       for (let i = 0; i < firstDay; i++) {
-        const empty = document.createElement('div');
-        calGrid.appendChild(empty);
+        calGrid.appendChild(document.createElement('div'));
       }
-
-      const visitsDates = (p.visitHistory || []).map(v => v.date);
-      const totalPaid = getPaidTotal(p);
-      const totalBilled = getBilledTotal(p);
-      const isAdvance = totalPaid > totalBilled;
-      const isFullyPaid = totalPaid >= totalBilled;
 
       for (let day = 1; day <= totalDays; day++) {
         const dayFmt = day < 10 ? `0${day}` : `${day}`;
         const monthFmt = (month + 1) < 10 ? `0${month + 1}` : `${month + 1}`;
         const dateStr = `${year}-${monthFmt}-${dayFmt}`;
 
-        const isVisited = visitsDates.includes(dateStr);
+        const visitRecord = (p.visitHistory || []).find(v => v.date === dateStr);
+        const isVisited = !!visitRecord;
         const cell = document.createElement('div');
         
         let cellClass = '';
@@ -4003,26 +4242,28 @@
         let textColor = '';
 
         if (isVisited) {
-          if (isAdvance) {
-            cellClass = 'advance-paid';
-            statusText = '✔ Advance';
-            textColor = '#38bdf8'; 
-          } else if (isFullyPaid) {
-            cellClass = 'visited-paid';
-            statusText = '✔ Paid';
-            textColor = '#10b981';
-          } else {
+          if (visitRecord.status === 'unpaid') {
             cellClass = 'visited-unpaid';
             statusText = '✖ Unpaid';
             textColor = '#ef4444';
+          } else {
+            cellClass = 'visited-paid';
+            statusText = '✔ Paid';
+            textColor = '#10b981';
           }
         }
 
         cell.className = `patient-cal-day-box ${cellClass}`;
+        cell.style.cursor = isVisited ? 'pointer' : 'default';
         cell.innerHTML = `
           <strong style="color:${isVisited ? textColor : 'var(--text-muted)'};">${day}</strong>
           ${isVisited ? `<span style="color:${textColor}; font-weight:800; font-size:0.65rem;">${statusText}</span>` : ''}
         `;
+        
+        if (isVisited) {
+          cell.onclick = () => toggleVisitPaymentStatus(p.id, dateStr);
+        }
+        
         calGrid.appendChild(cell);
       }
     }
@@ -4132,13 +4373,14 @@
     }
 
     function sendWhatsApp(id) {
+      const prof = typeof window.getActiveMemberProfile === 'function' ? window.getActiveMemberProfile() : null;
+      if (!window.checkSubscriptionStatus(prof)) return;
       const p = patients.find(p => p.id === id);
       if (!p) return;
       const billed = getBilledTotal(p);
       const paid = getPaidTotal(p);
       const due = billed - paid;
       const cleanPhone = p.mobile.replace(/\D/g, '');
-      const prof = typeof window.getActiveMemberProfile === 'function' ? window.getActiveMemberProfile() : null;
       const isParlor = prof?.businessCategory === 'parlor';
 
       const clinic = prof?.clinicName || (isParlor ? "BEAUTY & SPA CENTER" : "SIPI REHAB CENTER");
@@ -4160,12 +4402,13 @@
     }
 
     function printReceipt(id) {
+      const prof = typeof window.getActiveMemberProfile === 'function' ? window.getActiveMemberProfile() : null;
+      if (!window.checkSubscriptionStatus(prof)) return;
       const p = patients.find(p => p.id === id);
       if (!p) return;
       const totalBilled = getBilledTotal(p);
       const totalPaid = getPaidTotal(p);
       const dueAmount = Math.max(0, totalBilled - totalPaid);
-      const prof = typeof window.getActiveMemberProfile === 'function' ? window.getActiveMemberProfile() : null;
       const isParlor = prof?.businessCategory === 'parlor';
 
       const doctorName = prof?.doctorName || (isParlor ? "Ramya Devi" : "Dr. Kishore PT");
@@ -4247,6 +4490,8 @@
     }
 
     function editPatient(id) {
+      const prof = typeof window.getActiveMemberProfile === 'function' ? window.getActiveMemberProfile() : null;
+      if (!window.checkSubscriptionStatus(prof)) return;
       const p = patients.find(p => p.id === id);
       if (!p) return;
       document.getElementById('edit-id').value = p.id;
@@ -4275,6 +4520,8 @@
     }
 
     function deletePatient(id) {
+      const prof = typeof window.getActiveMemberProfile === 'function' ? window.getActiveMemberProfile() : null;
+      if (!window.checkSubscriptionStatus(prof)) return;
       if (confirm("Permanently delete this record?")) {
         patients = patients.filter(p => p.id !== id);
         saveAndRender();
@@ -4282,6 +4529,8 @@
     }
 
     function exportCSV() {
+      const prof = typeof window.getActiveMemberProfile === 'function' ? window.getActiveMemberProfile() : null;
+      if (!window.checkSubscriptionStatus(prof)) return;
       let csv = 'UID,Name,Mobile,Work_Service,Treatment_Plan,Days_Count,Sessions_Count,Total_Billed,Total_Received,Balance\n';
       patients.forEach(p => {
         const count = p.daysVisited || 1;
