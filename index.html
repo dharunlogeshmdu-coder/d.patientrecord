@@ -99,6 +99,24 @@
       }
     };
 
+    window.applyPortalTheme = function(theme) {
+      const selectedTheme = theme === 'luxury' ? 'luxury' : 'default';
+      document.body.dataset.theme = selectedTheme;
+      localStorage.setItem('dharun_portal_theme', selectedTheme);
+      const toggle = document.getElementById('global-theme-toggle');
+      if (toggle) {
+        toggle.innerHTML = selectedTheme === 'luxury'
+          ? '🌙 <span>Default Theme</span>'
+          : '✨ <span>Luxury Theme</span>';
+        toggle.setAttribute('aria-label', selectedTheme === 'luxury' ? 'Switch to default theme' : 'Switch to luxury theme');
+      }
+    };
+
+    window.togglePortalTheme = function() {
+      const nextTheme = document.body.dataset.theme === 'luxury' ? 'default' : 'luxury';
+      window.applyPortalTheme(nextTheme);
+    };
+
     window.downloadReceiptPDF = function() {
       const element = document.querySelector('.receipt-paper');
       const controlsBar = document.querySelector('.receipt-controls-bar');
@@ -679,6 +697,9 @@
 
     .modal-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.85); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 16px; }
     .modal-overlay.active { display: flex; }
+    .renewal-plan-card { border: 1.5px solid var(--border); border-radius: 12px; padding: 14px; display: flex; justify-content: space-between; align-items: center; gap: 12px; background: #0c1324; transition: border-color 0.15s ease; }
+    .renewal-plan-card.best-value { border-color: #10b981; box-shadow: 0 0 0 1px rgba(16, 185, 129, 0.25); }
+    .renewal-plan-save-badge { background: rgba(16, 185, 129, 0.15); color: #10b981; font-size: 0.68rem; padding: 2px 7px; border-radius: 6px; margin-left: 6px; font-weight: 800; white-space: nowrap; }
     .modal-content { background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; padding: 22px; width: 100%; max-width: 620px; max-height: 90vh; overflow-y: auto; }
     .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 14px; margin-bottom: 18px; }
     .close-modal { background: transparent; border: none; color: var(--text-muted); font-size: 1.6rem; cursor: pointer; }
@@ -756,6 +777,130 @@
       #receipt-number-display, #receipt-doctor-phone-sub { color: #000000 !important; }
     }
 
+    .theme-toggle {
+      position: fixed;
+      right: 18px;
+      bottom: 18px;
+      z-index: 10006;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      border: 1px solid rgba(251, 191, 36, 0.55);
+      border-radius: 999px;
+      padding: 8px 13px;
+      background: rgba(17, 25, 46, 0.92);
+      color: #fbbf24;
+      font-size: 0.76rem;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+      backdrop-filter: blur(10px);
+    }
+    .theme-toggle:hover { transform: translateY(-1px); }
+
+    /* Optional light luxury skin: the original dark skin remains the default. */
+    body[data-theme="luxury"] {
+      --bg-main: #f7f4ee;
+      --bg-sidebar: #fffdf8;
+      --bg-card: #ffffff;
+      --bg-input: #fffdf9;
+      --primary: #b8860b;
+      --primary-hover: #956f08;
+      --primary-glow: rgba(184, 134, 11, 0.2);
+      --accent: #9a6b08;
+      --accent-glow: rgba(184, 134, 11, 0.18);
+      --text-main: #2c2418;
+      --text-muted: #766b5d;
+      --border: #e8d8b2;
+      --border-focus: #c49a3a;
+      --folder-bg: #fbf8f1;
+      --sidebar-hover: rgba(184, 134, 11, 0.08);
+      --sidebar-active: rgba(184, 134, 11, 0.14);
+      color-scheme: light;
+    }
+    body[data-theme="luxury"] .theme-toggle {
+      background: #2f2517;
+      color: #f8d98b;
+      border-color: #d9b45d;
+    }
+    body[data-theme="luxury"] .sidebar,
+    body[data-theme="luxury"] .top-action-bar,
+    body[data-theme="luxury"] .card,
+    body[data-theme="luxury"] .modal-content,
+    body[data-theme="luxury"] .auth-card {
+      background: #fffdf8;
+      color: var(--text-main);
+      border-color: var(--border);
+      box-shadow: 0 14px 34px rgba(117, 83, 24, 0.11);
+    }
+    body[data-theme="luxury"] .sidebar {
+      border-right-color: #ead9b5;
+    }
+    body[data-theme="luxury"] .sidebar-brand h2,
+    body[data-theme="luxury"] h1,
+    body[data-theme="luxury"] h2,
+    body[data-theme="luxury"] h3,
+    body[data-theme="luxury"] h4,
+    body[data-theme="luxury"] label,
+    body[data-theme="luxury"] th {
+      color: #47351b;
+    }
+    body[data-theme="luxury"] .sidebar-brand p,
+    body[data-theme="luxury"] .page-title-group p,
+    body[data-theme="luxury"] p,
+    body[data-theme="luxury"] small {
+      color: var(--text-muted);
+    }
+    body[data-theme="luxury"] .nav-item { color: #65553d; }
+    body[data-theme="luxury"] .nav-item:hover,
+    body[data-theme="luxury"] .nav-item.active {
+      color: #76520a;
+      background: var(--sidebar-active);
+    }
+    body[data-theme="luxury"] .control-field,
+    body[data-theme="luxury"] .table-container,
+    body[data-theme="luxury"] .renewal-plan-card,
+    body[data-theme="luxury"] .pay-history-summary-box,
+    body[data-theme="luxury"] .password-badge-pill,
+    body[data-theme="luxury"] .doctor-professional-card,
+    body[data-theme="luxury"] .doctor-booking-banner {
+      background: #fbf8f1;
+      border-color: var(--border);
+      color: var(--text-main);
+    }
+    body[data-theme="luxury"] input,
+    body[data-theme="luxury"] select,
+    body[data-theme="luxury"] textarea {
+      background: #fffefa !important;
+      color: #352a1b !important;
+      border-color: #dfc994 !important;
+    }
+    body[data-theme="luxury"] table tr { border-color: #eee2c9; }
+    body[data-theme="luxury"] table tbody tr:hover { background: #fffaf0; }
+    body[data-theme="luxury"] .btn-primary,
+    body[data-theme="luxury"] .btn-notify,
+    body[data-theme="luxury"] .btn-admin {
+      background: linear-gradient(135deg, #d4af57 0%, #9a6b08 100%);
+      color: #fffdf8 !important;
+      border-color: #e9cc83;
+    }
+    body[data-theme="luxury"] .btn-secondary {
+      background: #fffaf0;
+      color: #76520a;
+      border-color: #d9b45d;
+    }
+    body[data-theme="luxury"] .theme-toggle span { color: #f8d98b; }
+    .manager-only { display: none; }
+    .manager-summary {
+      background: linear-gradient(135deg, rgba(212,175,87,0.16), rgba(255,255,255,0.02));
+      border: 1px solid rgba(212,175,87,0.45);
+      border-radius: 14px;
+      padding: 16px 18px;
+      margin-bottom: 18px;
+    }
+    .manager-summary strong { color: #fbbf24; }
+    body[data-theme="luxury"] .manager-summary strong { color: #9a6b08; }
+
     @media (max-width: 900px) {
       .mobile-menu-btn { display: inline-flex; }
       .sidebar { position: fixed; left: 0; top: 0; bottom: 0; transform: translateX(-100%); }
@@ -769,6 +914,12 @@
   </style>
 </head>
 <body>
+  <button id="global-theme-toggle" class="theme-toggle" type="button" onclick="togglePortalTheme()" aria-label="Switch to luxury theme">
+    ✨ <span>Luxury Theme</span>
+  </button>
+  <script>
+    applyPortalTheme(localStorage.getItem('dharun_portal_theme') || 'default');
+  </script>
 
   <div id="patient-self-reg-view">
     <div class="auth-card" style="max-width: 540px;">
@@ -895,8 +1046,8 @@
 
     <div class="auth-card">
       <div class="auth-brand">
-        <h2>(patient records)</h2>
-        <p>Physiotherapy Rehab & Beauty Parlor Hub</p>
+        <h2>Patient Records</h2>
+        <p>Physiotherapy Rehab </p>
       </div>
 
       <div class="auth-tabs" id="authTabHeader">
@@ -1041,10 +1192,17 @@
           <span id="admin-nav-label">Rented Portals Directory</span>
           <span class="nav-badge" id="badge-admin-count" style="background:#f59e0b; color:#060913;">0</span>
         </div>
+
+        <div class="nav-item manager-only" id="manager-nav-item" onclick="switchPage('page-manager-portal', this)">
+          <span class="nav-icon">🧭</span>
+          <span>Manager Directory</span>
+          <span class="nav-badge" id="badge-manager-count">0</span>
+        </div>
       </nav>
 
       <div class="sidebar-footer" id="sidebar-footer-controls">
         <button class="btn btn-notify member-footer-btn" style="width: 100%; font-size: 0.85rem;" onclick="openShareLinkModal()">🔗 Share Reg Link</button>
+        <button class="btn btn-notify member-footer-btn" style="width: 100%; font-size: 0.85rem; background: linear-gradient(135deg, #059669 0%, #0284c7 100%);" onclick="openRenewalPlanModal()">⚡ Advance Renewal</button>
         <button class="btn btn-leave member-footer-btn" style="width: 100%; font-size: 0.85rem;" onclick="openLeaveModal()">🏖️ Send Leave Update</button>
         <button class="btn btn-export member-footer-btn" style="width: 100%; font-size: 0.85rem;" onclick="exportCSV()">💾 Export Database (CSV)</button>
       </div>
@@ -1074,6 +1232,7 @@
           </div>
           <div id="top-member-buttons" style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
             <button class="btn btn-notify" onclick="openShareLinkModal()">🔗 Share Reg Link</button>
+            <button class="btn btn-notify" onclick="openRenewalPlanModal()" style="background: linear-gradient(135deg, #059669 0%, #0284c7 100%);">⚡ Advance Renewal</button>
             <button id="btn-return-admin" class="btn btn-admin" style="display:none;" onclick="returnToSuperAdminPortal()">👑 Return to Master Admin</button>
             <button class="btn btn-leave" onclick="openLeaveModal()">🏖️ Leave Notice</button>
             <button class="btn btn-primary" onclick="markAllVisitedToday()">⚡ Check-In All</button>
@@ -1272,6 +1431,15 @@
         </section>
 
         <section id="page-active-works" class="page-view active-page">
+          <div id="member-renewal-summary" class="card" style="display:none; margin-bottom: 18px; border-color: rgba(212, 175, 87, 0.55);">
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+              <div>
+                <div style="font-size:0.76rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.08em; font-weight:800;">Portal Subscription</div>
+                <div style="font-size:0.88rem; color:var(--text-muted); margin-top:3px;">Current 1-month renewal amount</div>
+              </div>
+              <strong id="member-renewal-amount" style="font-size:1.5rem; color:#fbbf24;">₹599</strong>
+            </div>
+          </div>
           <div class="top-pro-stats" style="margin-bottom: 22px;">
             <div class="pro-kpi-card kpi-count">
               <h3>TODAY'S VISITED CLIENTS</h3>
@@ -1329,6 +1497,9 @@
                 </thead>
                 <tbody id="patient-table-body"></tbody>
               </table>
+            </div>
+            <div class="btn-group" style="justify-content:flex-end; margin-top:18px; padding-top:16px; border-top:1px dashed var(--border);">
+              <button type="button" class="btn btn-notify" onclick="switchPageById('page-registration')">📝 Go to Manual Registration</button>
             </div>
           </div>
         </section>
@@ -1444,6 +1615,41 @@
                 </thead>
                 <tbody id="admin-users-table-body">
                   <tr><td colspan="7" style="text-align:center; padding:20px;">Loading rented member accounts...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <section id="page-manager-portal" class="page-view">
+          <div class="card" style="border-color: rgba(212, 175, 87, 0.55);">
+            <div class="manager-summary">
+              <h2 style="margin-bottom: 4px;">🧭 Manager Directory</h2>
+              <p>Read-only view of member specialist identity, mobile number, and active expiry date.</p>
+              <p style="margin-top: 7px;"><strong>Manager access:</strong> No payment, password, edit, delete, or admin controls are shown.</p>
+            </div>
+            <div class="controls-grid" style="grid-template-columns: 2fr 1fr; margin-bottom: 16px;">
+              <div class="control-field">
+                <span style="margin-right: 12px; color: var(--accent);">🔍</span>
+                <input type="text" id="manager-search-input" placeholder="Search specialist, business, mobile..." oninput="filterManagerUsers()">
+              </div>
+              <div class="control-field">
+                <span style="margin-right: 12px; color: var(--accent);">🔄</span>
+                <button class="btn btn-secondary" style="width:100%;" onclick="loadAllRegisteredUsers()">Refresh Directory</button>
+              </div>
+            </div>
+            <div class="table-container">
+              <table>
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Specialist Name & Business Identity</th>
+                    <th>Mobile Number</th>
+                    <th>Active Expiry Date</th>
+                  </tr>
+                </thead>
+                <tbody id="manager-users-table-body">
+                  <tr><td colspan="4" style="text-align:center; padding:20px;">Loading member directory...</td></tr>
                 </tbody>
               </table>
             </div>
@@ -1754,7 +1960,7 @@
   </div>
 
   <div class="modal-overlay" id="globalSettingsModal">
-    <div class="modal-content" style="max-width: 480px;">
+    <div class="modal-content" style="max-width: 520px;">
       <div class="modal-header">
         <h3 style="color: #fbbf24;">⚙️ Global Portal Settings</h3>
         <button class="close-modal" onclick="closeGlobalSettingsModal()">&times;</button>
@@ -1762,20 +1968,60 @@
       <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 14px;">
         Set the default pricing and member portal unlock amounts.
       </p>
-      <div class="form-grid" style="margin-bottom: 18px; gap: 10px;">
+      <div class="form-group" style="margin-bottom: 18px;">
+        <label>Default Registration Amount (₹) *</label>
+        <input type="number" id="global-reg-amount" placeholder="0">
+      </div>
+
+      <div style="border-top: 1px dashed var(--border); margin: 4px 0 16px 0;"></div>
+
+      <p style="font-size: 0.85rem; color: #fbbf24; font-weight: 800; margin-bottom: 4px;">⚡ Advance Renewal Plan Pricing</p>
+      <p style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 14px;">
+        Set the 1-Month plan amount below — the 3 / 6 / 12 Month packages are automatically calculated from it (months × amount), minus the discount % you set for each. All values are editable and update the live preview instantly.
+      </p>
+
+      <div class="form-group" style="margin-bottom: 14px;">
+        <label>1 Month Plan Renewal Amount (₹) *</label>
+        <input type="number" id="global-rental-fee" placeholder="599" oninput="previewGlobalRenewalPlans()">
+      </div>
+
+      <div class="form-grid" style="margin-bottom: 10px; gap: 10px;">
         <div class="form-group">
-          <label>Default Registration Amount (₹) *</label>
-          <input type="number" id="global-reg-amount" placeholder="0">
+          <label>3-Month Plan Discount (%)</label>
+          <input type="number" id="global-discount-3m" placeholder="5" min="0" max="100" oninput="previewGlobalRenewalPlans()">
         </div>
         <div class="form-group">
-          <label>Member Unlock Portal Amount (₹) *</label>
-          <input type="number" id="global-rental-fee" placeholder="599">
+          <label>6-Month Plan Discount (%)</label>
+          <input type="number" id="global-discount-6m" placeholder="10" min="0" max="100" oninput="previewGlobalRenewalPlans()">
         </div>
       </div>
+      <div class="form-group" style="margin-bottom: 16px; max-width: calc(50% - 5px);">
+        <label>12-Month Plan Discount (%)</label>
+        <input type="number" id="global-discount-12m" placeholder="15" min="0" max="100" oninput="previewGlobalRenewalPlans()">
+      </div>
+
+      <div id="global-plan-preview" style="display: flex; flex-direction: column; gap: 6px; background: #0c1324; border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; margin-bottom: 18px; font-size: 0.8rem;"></div>
+
       <div style="display: flex; gap: 10px;">
         <button class="btn btn-notify" style="flex: 1;" onclick="saveGlobalSettings()">💾 Save Defaults</button>
         <button class="btn btn-secondary" style="flex: 1;" onclick="closeGlobalSettingsModal()">Cancel</button>
       </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="renewalPlanModal" style="z-index: 10010;">
+    <div class="modal-content" style="max-width: 540px;">
+      <div class="modal-header">
+        <h3 style="color: #10b981;">⚡ Choose Your Advance Renewal Plan</h3>
+        <button class="close-modal" onclick="closeRenewalPlanModal()">&times;</button>
+      </div>
+      <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 14px;">
+        Prepay in advance and save with longer packages. New days are stacked on top of your current expiry date.
+      </p>
+      <div id="renewal-plan-list" style="display: flex; flex-direction: column; gap: 10px; max-height: 440px; overflow-y: auto;">
+        <p style="text-align: center; color: var(--text-muted); padding: 20px;">Loading plans...</p>
+      </div>
+      <button class="btn btn-secondary" style="width: 100%; margin-top: 14px;" onclick="closeRenewalPlanModal()">Cancel</button>
     </div>
   </div>
 
@@ -1950,9 +2196,20 @@
     const db = getFirestore(app);
 
     const SUPER_ADMIN_EMAIL = "dharunlogeshmdu@gmail.com";
+    const MANAGER_EMAIL = "dharun@gmail.com";
+    const MANAGER_PASSWORD = "232323";
     const APP_OWNER_PHONE = "8248090433"; 
     const APP_OWNER_UPI_ID = "dharunlogeshmdu-2@okicici"; 
     const RAZORPAY_KEY_ID = "rzp_live_TUPuy45h1NrJg4";
+
+    // Advance renewal package durations. Discounts for the 3/6/12 month
+    // packages come from system_config/rentals (admin-editable in Global Settings).
+    const RENEWAL_PLANS = [
+      { key: 'monthly',    label: '1 Month',   days: 30,  months: 1  },
+      { key: 'quarterly',  label: '3 Months',  days: 90,  months: 3  },
+      { key: 'halfyearly', label: '6 Months',  days: 180, months: 6  },
+      { key: 'yearly',     label: '12 Months', days: 365, months: 12 }
+    ];
 
     let activeFirebaseUser = null;
     let activeUserRole = "member";
@@ -1996,24 +2253,73 @@
       document.getElementById('patient-self-reg-view').classList.remove('active');
     }
     
+    window.previewGlobalRenewalPlans = function() {
+      const previewEl = document.getElementById('global-plan-preview');
+      if (!previewEl) return;
+
+      const baseMonthlyFee = parseFloat(document.getElementById('global-rental-fee').value);
+      let discount3 = parseFloat(document.getElementById('global-discount-3m').value);
+      let discount6 = parseFloat(document.getElementById('global-discount-6m').value);
+      let discount12 = parseFloat(document.getElementById('global-discount-12m').value);
+
+      if (isNaN(baseMonthlyFee) || baseMonthlyFee <= 0) {
+        previewEl.innerHTML = `<span style="color: var(--text-muted);">Enter a 1 Month Plan amount to preview package pricing.</span>`;
+        return;
+      }
+      if (isNaN(discount3)) discount3 = 0;
+      if (isNaN(discount6)) discount6 = 0;
+      if (isNaN(discount12)) discount12 = 0;
+
+      const discountMap = { monthly: 0, quarterly: discount3, halfyearly: discount6, yearly: discount12 };
+
+      let rows = `<div style="font-weight:800; color:#fbbf24; margin-bottom:2px;">📋 Live Preview</div>`;
+      RENEWAL_PLANS.forEach(plan => {
+        const fullPrice = Math.round(baseMonthlyFee * plan.months);
+        const discountPct = discountMap[plan.key] || 0;
+        const finalPrice = Math.round(fullPrice * (1 - discountPct / 100));
+        rows += `<div style="display:flex; justify-content:space-between; align-items:center;">
+          <span style="color:#e2e8f0;">${plan.label}</span>
+          <span>
+            ${discountPct > 0 ? `<span style="text-decoration:line-through; color:#64748b; margin-right:6px;">₹${fullPrice}</span>` : ''}
+            <strong style="color:#10b981;">₹${finalPrice}</strong>
+          </span>
+        </div>`;
+      });
+      previewEl.innerHTML = rows;
+    };
+
     window.openGlobalSettingsModal = async function() {
       document.getElementById('globalSettingsModal').classList.add('active');
       document.getElementById('global-reg-amount').value = 'Loading...';
-      document.getElementById('global-rental-fee').value = 'Loading...';
+      document.getElementById('global-rental-fee').value = '';
+      document.getElementById('global-discount-3m').value = '';
+      document.getElementById('global-discount-6m').value = '';
+      document.getElementById('global-discount-12m').value = '';
       try {
         const snap = await getDoc(doc(db, "system_config", "rentals"));
         if (snap.exists()) {
-          document.getElementById('global-reg-amount').value = snap.data().regAmount || 0;
-          document.getElementById('global-rental-fee').value = snap.data().rentalFee || 599;
+          const d = snap.data();
+          document.getElementById('global-reg-amount').value = d.regAmount || 0;
+          document.getElementById('global-rental-fee').value = d.rentalFee || 599;
+          document.getElementById('global-discount-3m').value = (d.discount3 !== undefined && d.discount3 !== null) ? d.discount3 : 5;
+          document.getElementById('global-discount-6m').value = (d.discount6 !== undefined && d.discount6 !== null) ? d.discount6 : 10;
+          document.getElementById('global-discount-12m').value = (d.discount12 !== undefined && d.discount12 !== null) ? d.discount12 : 15;
         } else {
           document.getElementById('global-reg-amount').value = 0;
           document.getElementById('global-rental-fee').value = 599;
+          document.getElementById('global-discount-3m').value = 5;
+          document.getElementById('global-discount-6m').value = 10;
+          document.getElementById('global-discount-12m').value = 15;
         }
       } catch(err) {
         console.error(err);
         document.getElementById('global-reg-amount').value = 0;
         document.getElementById('global-rental-fee').value = 599;
+        document.getElementById('global-discount-3m').value = 5;
+        document.getElementById('global-discount-6m').value = 10;
+        document.getElementById('global-discount-12m').value = 15;
       }
+      window.previewGlobalRenewalPlans();
     };
 
     window.closeGlobalSettingsModal = function() {
@@ -2022,23 +2328,57 @@
 
     window.saveGlobalSettings = async function() {
       const regAmount = parseFloat(document.getElementById('global-reg-amount').value) || 0;
-      const rentalFee = parseFloat(document.getElementById('global-rental-fee').value) || 599;
-      
+      let rentalFee = parseFloat(document.getElementById('global-rental-fee').value);
+      let discount3 = parseFloat(document.getElementById('global-discount-3m').value);
+      let discount6 = parseFloat(document.getElementById('global-discount-6m').value);
+      let discount12 = parseFloat(document.getElementById('global-discount-12m').value);
+
+      if (isNaN(rentalFee) || rentalFee <= 0) {
+        alert("Please enter a valid 1 Month Plan Renewal Amount (₹) greater than 0.");
+        document.getElementById('global-rental-fee').focus();
+        return;
+      }
+
+      if (isNaN(discount3)) discount3 = 0;
+      if (isNaN(discount6)) discount6 = 0;
+      if (isNaN(discount12)) discount12 = 0;
+
+      // Clamp discounts to a sane 0-100% range
+      discount3 = Math.min(100, Math.max(0, discount3));
+      discount6 = Math.min(100, Math.max(0, discount6));
+      discount12 = Math.min(100, Math.max(0, discount12));
+
       try {
         await setDoc(doc(db, "system_config", "rentals"), {
           regAmount: regAmount,
           rentalFee: rentalFee,
+          discount3: discount3,
+          discount6: discount6,
+          discount12: discount12,
           lastUpdated: new Date().toISOString()
         }, { merge: true });
-        
-        alert("✅ Global member unlock amount & settings updated successfully!");
+
+        // Keep existing member portals in sync. Previously the global value was
+        // saved but each member retained the old 599 fallback in their profile.
+        const memberUpdates = allUsersList
+          .filter(user => user.role !== 'super_admin' && user.role !== 'manager')
+          .map(user => updateDoc(doc(db, "registered_members", user.id), {
+            rentalFee: rentalFee,
+            lastUpdated: new Date().toISOString()
+          }));
+        await Promise.all(memberUpdates);
+        if (activeMemberProfile && activeMemberProfile.role !== 'super_admin' && activeMemberProfile.role !== 'manager') {
+          activeMemberProfile.rentalFee = rentalFee;
+        }
+
+        alert(`✅ Renewal amount updated to ₹${rentalFee} and synced to all member portals.`);
         closeGlobalSettingsModal();
       } catch(err) {
         alert("Failed to save global settings: " + err.message);
       }
     };
 
-    window.payWithRazorpayAndAutoUnlock = function() {
+    window.payWithRazorpayAndAutoUnlock = function(daysToAdd, planAmount, planLabel) {
       const targetUid = activeFirebaseUser ? activeFirebaseUser.uid : null;
       if (!targetUid) {
         alert("Session expired. Please sign in again.");
@@ -2046,8 +2386,14 @@
       }
 
       const isNewMember = !activeMemberProfile?.lastPaymentDate && (!activeMemberProfile?.paymentHistoryList || activeMemberProfile.paymentHistoryList.length === 0);
-      const chargeFee = isNewMember ? (activeMemberProfile?.regAmount || activeMemberProfile?.rentalFee || 599) : (activeMemberProfile?.rentalFee || 599);
-      
+
+      // Backward compatible defaults: if called with no args (e.g. the paywall's
+      // single "Pay & Auto Unlock" button), fall back to the classic 30-day / monthly-fee behavior.
+      const useCustomPlan = (typeof daysToAdd === 'number' && !isNaN(daysToAdd) && daysToAdd > 0 && typeof planAmount === 'number' && !isNaN(planAmount));
+      daysToAdd = useCustomPlan ? daysToAdd : 30;
+      const chargeFee = useCustomPlan ? planAmount : (isNewMember ? (activeMemberProfile?.regAmount || activeMemberProfile?.rentalFee || 599) : (activeMemberProfile?.rentalFee || 599));
+      const planText = useCustomPlan ? (planLabel || `${daysToAdd} Days`) : "30-Day";
+
       const userTag = activeMemberProfile?.displayName || activeMemberProfile?.clinicName || "Member";
       const userPhone = activeMemberProfile?.mobile?.replace(/\D/g, '') || "";
       const userEmail = activeFirebaseUser?.email || "";
@@ -2057,7 +2403,7 @@
         amount: Math.round(chargeFee * 100),
         currency: "INR",
         name: "Dharun Portal Manager",
-        description: isNewMember ? `Portal Activation - ${userTag}` : `Portal 30-Day Renewal - ${userTag}`,
+        description: isNewMember ? `Portal Activation - ${userTag}` : `Portal Advance Renewal (${planText}) - ${userTag}`,
         image: "https://cdn-icons-png.flaticon.com/512/3135/3135715.png",
         handler: async function (response) {
           try {
@@ -2075,7 +2421,7 @@
               if (curExp > baseDate) baseDate = curExp;
             }
 
-            baseDate.setDate(baseDate.getDate() + 30);
+            baseDate.setDate(baseDate.getDate() + daysToAdd);
             const newExpiryISO = baseDate.toISOString();
             const paidTimestamp = new Date().toISOString();
 
@@ -2083,7 +2429,7 @@
             payHistory.unshift({ 
               id: paymentId, 
               amount: chargeFee, 
-              method: "Razorpay (Auto-Unlock)", 
+              method: `Razorpay (Advance/Renewal - ${planText})`, 
               paidAt: paidTimestamp, 
               adminRef: "Auto Gateway"
             });
@@ -2107,7 +2453,7 @@
 
             document.getElementById('subscription-lock-overlay').classList.remove('active');
             window.updateRenewalBadge(activeMemberProfile);
-            alert(`🎉 Payment of ₹${chargeFee} Successful!\n\nTransaction ID: ${paymentId}\nYour portal has been unlocked for 30 days.`);
+            alert(`🎉 Advance Payment of ₹${chargeFee} Successful!\n\nTransaction ID: ${paymentId}\nYour portal subscription has been extended by ${daysToAdd} days (${planText} plan).`);
             
             await loadFromCloud(targetUid);
           } catch (err) {
@@ -2135,6 +2481,87 @@
       }
     };
 
+    // ---- Advance Renewal Plan Picker (Monthly / 3-Month / 6-Month / 12-Month) ----
+
+    window.openRenewalPlanModal = async function() {
+      if (!activeFirebaseUser) {
+        alert("Session expired. Please sign in again.");
+        return;
+      }
+      const modal = document.getElementById('renewalPlanModal');
+      const listEl = document.getElementById('renewal-plan-list');
+      modal.classList.add('active');
+      listEl.innerHTML = `<p style="text-align: center; color: var(--text-muted); padding: 20px;">Loading plans...</p>`;
+
+      let discount3 = 5, discount6 = 10, discount12 = 15;
+      let configuredRentalFee = null;
+      try {
+        const snap = await getDoc(doc(db, "system_config", "rentals"));
+        if (snap.exists()) {
+          const d = snap.data();
+          if (d.rentalFee !== undefined && d.rentalFee !== null && !isNaN(parseFloat(d.rentalFee)) && parseFloat(d.rentalFee) > 0) {
+            configuredRentalFee = parseFloat(d.rentalFee);
+          }
+          discount3 = (d.discount3 !== undefined && d.discount3 !== null && !isNaN(parseFloat(d.discount3))) ? parseFloat(d.discount3) : 5;
+          discount6 = (d.discount6 !== undefined && d.discount6 !== null && !isNaN(parseFloat(d.discount6))) ? parseFloat(d.discount6) : 10;
+          discount12 = (d.discount12 !== undefined && d.discount12 !== null && !isNaN(parseFloat(d.discount12))) ? parseFloat(d.discount12) : 15;
+        }
+      } catch(err) {
+        console.error("Failed to load renewal package discounts, using defaults:", err);
+      }
+
+      const isNewMember = !activeMemberProfile?.lastPaymentDate && (!activeMemberProfile?.paymentHistoryList || activeMemberProfile.paymentHistoryList.length === 0);
+      const baseMonthlyFee = isNewMember
+        ? (activeMemberProfile?.regAmount || configuredRentalFee || activeMemberProfile?.rentalFee || 599)
+        : (configuredRentalFee || activeMemberProfile?.rentalFee || 599);
+      if (configuredRentalFee && activeMemberProfile && activeUserRole === 'member') {
+        activeMemberProfile.rentalFee = configuredRentalFee;
+        window.updateRenewalAmountDisplay(activeMemberProfile);
+      }
+
+      const discountMap = { monthly: 0, quarterly: discount3, halfyearly: discount6, yearly: discount12 };
+
+      let bestDiscount = 0;
+      RENEWAL_PLANS.forEach(p => { if ((discountMap[p.key] || 0) > bestDiscount) bestDiscount = discountMap[p.key]; });
+
+      let html = '';
+      RENEWAL_PLANS.forEach(plan => {
+        const fullPrice = Math.round(baseMonthlyFee * plan.months);
+        const discountPct = discountMap[plan.key] || 0;
+        const finalPrice = Math.round(fullPrice * (1 - discountPct / 100));
+        const savings = fullPrice - finalPrice;
+        const isBest = discountPct > 0 && discountPct === bestDiscount;
+
+        html += `
+          <div class="renewal-plan-card${isBest ? ' best-value' : ''}">
+            <div>
+              <div style="font-weight: 800; color: #ffffff; font-size: 0.95rem;">
+                ${plan.label} Plan
+                ${discountPct > 0 ? `<span class="renewal-plan-save-badge">SAVE ${discountPct}%</span>` : ''}
+                ${isBest ? `<span class="renewal-plan-save-badge" style="background: rgba(251,191,36,0.15); color:#fbbf24;">🔥 BEST VALUE</span>` : ''}
+              </div>
+              <div style="margin-top: 6px;">
+                ${discountPct > 0 ? `<span style="text-decoration: line-through; color: #94a3b8; font-size: 0.82rem; margin-right: 6px;">₹${fullPrice}</span>` : ''}
+                <span style="color: #10b981; font-weight: 900; font-size: 1.2rem;">₹${finalPrice}</span>
+              </div>
+              ${savings > 0 ? `<div style="font-size: 0.72rem; color: #fbbf24; margin-top: 2px;">You save ₹${savings}</div>` : `<div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 2px;">${plan.days} days access</div>`}
+            </div>
+            <button class="btn btn-notify" style="font-size: 0.8rem; padding: 9px 16px; white-space: nowrap;" onclick="selectRenewalPlan(${plan.days}, ${finalPrice}, '${plan.label}')">Select ▶</button>
+          </div>
+        `;
+      });
+      listEl.innerHTML = html;
+    };
+
+    window.closeRenewalPlanModal = function() {
+      document.getElementById('renewalPlanModal').classList.remove('active');
+    };
+
+    window.selectRenewalPlan = function(days, amount, label) {
+      closeRenewalPlanModal();
+      window.payWithRazorpayAndAutoUnlock(days, amount, label);
+    };
+
     window.sendBroadcastToAll = async function() {
       const msg = document.getElementById('broadcast-msg-input').value.trim();
       if (!msg) return alert("Please enter a message.");
@@ -2142,7 +2569,10 @@
 
       try {
         const promises = allUsersList.map(usr => {
-          if (usr.identity && usr.identity.toLowerCase() !== SUPER_ADMIN_EMAIL.toLowerCase()) {
+          if (usr.identity &&
+              usr.identity.toLowerCase() !== SUPER_ADMIN_EMAIL.toLowerCase() &&
+              usr.identity.toLowerCase() !== MANAGER_EMAIL.toLowerCase() &&
+              usr.role !== 'manager') {
             const userRef = doc(db, "registered_members", usr.id);
             return updateDoc(userRef, {
               adminMessage: msg,
@@ -2223,6 +2653,8 @@
       const badge = document.getElementById('renewal-days-text');
       if (!container || !badge) return;
 
+      window.updateRenewalAmountDisplay(memberData);
+
       if (activeUserRole === 'super_admin' && !isImpersonating) {
          container.style.display = 'none';
          return;
@@ -2258,6 +2690,20 @@
       badge.style.borderColor = badgeColor;
       badge.style.background = badgeBg;
       container.style.display = 'block';
+    };
+
+    window.updateRenewalAmountDisplay = function(memberData) {
+      const summary = document.getElementById('member-renewal-summary');
+      const amount = document.getElementById('member-renewal-amount');
+      if (!summary || !amount) return;
+      const isManagerOrAdmin = (activeUserRole === 'super_admin' && !isImpersonating) || activeUserRole === 'manager';
+      if (isManagerOrAdmin || !memberData) {
+        summary.style.display = 'none';
+        return;
+      }
+      const fee = parseFloat(memberData.rentalFee);
+      amount.innerText = `₹${!isNaN(fee) && fee > 0 ? fee.toLocaleString('en-IN') : '599'}`;
+      summary.style.display = 'block';
     };
 
     window.checkAdminMessages = function(memberData) {
@@ -2603,7 +3049,8 @@
       const rawEmail = (activeFirebaseUser?.email || "").toLowerCase();
       const userEmail = rawEmail.replace(/\.com[a-zA-Z]*$/, '.com');
       
-      if (userEmail === SUPER_ADMIN_EMAIL.toLowerCase() || activeUserRole === "super_admin" || isImpersonating) {
+      if (userEmail === SUPER_ADMIN_EMAIL.toLowerCase() || activeUserRole === "super_admin" ||
+          activeUserRole === "manager" || userData?.role === "manager" || isImpersonating) {
         document.getElementById('subscription-lock-overlay').classList.remove('active');
         return true;
       }
@@ -2800,16 +3247,19 @@
       try {
         const userRef = doc(db, "registered_members", targetUid);
         const userDoc = await getDoc(userRef);
+        
         let baseDate = new Date();
-
         const currentData = userDoc.exists() ? userDoc.data() : {};
         const previousExpiry = currentData.subscriptionExpiry || null;
         const previousStatus = currentData.paymentStatus || 'unpaid';
         const rentalFee = currentData.rentalFee || 599;
 
+        // ADVANCE RENEWAL LOGIC: Stack new days on top of future expiry date if active
         if (currentData.subscriptionExpiry) {
           const curExp = new Date(currentData.subscriptionExpiry);
-          if (curExp > baseDate) baseDate = curExp;
+          if (curExp > baseDate) {
+            baseDate = curExp; 
+          }
         }
 
         baseDate.setDate(baseDate.getDate() + daysToAdd);
@@ -2820,7 +3270,7 @@
         payHistory.unshift({ 
           id: Date.now(), 
           amount: rentalFee, 
-          method: method, 
+          method: `${method} (Advance/Renewal)`, 
           paidAt: paidTimestamp, 
           adminRef: "8248090433" 
         });
@@ -2836,7 +3286,7 @@
           paymentHistoryList: payHistory
         });
 
-        alert(`✅ Member extended for ${daysToAdd} days via ${method}!`);
+        alert(`✅ Member subscription extended by ${daysToAdd} days successfully (Stacked from current expiry)!`);
         window.loadAllRegisteredUsers();
       } catch (err) {
         alert("Error: " + err.message);
@@ -3075,7 +3525,10 @@
         let activeMRR = 0;
 
         allUsersList.forEach((usr) => {
-          const isSuper = (usr.identity || "").toLowerCase() === SUPER_ADMIN_EMAIL.toLowerCase();
+          const identity = (usr.identity || "").toLowerCase();
+          const isSuper = usr.role === 'super_admin' || identity === SUPER_ADMIN_EMAIL.toLowerCase();
+          const isManager = usr.role === 'manager' || identity === MANAGER_EMAIL.toLowerCase();
+          if (isManager) return;
           const expiryDate = usr.subscriptionExpiry ? new Date(usr.subscriptionExpiry) : null;
           const hasPaidHistory = (usr.paymentHistoryList && usr.paymentHistoryList.length > 0) || usr.lastPaymentDate;
           const isExpired = !expiryDate || expiryDate < new Date() || (!hasPaidHistory && !isSuper);
@@ -3097,6 +3550,7 @@
         document.getElementById('badge-admin-count').innerText = allUsersList.length;
 
         renderAdminTableFull();
+        renderManagerTable();
       } catch (err) {
         console.error(err);
       }
@@ -3108,14 +3562,64 @@
       renderAdminTableFull(query, statusFilter);
     };
 
+    window.filterManagerUsers = function() {
+      const query = (document.getElementById('manager-search-input')?.value || '').toLowerCase();
+      renderManagerTable(query);
+    };
+
+    function renderManagerTable(query = '') {
+      const tableBody = document.getElementById('manager-users-table-body');
+      const countBadge = document.getElementById('badge-manager-count');
+      if (!tableBody) return;
+
+      const members = allUsersList.filter(user => {
+        const identity = (user.identity || '').toLowerCase();
+        const isOwner = user.role === 'super_admin' || identity === SUPER_ADMIN_EMAIL.toLowerCase();
+        const isManager = user.role === 'manager' || identity === MANAGER_EMAIL.toLowerCase();
+        return !isOwner && !isManager;
+      }).filter(user => {
+        const searchable = [
+          user.doctorName, user.clinicName, user.mobile, user.identity
+        ].filter(Boolean).join(' ').toLowerCase();
+        return searchable.includes(query);
+      });
+
+      if (countBadge) countBadge.innerText = members.length;
+      if (members.length === 0) {
+        tableBody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding:20px; color:var(--text-muted);">No member accounts found.</td></tr>`;
+        return;
+      }
+
+      tableBody.innerHTML = members.map((user, index) => {
+        const expiry = user.subscriptionExpiry ? new Date(user.subscriptionExpiry) : null;
+        const expiryText = expiry && !isNaN(expiry.getTime())
+          ? expiry.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+          : 'Not available';
+        const category = user.businessCategory === 'parlor' ? '💇 Beauty Parlor' : '🏥 Physiotherapy';
+        return `
+          <tr>
+            <td><strong>${index + 1}</strong></td>
+            <td>
+              <div class="member-bright-title">${user.doctorName || 'Specialist'}</div>
+              <div class="member-bright-clinic" style="margin-top:3px;"><span style="color:#fbbf24; font-weight:800;">${category}</span> • <strong>${user.clinicName || 'Business Identity'}</strong></div>
+            </td>
+            <td class="member-bright-phone">${user.mobile || 'No Mobile'}</td>
+            <td><strong style="color:var(--accent);">${expiryText}</strong></td>
+          </tr>
+        `;
+      }).join('');
+    }
+
     function renderAdminTableFull(query = '', statusFilter = 'all') {
       const tableBody = document.getElementById('admin-users-table-body');
       if (!tableBody) return;
       tableBody.innerHTML = '';
 
       const filtered = allUsersList.filter(usr => {
-        const isSuper = (usr.identity || "").toLowerCase() === SUPER_ADMIN_EMAIL.toLowerCase();
-        if (isSuper) return false;
+        const identity = (usr.identity || "").toLowerCase();
+        const isSuper = usr.role === 'super_admin' || identity === SUPER_ADMIN_EMAIL.toLowerCase();
+        const isManager = usr.role === 'manager' || identity === MANAGER_EMAIL.toLowerCase();
+        if (isSuper || isManager) return false;
 
         const matchesQuery = (usr.doctorName || '').toLowerCase().includes(query) ||
                              (usr.clinicName || '').toLowerCase().includes(query) ||
@@ -3245,6 +3749,33 @@
       const cleanPassword = document.getElementById('login-password').value.trim();
 
       try {
+        // The manager account is provisioned on first sign-in, so the owner
+        // does not need to manually create a Firebase Auth user first.
+        if (cleanEmail === MANAGER_EMAIL && cleanPassword === MANAGER_PASSWORD) {
+          let managerCredential;
+          try {
+            managerCredential = await signInWithEmailAndPassword(auth, cleanEmail, cleanPassword);
+          } catch (managerAuthErr) {
+            if (managerAuthErr.code !== 'auth/user-not-found' && managerAuthErr.code !== 'auth/invalid-credential') {
+              throw managerAuthErr;
+            }
+            managerCredential = await createUserWithEmailAndPassword(auth, cleanEmail, cleanPassword);
+          }
+          await setDoc(doc(db, "registered_members", managerCredential.user.uid), {
+            uid: managerCredential.user.uid,
+            identity: MANAGER_EMAIL,
+            displayName: "Dharun Manager",
+            doctorName: "Dharun Manager",
+            clinicName: "Dharun Portal Manager",
+            doctorRole: "Manager",
+            mobile: APP_OWNER_PHONE,
+            role: "manager",
+            paymentStatus: "manager_access",
+            registeredAt: new Date().toISOString()
+          }, { merge: true });
+          return;
+        }
+
         try {
           await signInWithEmailAndPassword(auth, cleanEmail, cleanPassword);
         } catch (authErr) {
@@ -3292,6 +3823,11 @@
 
       if (password !== passwordConfirm) {
         showAuthMsg('reg-msg', 'Error: Passwords do not match. Please re-check.', 'error');
+        return;
+      }
+
+      if (email === MANAGER_EMAIL) {
+        showAuthMsg('reg-msg', 'This email is reserved for the individual manager account. Please use Sign In.', 'error');
         return;
       }
 
@@ -3394,8 +3930,25 @@
         const memberSnap = await getDoc(doc(db, "registered_members", uid));
         const memberData = memberSnap.exists() ? memberSnap.data() : null;
         activeMemberProfile = memberData;
+
+        // Read the current owner pricing before rendering the paywall. This
+        // also fixes older member records that still contain the previous fee.
+        if (memberData && memberData.role !== 'super_admin' && memberData.role !== 'manager') {
+          try {
+            const pricingSnap = await getDoc(doc(db, "system_config", "rentals"));
+            const currentRentalFee = pricingSnap.exists() ? parseFloat(pricingSnap.data().rentalFee) : NaN;
+            if (!isNaN(currentRentalFee) && currentRentalFee > 0) {
+              activeMemberProfile.rentalFee = currentRentalFee;
+            }
+          } catch (pricingErr) {
+            console.warn("Using member pricing because global pricing could not be loaded.", pricingErr);
+          }
+        }
+        if (memberData?.role === 'member' || activeUserRole === 'member') {
+          window.updateRenewalBadge(activeMemberProfile);
+        }
         
-        const isAccessGranted = window.checkSubscriptionStatus(memberData);
+        const isAccessGranted = window.checkSubscriptionStatus(activeMemberProfile);
         if (!isAccessGranted) return;
 
         const snap = await getDoc(doc(db, "clinics", uid));
@@ -3417,6 +3970,7 @@
     onAuthStateChanged(auth, async (user) => {
       activeFirebaseUser = user;
       const adminNavItem = document.getElementById('admin-nav-item');
+      const managerNavItem = document.getElementById('manager-nav-item');
       const adminCustomBadge = document.getElementById('admin-custom-badge');
       const topMemberButtons = document.getElementById('top-member-buttons');
       const sidebarFooterControls = document.getElementById('sidebar-footer-controls');
@@ -3425,15 +3979,17 @@
       
       if (user) {
         document.getElementById('auth-screen-overlay').classList.add('hidden');
-        let userRole = (user.email?.toLowerCase() === SUPER_ADMIN_EMAIL.toLowerCase()) ? "super_admin" : "member";
-        activeUserRole = userRole;
-
         const memberSnap = await getDoc(doc(db, "registered_members", user.uid));
         const memberData = memberSnap.exists() ? memberSnap.data() : null;
+        let userRole = memberData?.role ||
+          ((user.email?.toLowerCase() === SUPER_ADMIN_EMAIL.toLowerCase()) ? "super_admin" :
+          (user.email?.toLowerCase() === MANAGER_EMAIL.toLowerCase() ? "manager" : "member"));
+        activeUserRole = userRole;
         activeMemberProfile = memberData;
 
         if (userRole === "super_admin") {
           if (adminNavItem) adminNavItem.style.display = 'flex';
+          if (managerNavItem) managerNavItem.style.display = 'flex';
           if (adminCustomBadge) adminCustomBadge.style.display = 'inline-flex';
           document.getElementById('sidebar-logo-initial').style.display = 'none';
           document.getElementById('sidebar-display-name').innerText = "DHARUN RENTALS";
@@ -3451,6 +4007,26 @@
 
           switchPage('page-admin-portal', adminNavItem);
           window.loadAllRegisteredUsers();
+        } else if (userRole === "manager") {
+          if (adminNavItem) adminNavItem.style.display = 'none';
+          if (managerNavItem) managerNavItem.style.display = 'flex';
+          if (adminCustomBadge) adminCustomBadge.style.display = 'none';
+          document.getElementById('sidebar-logo-initial').style.display = 'flex';
+          document.getElementById('sidebar-display-name').innerText = "DHARUN PORTAL";
+          window.generateUniqueLogo("Dharun Portal");
+          document.getElementById('user-role-label').innerText = "🧭 INDIVIDUAL MANAGER";
+          document.getElementById('screen-heading-title').innerText = "Member Specialist Directory";
+          document.getElementById('doc-badge-name').innerText = "Dharun Manager";
+          document.getElementById('doc-badge-iap').innerText = "🧭 Read-only Manager";
+          if (navSectionTitle) navSectionTitle.innerText = "Manager Hub";
+          memberNavItems.forEach(item => item.style.display = 'none');
+          if (topMemberButtons) topMemberButtons.style.display = 'none';
+          if (sidebarFooterControls) sidebarFooterControls.style.display = 'none';
+          if (document.getElementById('renewal-days-container')) {
+            document.getElementById('renewal-days-container').style.display = 'none';
+          }
+          switchPage('page-manager-portal', managerNavItem);
+          await window.loadAllRegisteredUsers();
         } else {
           const isParlor = memberData?.businessCategory === 'parlor';
           const doctorName = memberData?.doctorName || (isParlor ? "Ramya Devi" : "Dharun");
@@ -3458,6 +4034,7 @@
           const doctorRole = memberData?.doctorRole || (isParlor ? "Bridal & Spa Specialist" : "Professional Specialist");
 
           if (adminNavItem) adminNavItem.style.display = 'none';
+          if (managerNavItem) managerNavItem.style.display = 'none';
           if (adminCustomBadge) adminCustomBadge.style.display = 'none';
           document.getElementById('sidebar-logo-initial').style.display = 'flex';
           document.getElementById('sidebar-display-name').innerText = clinicName;
@@ -3534,7 +4111,8 @@
         'page-active-works': 'Active Works & Ongoing Appointments',
         'page-completed-works': 'Completed & Settled Records',
         'page-overall-directory': 'Overall Directory',
-        'page-admin-portal': 'Rented Portals Directory & Management'
+        'page-admin-portal': 'Rented Portals Directory & Management',
+        'page-manager-portal': 'Member Specialist Directory'
       };
       document.getElementById('screen-heading-title').innerText = titles[pageId] || 'Portal Hub';
 
@@ -3543,6 +4121,7 @@
       if (pageId === 'page-overall-directory') renderDirectoryTable();
       if (pageId === 'page-completed-works') renderArchiveTable();
       if (pageId === 'page-reminders') renderRemindersPage();
+      if (pageId === 'page-manager-portal' && typeof window.filterManagerUsers === "function") window.filterManagerUsers();
 
       renderStats();
 
