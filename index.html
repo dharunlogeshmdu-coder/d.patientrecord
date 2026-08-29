@@ -285,11 +285,16 @@
     .auth-feature-list li .fi-icon { font-size: 1.05rem; line-height: 1.3; }
     .auth-feature-list li strong { color: var(--text-main); display: block; margin-bottom: 1px; }
     @media (max-width: 900px) {
-      .auth-feature-panel { max-width: 100%; }
-      #auth-screen-overlay { flex-direction: column; }
+      .auth-feature-panel { display: none; }
+      .auth-corner-ad-badge { display: none; }
+      #auth-screen-overlay {
+        flex-direction: column;
+        justify-content: flex-start;
+        align-items: stretch;
+        padding-top: 24px;
+        padding-bottom: 24px;
+      }
       #auth-screen-overlay .auth-card { order: 1; margin: 0 auto; }
-      #auth-screen-overlay .auth-feature-panel { order: 2; margin-top: 8px; }
-      #auth-screen-overlay .auth-corner-ad-badge { order: 3; }
     }
 
     #subscription-lock-overlay {
@@ -1705,18 +1710,15 @@
                 <thead>
                   <tr>
                     <th>#</th>
-                    <th>UID</th>
-                    <th>Name & Address</th>
+                    <th>UID, Name & Address</th>
+                    <th>Fees & Package</th>
                     <th>Action & Calendar Ledger</th>
-                    <th>Actions</th>
-                    <th>Time</th>
-                    <th>Package</th>
-                    <th id="th-work-details">Assessment & Plan</th>
-                    <th>Rate/Fee</th>
                     <th>Visits</th>
                     <th>Total Billed</th>
                     <th>Received (Editable)</th>
                     <th>Total Balance (Editable)</th>
+                    <th id="th-work-details">Assessment & Plan</th>
+                    <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody id="patient-table-body"></tbody>
@@ -4939,7 +4941,7 @@
       });
 
       if (filtered.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="13" style="text-align:center; color:var(--text-muted); padding:20px;">No active records found.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="10" style="text-align:center; color:var(--text-muted); padding:20px;">No active records found.</td></tr>`;
         renderStats();
         return;
       }
@@ -4953,12 +4955,18 @@
         const tr = document.createElement('tr');
         tr.innerHTML = `
           <td>${index + 1}</td>
-           <td><span class="uid-badge">${p.uid}</span></td>
            <td>
+            <span class="uid-badge">${p.uid}</span><br>
             <strong style="color:var(--text-main); font-size:0.95rem;">${p.name}</strong><br>
             <small style="color:#38bdf8; font-weight:700;">📞 ${p.mobile}</small><br>
             <small style="color:#cbd5e1;">📍 ${p.address || 'In Store'}</small>
             ${hasGps ? `<br><a href="${p.location}" target="_blank" style="font-size:0.75rem; color:#06d6a0; font-weight:800; text-decoration:none;">📍 Map GPS</a>` : ''}
+            <br><button class="action-btn btn-edit" style="margin-top:4px;" onclick="editPatient(${p.id})">Edit</button>
+          </td>
+          <td>
+            <div>${p.packageType === 'daily' ? 'Daily' : p.packageType} Package</div>
+            <strong style="color:var(--text-main);">₹${p.dailyCharge}</strong>
+            <br><span class="uid-badge" style="background:#1e293b; color:#38bdf8; margin-top:4px; display:inline-block;">⏰ ${p.reminderTime || '09:00'}</span>
           </td>
            <td>
              <div style="display:flex; gap:4px; flex-wrap:wrap;">
@@ -4970,24 +4978,8 @@
                <button class="action-btn btn-item" onclick="openExtraModal(${p.id})">+ Extra</button>
                <button class="action-btn btn-pay" onclick="openPayModal(${p.id})">+ Pay</button>
                <button class="action-btn btn-ledger" onclick="openPatientLedgerModal(${p.id})">📅 Ledger</button>
-               <button class="action-btn btn-finish" onclick="openFinishModal(${p.id})">✔ Finish</button>
              </div>
            </td>
-           <td>
-             <div style="display:flex; gap:4px;">
-               <button class="action-btn btn-whatsapp" onclick="sendWhatsApp(${p.id})">WA</button>
-               <button class="action-btn btn-print" onclick="printReceipt(${p.id})">Bill</button>
-               <button class="action-btn btn-edit" onclick="editPatient(${p.id})">Edit</button>
-               <button class="action-btn btn-del" onclick="deletePatient(${p.id})">Del</button>
-             </div>
-           </td>
-          <td><span class="uid-badge" style="background:#1e293b; color:#38bdf8;">${p.reminderTime || '09:00'}</span></td>
-          <td>${p.packageType === 'daily' ? 'Daily' : p.packageType}</td>
-          <td>
-            <strong style="color:var(--text-main);">${p.diagnosis}</strong><br>
-            <small style="color:var(--text-muted);">${p.treatment}</small>
-          </td>
-          <td>₹${p.dailyCharge}</td>
           <td>
             <div style="display:flex; align-items:center; gap:6px;">
               <strong style="color:#38bdf8; font-size:1.05rem;">${p.daysVisited || 1}</strong>
@@ -5004,6 +4996,18 @@
           <td>
             <input type="number" class="editable-inline-input" value="${outstanding}" onchange="updateBalanceDirectly(${p.id}, this.value)" style="color:var(--danger);" title="Edit Balance Amount">
           </td>
+          <td>
+            <strong style="color:var(--text-main);">${p.diagnosis}</strong><br>
+            <small style="color:var(--text-muted);">${p.treatment}</small>
+          </td>
+           <td>
+             <div style="display:flex; gap:4px; flex-wrap:wrap;">
+               <button class="action-btn btn-whatsapp" onclick="sendWhatsApp(${p.id})">WA</button>
+               <button class="action-btn btn-print" onclick="printReceipt(${p.id})">Bill</button>
+               <button class="action-btn btn-del" onclick="deletePatient(${p.id})">Del</button>
+               <button class="action-btn btn-finish" onclick="openFinishModal(${p.id})">✔ Finish</button>
+             </div>
+           </td>
         `;
         tbody.appendChild(tr);
       });
