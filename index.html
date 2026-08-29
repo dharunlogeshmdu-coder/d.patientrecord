@@ -1348,7 +1348,7 @@
 
       <div class="sidebar-footer" id="sidebar-footer-controls">
         <button class="btn btn-notify member-footer-btn" style="width: 100%; font-size: 0.85rem;" onclick="openShareLinkModal()">🔗 Share Reg Link</button>
-        <button class="btn btn-notify member-footer-btn" style="width: 100%; font-size: 0.85rem; background: linear-gradient(135deg, #059669 0%, #0284c7 100%);" onclick="openRenewalPlanModal()">⚡ Advance Renewal</button>
+        <button class="btn btn-notify member-footer-btn" style="width: 100%; font-size: 0.85rem; background: linear-gradient(135deg, #059669 0%, #0284c7 100%);" onclick="openRenewalPlanModal()">⚡ Subscription</button>
         <button class="btn btn-leave member-footer-btn" style="width: 100%; font-size: 0.85rem;" onclick="openLeaveModal()">🏖️ Send Leave Update</button>
         <button class="btn btn-export member-footer-btn" style="width: 100%; font-size: 0.85rem;" onclick="exportCSV()">💾 Export Database (CSV)</button>
       </div>
@@ -1378,7 +1378,7 @@
           </div>
           <div id="top-member-buttons" style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
             <button class="btn btn-notify" onclick="openShareLinkModal()">🔗 Share Reg Link</button>
-            <button class="btn btn-notify" onclick="openRenewalPlanModal()" style="background: linear-gradient(135deg, #059669 0%, #0284c7 100%);">⚡ Advance Renewal</button>
+            <button class="btn btn-notify" onclick="openRenewalPlanModal()" style="background: linear-gradient(135deg, #059669 0%, #0284c7 100%);">⚡ Subscription</button>
             <button id="btn-return-admin" class="btn btn-admin" style="display:none;" onclick="returnToSuperAdminPortal()">👑 Return to Master Admin</button>
             <button class="btn btn-leave" onclick="openLeaveModal()">🏖️ Leave Notice</button>
             <button class="btn btn-primary" onclick="markAllVisitedToday()">⚡ Check-In All</button>
@@ -2179,7 +2179,7 @@
 
       <div style="border-top: 1px dashed var(--border); margin: 4px 0 16px 0;"></div>
 
-      <p style="font-size: 0.85rem; color: #fbbf24; font-weight: 800; margin-bottom: 4px;">⚡ Advance Renewal Plan Pricing</p>
+      <p style="font-size: 0.85rem; color: #fbbf24; font-weight: 800; margin-bottom: 4px;">⚡ Subscription Plan Pricing</p>
       <p style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 14px;">
         Set the 1-Month plan amount below — the 3 / 6 / 12 Month packages are automatically calculated from it (months × amount), minus the discount % you set for each. All values are editable and update the live preview instantly.
       </p>
@@ -2216,7 +2216,7 @@
   <div class="modal-overlay" id="renewalPlanModal" style="z-index: 10010;">
     <div class="modal-content" style="max-width: 540px;">
       <div class="modal-header">
-        <h3 style="color: #10b981;">⚡ Choose Your Advance Renewal Plan</h3>
+        <h3 style="color: #10b981;">⚡ Choose Your Subscription Plan</h3>
         <button class="close-modal" onclick="closeRenewalPlanModal()">&times;</button>
       </div>
       <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 14px;">
@@ -2647,7 +2647,7 @@
         amount: Math.round(chargeFee * 100),
         currency: "INR",
         name: "Dharun Portal Manager",
-        description: isNewMember ? `Portal Activation - ${userTag}` : `Portal Advance Renewal (${planText}) - ${userTag}`,
+        description: isNewMember ? `Portal Activation - ${userTag}` : `Portal Subscription Renewal (${planText}) - ${userTag}`,
         image: "https://cdn-icons-png.flaticon.com/512/3135/3135715.png",
         handler: async function (response) {
           try {
@@ -2725,7 +2725,7 @@
       }
     };
 
-    // ---- Advance Renewal Plan Picker (Monthly / 3-Month / 6-Month / 12-Month) ----
+    // ---- Subscription Plan Picker (Monthly / 3-Month / 6-Month / 12-Month) ----
 
     window.openRenewalPlanModal = async function() {
       if (!activeFirebaseUser) {
