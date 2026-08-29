@@ -276,6 +276,16 @@
     .auth-corner-ad-badge .ad-subtitle { font-size: 0.72rem; color: #94a3b8; }
     .auth-corner-ad-badge .ad-contact-link { font-size: 0.78rem; font-weight: 800; color: var(--accent); text-decoration: none; display: inline-flex; align-items: center; gap: 4px; margin-top: 2px; }
 
+    #auth-screen-overlay { gap: 44px; }
+    .auth-feature-panel { max-width: 380px; color: var(--text-main); padding: 10px 0; }
+    .auth-feature-panel h1 { font-size: 1.5rem; font-weight: 800; margin-bottom: 8px; line-height: 1.25; }
+    .auth-feature-panel .sub { font-size: 0.88rem; color: var(--text-muted); margin-bottom: 20px; }
+    .auth-feature-list { list-style: none; display: flex; flex-direction: column; gap: 10px; padding: 0; margin: 0; }
+    .auth-feature-list li { display: flex; gap: 10px; align-items: flex-start; font-size: 0.83rem; color: var(--text-muted); background: #11192e; border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; }
+    .auth-feature-list li .fi-icon { font-size: 1.05rem; line-height: 1.3; }
+    .auth-feature-list li strong { color: var(--text-main); display: block; margin-bottom: 1px; }
+    @media (max-width: 900px) { .auth-feature-panel { display: none; } }
+
     #subscription-lock-overlay {
       position: fixed;
       inset: 0;
@@ -1132,6 +1142,32 @@
         <span style="font-size: 0.85rem; color: var(--text-muted); margin-left: 4px;">/ 30 Days</span>
       </div>
 
+      <div style="background: #0c1324; border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; margin: 12px 0; text-align: left;">
+        <p style="font-size: 0.72rem; color: #10b981; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">✅ What You Get</p>
+        <div style="display: flex; flex-direction: column; gap: 6px; font-size: 0.78rem; color: var(--text-muted);">
+          <span>⚡ Unlimited Active Works Ledger & balance tracking</span>
+          <span>📅 Visit & Payment Calendar for every patient</span>
+          <span>🧾 Instant PDF invoices & receipts</span>
+          <span>📲 WhatsApp reminders & notifications</span>
+          <span>🔗 Your own public booking link</span>
+        </div>
+      </div>
+
+      <div style="display: flex; justify-content: space-between; gap: 4px; margin: 10px 0; text-align: center;">
+        <div style="flex: 1;">
+          <div style="font-size: 1.05rem;">1️⃣</div>
+          <span style="font-size: 0.66rem; color: var(--text-muted); display:block; line-height:1.3;">Pay via Razorpay or UPI</span>
+        </div>
+        <div style="flex: 1;">
+          <div style="font-size: 1.05rem;">2️⃣</div>
+          <span style="font-size: 0.66rem; color: var(--text-muted); display:block; line-height:1.3;">Razorpay unlocks instantly. UPI unlocks after admin confirms.</span>
+        </div>
+        <div style="flex: 1;">
+          <div style="font-size: 1.05rem;">3️⃣</div>
+          <span style="font-size: 0.66rem; color: var(--text-muted); display:block; line-height:1.3;">Start managing your clinic</span>
+        </div>
+      </div>
+
       <div style="margin: 14px 0 10px 0;">
         <button class="btn btn-razorpay" style="width: 100%; font-size: 0.95rem; padding: 12px;" onclick="payWithRazorpayAndAutoUnlock()">
           💳 Pay & Auto Unlock with Razorpay
@@ -1175,6 +1211,18 @@
       <a class="ad-contact-link" href="https://wa.me/918248090433?text=Hello%20Dharun%2C%20I%20am%20interested%20in%20custom%20software%20portal%20creation." target="_blank">
         📞 Owner Dharun: <strong>8248090433</strong>
       </a>
+    </div>
+
+    <div class="auth-feature-panel">
+      <h1>Run your clinic's billing &amp; scheduling from one screen</h1>
+      <p class="sub">Built for physiotherapy, rehab and wellness clinics — track every patient, payment and visit without spreadsheets.</p>
+      <ul class="auth-feature-list">
+        <li><span class="fi-icon">⚡</span><div><strong>Active Works Ledger</strong>Live billed, received & balance for every patient</div></li>
+        <li><span class="fi-icon">📅</span><div><strong>Visit & Payment Calendar</strong>Mark each visit paid or unpaid, month by month</div></li>
+        <li><span class="fi-icon">🧾</span><div><strong>Instant Invoices & Receipts</strong>Generate professional PDFs in one click</div></li>
+        <li><span class="fi-icon">📲</span><div><strong>WhatsApp Reminders</strong>Notify patients about visits & dues in one tap</div></li>
+        <li><span class="fi-icon">🔗</span><div><strong>Your Own Booking Link</strong>Let patients request appointments online</div></li>
+      </ul>
     </div>
 
     <div class="auth-card">
@@ -1238,6 +1286,10 @@
         <div class="auth-input-group">
           <label>Confirm Password *</label>
           <input type="password" id="reg-password-confirm" required minlength="6" placeholder="Re-enter password">
+        </div>
+        <div class="auth-input-group">
+          <label>🎁 Referral Code (optional)</label>
+          <input type="text" id="reg-referral-code" placeholder="Enter code shared by a member" style="text-transform:uppercase;">
         </div>
         <div id="reg-msg"></div>
         <button type="submit" class="btn btn-notify" style="width: 100%; margin-top: 6px;">Register & Unlock Account</button>
@@ -1351,6 +1403,7 @@
         <button class="btn btn-notify member-footer-btn" style="width: 100%; font-size: 0.85rem; background: linear-gradient(135deg, #059669 0%, #0284c7 100%);" onclick="openRenewalPlanModal()">⚡ Subscription</button>
         <button class="btn btn-leave member-footer-btn" style="width: 100%; font-size: 0.85rem;" onclick="openLeaveModal()">🏖️ Send Leave Update</button>
         <button class="btn btn-export member-footer-btn" style="width: 100%; font-size: 0.85rem;" onclick="exportCSV()">💾 Export Database (CSV)</button>
+        <button class="btn btn-whatsapp member-footer-btn" style="width: 100%; font-size: 0.85rem;" onclick="openReferAndEarnModal()">🎁 Refer & Earn</button>
       </div>
     </aside>
 
@@ -1436,6 +1489,12 @@
           </div>
 
           <div class="card">
+            <h2>📊 Monthly Revenue Trend</h2>
+            <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 14px;">Payments received over the last 6 months.</p>
+            <div id="revenue-trend-chart" style="display: flex; align-items: flex-end; gap: 10px; height: 160px; padding: 0 4px;"></div>
+          </div>
+
+          <div class="card">
             <h2>⚡ Quick Actions</h2>
             <div class="quick-launch-grid">
               <div class="quick-launch-card" onclick="switchPageById('page-patient-requests')">
@@ -1457,6 +1516,11 @@
                 <span class="ql-icon">📲</span>
                 <h3>Morning Reminders</h3>
                 <p>1-click WhatsApp alerts for today's visits</p>
+              </div>
+              <div class="quick-launch-card" onclick="openReferAndEarnModal()">
+                <span class="ql-icon">🎁</span>
+                <h3>Refer & Earn</h3>
+                <p>Invite a clinic & earn free subscription days</p>
               </div>
             </div>
           </div>
@@ -2206,6 +2270,17 @@
 
       <div id="global-plan-preview" style="display: flex; flex-direction: column; gap: 6px; background: #0c1324; border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; margin-bottom: 18px; font-size: 0.8rem;"></div>
 
+      <div style="border-top: 1px dashed var(--border); margin: 4px 0 16px 0;"></div>
+
+      <p style="font-size: 0.85rem; color: #a78bfa; font-weight: 800; margin-bottom: 4px;">🎁 Refer & Earn Program</p>
+      <p style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 14px;">
+        When a member's referral joins and completes their <strong>first</strong> payment (registration or renewal), the referring member is automatically credited these bonus days on top of their current subscription. Set to 0 to disable the program.
+      </p>
+      <div class="form-group" style="margin-bottom: 18px;">
+        <label>Referral Bonus (Days per successful referral) *</label>
+        <input type="number" id="global-referral-days" placeholder="3" min="0">
+      </div>
+
       <div class="modal-actions">
         <button class="btn btn-notify" style="flex: 1;" onclick="saveGlobalSettings()">💾 Save Defaults</button>
         <button class="btn btn-secondary" style="flex: 1;" onclick="closeGlobalSettingsModal()">Cancel</button>
@@ -2226,6 +2301,47 @@
         <p style="text-align: center; color: var(--text-muted); padding: 20px;">Loading plans...</p>
       </div>
       <button class="btn btn-secondary" style="width: 100%; margin-top: 14px;" onclick="closeRenewalPlanModal()">Cancel</button>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="referAndEarnModal" style="z-index: 10010;">
+    <div class="modal-content" style="max-width: 480px;">
+      <div class="modal-header">
+        <h3 style="color: #a78bfa;">🎁 Refer & Earn</h3>
+        <button class="close-modal" onclick="closeReferAndEarnModal()">&times;</button>
+      </div>
+
+      <div id="refer-earn-info-banner" style="background: linear-gradient(135deg, rgba(167,139,250,0.16) 0%, rgba(6,214,160,0.10) 100%); border: 1px solid rgba(167,139,250,0.4); border-radius: 12px; padding: 12px 14px; margin-bottom: 16px; font-size: 0.85rem; color: #e9d5ff; text-align: center; font-weight: 700;">
+        Loading your referral rewards...
+      </div>
+
+      <div style="display: flex; gap: 10px; margin-bottom: 16px;">
+        <div class="pro-kpi-card kpi-purple" style="flex: 1; padding: 12px; text-align: center;">
+          <h3 style="margin-bottom: 4px;">Referrals</h3>
+          <div class="amount text-purple" id="refer-earn-count" style="font-size: 1.6rem;">0</div>
+        </div>
+        <div class="pro-kpi-card kpi-received" style="flex: 1; padding: 12px; text-align: center;">
+          <h3 style="margin-bottom: 4px;">Days Earned</h3>
+          <div class="amount text-success" id="refer-earn-days" style="font-size: 1.6rem;">0</div>
+        </div>
+      </div>
+
+      <label style="font-size: 0.78rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;">Your Referral Code</label>
+      <div style="display: flex; align-items: center; gap: 8px; background: #0c1324; border: 1.5px dashed rgba(167,139,250,0.5); border-radius: 10px; padding: 10px 12px; margin: 6px 0 14px 0;">
+        <strong id="refer-earn-code" style="flex: 1; font-size: 1.15rem; letter-spacing: 2px; color: #e9d5ff;">------</strong>
+        <button type="button" class="btn btn-secondary" style="padding: 7px 12px; font-size: 0.78rem;" onclick="copyReferralCode()">📋 Copy</button>
+      </div>
+
+      <button type="button" class="btn btn-whatsapp" style="width: 100%; font-size: 0.9rem; margin-bottom: 8px;" onclick="shareReferralInvite()">📲 Share Invite on WhatsApp</button>
+      <button type="button" class="btn btn-secondary" style="width: 100%; font-size: 0.85rem; margin-bottom: 16px;" onclick="copyReferralLink()">🔗 Copy Referral Link</button>
+
+      <div style="border-top: 1px dashed var(--border); margin: 4px 0 12px 0;"></div>
+      <p style="font-size: 0.78rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px;">Your Referral History</p>
+      <div id="refer-earn-history" style="display: flex; flex-direction: column; gap: 8px; max-height: 220px; overflow-y: auto;">
+        <p style="text-align: center; color: var(--text-muted); font-size: 0.85rem; padding: 14px 0;">No referrals yet.</p>
+      </div>
+
+      <button class="btn btn-secondary" style="width: 100%; margin-top: 16px;" onclick="closeReferAndEarnModal()">Close</button>
     </div>
   </div>
 
@@ -2384,7 +2500,10 @@
       updateDoc, 
       deleteDoc,
       collection, 
-      getDocs 
+      getDocs,
+      query,
+      where,
+      limit
     } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     const firebaseConfig = {
@@ -2427,6 +2546,15 @@
 
     const urlParams = new URLSearchParams(window.location.search);
     const publicClinicUid = urlParams.get('book') || urlParams.get('reg');
+    const incomingRefCode = urlParams.get('refcode');
+
+    if (incomingRefCode) {
+      window.addEventListener('DOMContentLoaded', () => {
+        const codeInput = document.getElementById('reg-referral-code');
+        if (codeInput) codeInput.value = incomingRefCode.toUpperCase();
+        if (typeof window.switchAuthTab === 'function') window.switchAuthTab('register');
+      });
+    }
 
     if (publicClinicUid) {
       document.getElementById('patient-self-reg-view').classList.add('active');
@@ -2539,6 +2667,7 @@
       document.getElementById('global-discount-3m').value = '';
       document.getElementById('global-discount-6m').value = '';
       document.getElementById('global-discount-12m').value = '';
+      document.getElementById('global-referral-days').value = '';
       try {
         const snap = await getDoc(doc(db, "system_config", "rentals"));
         if (snap.exists()) {
@@ -2548,12 +2677,14 @@
           document.getElementById('global-discount-3m').value = (d.discount3 !== undefined && d.discount3 !== null) ? d.discount3 : 5;
           document.getElementById('global-discount-6m').value = (d.discount6 !== undefined && d.discount6 !== null) ? d.discount6 : 10;
           document.getElementById('global-discount-12m').value = (d.discount12 !== undefined && d.discount12 !== null) ? d.discount12 : 15;
+          document.getElementById('global-referral-days').value = (d.referralBonusDays !== undefined && d.referralBonusDays !== null) ? d.referralBonusDays : 3;
         } else {
           document.getElementById('global-reg-amount').value = 0;
           document.getElementById('global-rental-fee').value = 599;
           document.getElementById('global-discount-3m').value = 5;
           document.getElementById('global-discount-6m').value = 10;
           document.getElementById('global-discount-12m').value = 15;
+          document.getElementById('global-referral-days').value = 3;
         }
       } catch(err) {
         console.error(err);
@@ -2562,6 +2693,7 @@
         document.getElementById('global-discount-3m').value = 5;
         document.getElementById('global-discount-6m').value = 10;
         document.getElementById('global-discount-12m').value = 15;
+        document.getElementById('global-referral-days').value = 3;
       }
       window.previewGlobalRenewalPlans();
     };
@@ -2576,6 +2708,7 @@
       let discount3 = parseFloat(document.getElementById('global-discount-3m').value);
       let discount6 = parseFloat(document.getElementById('global-discount-6m').value);
       let discount12 = parseFloat(document.getElementById('global-discount-12m').value);
+      let referralBonusDays = parseFloat(document.getElementById('global-referral-days').value);
 
       if (isNaN(rentalFee) || rentalFee <= 0) {
         alert("Please enter a valid 1 Month Plan Renewal Amount (₹) greater than 0.");
@@ -2586,6 +2719,7 @@
       if (isNaN(discount3)) discount3 = 0;
       if (isNaN(discount6)) discount6 = 0;
       if (isNaN(discount12)) discount12 = 0;
+      if (isNaN(referralBonusDays) || referralBonusDays < 0) referralBonusDays = 0;
 
       // Clamp discounts to a sane 0-100% range
       discount3 = Math.min(100, Math.max(0, discount3));
@@ -2599,6 +2733,7 @@
           discount3: discount3,
           discount6: discount6,
           discount12: discount12,
+          referralBonusDays: referralBonusDays,
           lastUpdated: new Date().toISOString()
         }, { merge: true });
 
@@ -2615,7 +2750,7 @@
           activeMemberProfile.rentalFee = rentalFee;
         }
 
-        alert(`✅ Renewal amount updated to ₹${rentalFee} and synced to all member portals.`);
+        alert(`✅ Renewal amount updated to ₹${rentalFee} and synced to all member portals.\n🎁 Referral bonus set to ${referralBonusDays} day(s) per successful referral.`);
         closeGlobalSettingsModal();
       } catch(err) {
         alert("Failed to save global settings: " + err.message);
@@ -2695,9 +2830,64 @@
               activeMemberProfile.paymentHistoryList = payHistory;
             }
 
+            // Referral bonus: credited ONLY on the referred member's very
+            // first successful payment (registration or renewal amount),
+            // and only once. Bonus day count is fully admin-controlled via
+            // Global Settings (system_config/rentals -> referralBonusDays).
+            let referralBonusMsg = "";
+            if (isNewMember && currentData.referredBy && !currentData.referralBonusApplied) {
+              try {
+                let bonusDays = 3;
+                try {
+                  const cfgSnap = await getDoc(doc(db, "system_config", "rentals"));
+                  if (cfgSnap.exists() && cfgSnap.data().referralBonusDays !== undefined && cfgSnap.data().referralBonusDays !== null) {
+                    bonusDays = parseFloat(cfgSnap.data().referralBonusDays) || 0;
+                  }
+                } catch(e) { console.log(e); }
+
+                if (bonusDays > 0) {
+                  const referrerRef = doc(db, "registered_members", currentData.referredBy);
+                  const referrerSnap = await getDoc(referrerRef);
+                  if (referrerSnap.exists()) {
+                    const referrerData = referrerSnap.data();
+                    let referrerBase = new Date();
+                    if (referrerData.subscriptionExpiry) {
+                      const refExp = new Date(referrerData.subscriptionExpiry);
+                      if (refExp > referrerBase) referrerBase = refExp;
+                    }
+                    referrerBase.setDate(referrerBase.getDate() + bonusDays);
+                    const referrerNewExpiry = referrerBase.toISOString();
+                    const referralHistory = referrerData.referralHistory || [];
+                    referralHistory.unshift({
+                      referredName: currentData.clinicName || currentData.doctorName || userTag,
+                      referredUid: targetUid,
+                      daysAwarded: bonusDays,
+                      date: paidTimestamp
+                    });
+
+                    await updateDoc(referrerRef, {
+                      subscriptionExpiry: referrerNewExpiry,
+                      referralCount: (referrerData.referralCount || 0) + 1,
+                      referralBonusDaysEarned: (referrerData.referralBonusDaysEarned || 0) + bonusDays,
+                      referralHistory: referralHistory
+                    });
+
+                    if (activeMemberProfile && activeMemberProfile.uid === currentData.referredBy) {
+                      activeMemberProfile.subscriptionExpiry = referrerNewExpiry;
+                    }
+                  }
+                }
+
+                await updateDoc(userRef, { referralBonusApplied: true });
+                referralBonusMsg = `\n\n🎁 Your referrer just earned ${bonusDays} bonus day(s) thanks to you joining!`;
+              } catch (refErr) {
+                console.log("Referral bonus crediting failed:", refErr);
+              }
+            }
+
             document.getElementById('subscription-lock-overlay').classList.remove('active');
             window.updateRenewalBadge(activeMemberProfile);
-            alert(`🎉 Advance Payment of ₹${chargeFee} Successful!\n\nTransaction ID: ${paymentId}\nYour portal subscription has been extended by ${daysToAdd} days (${planText} plan).`);
+            alert(`🎉 Advance Payment of ₹${chargeFee} Successful!\n\nTransaction ID: ${paymentId}\nYour portal subscription has been extended by ${daysToAdd} days (${planText} plan).${referralBonusMsg}`);
             
             await loadFromCloud(targetUid);
           } catch (err) {
@@ -4098,18 +4288,17 @@
       const clinicName = document.getElementById('reg-clinic-name').value.trim().toUpperCase();
       const doctorRole = document.getElementById('reg-doctor-role').value.trim();
       const mobile = document.getElementById('reg-mobile').value.trim();
+      const referralCodeEntered = (document.getElementById('reg-referral-code')?.value || '').trim().toUpperCase();
 
       try {
-        let defaultRegAmt = 0;
-        let defaultRentalFee = 599;
-        try {
-          const confSnap = await getDoc(doc(db, "system_config", "rentals"));
-          if(confSnap.exists()) {
-            defaultRegAmt = parseFloat(confSnap.data().regAmount) || 0;
-            defaultRentalFee = parseFloat(confSnap.data().rentalFee) || 599;
-          }
-        } catch(e) { console.log(e); }
-
+        // Create/sign in the account FIRST. Firestore rules almost always
+        // require an authenticated request to read "registered_members"
+        // (that collection holds emails, mobile numbers, etc., so it should
+        // NOT be publicly readable) — so the pricing lookup and the
+        // referral-code lookup below both need to run AFTER sign-up
+        // succeeds. Doing them before, like this used to, means both reads
+        // silently fail while signed out: the referral code just never gets
+        // linked, with no visible error to the user.
         let userCredential;
         try {
           userCredential = await createUserWithEmailAndPassword(auth, email, password);
@@ -4127,11 +4316,39 @@
           }
         }
 
+        let defaultRegAmt = 0;
+        let defaultRentalFee = 599;
+        try {
+          const confSnap = await getDoc(doc(db, "system_config", "rentals"));
+          if(confSnap.exists()) {
+            defaultRegAmt = parseFloat(confSnap.data().regAmount) || 0;
+            defaultRentalFee = parseFloat(confSnap.data().rentalFee) || 599;
+          }
+        } catch(e) { console.log(e); }
+
+        // Look up the referring member (if a valid code was entered) now
+        // that we're authenticated, so Firestore rules actually allow it.
+        let referrerUid = null;
+        let referrerName = null;
+        if (referralCodeEntered) {
+          try {
+            const refQuery = query(collection(db, "registered_members"), where("referralCode", "==", referralCodeEntered), limit(1));
+            const refSnap = await getDocs(refQuery);
+            if (!refSnap.empty) {
+              const refDoc = refSnap.docs[0];
+              referrerUid = refDoc.id;
+              referrerName = refDoc.data().clinicName || refDoc.data().doctorName || 'A member';
+            }
+          } catch (e) { console.log("Referral lookup failed:", e); }
+        }
+
         const isSuper = email.toLowerCase() === SUPER_ADMIN_EMAIL.toLowerCase();
         const initialExpiry = isSuper ? new Date(2099, 1, 1).toISOString() : new Date(Date.now() - 86400000).toISOString();
+        const newUid = userCredential.user.uid;
+        const ownReferralCode = newUid.slice(-6).toUpperCase();
 
-        await setDoc(doc(db, "registered_members", userCredential.user.uid), {
-          uid: userCredential.user.uid,
+        await setDoc(doc(db, "registered_members", newUid), {
+          uid: newUid,
           identity: email,
           businessCategory: bizCategory,
           doctorName: doctorName,
@@ -4145,10 +4362,17 @@
           role: isSuper ? 'super_admin' : 'member',
           subscriptionExpiry: initialExpiry,
           paymentStatus: isSuper ? 'free_admin' : 'unpaid',
-          registeredAt: new Date().toISOString()
+          registeredAt: new Date().toISOString(),
+          referralCode: ownReferralCode,
+          referredBy: (referrerUid && referrerUid !== newUid) ? referrerUid : null,
+          referredByCode: (referrerUid && referrerUid !== newUid) ? referralCodeEntered : null,
+          referralBonusApplied: false,
+          referralCount: 0,
+          referralBonusDaysEarned: 0,
+          referralHistory: []
         });
 
-        showAuthMsg('reg-msg', `Account Registered! Loading payment unlock...`, 'success');
+        showAuthMsg('reg-msg', referrerUid ? `Account Registered! Referred by ${referrerName}. Loading payment unlock...` : `Account Registered! Loading payment unlock...`, 'success');
       } catch (err) {
         showAuthMsg('reg-msg', err.message, 'error');
       }
@@ -4489,7 +4713,145 @@
       if (bComp) bComp.innerText = finishedList.length;
       if (bRem) bRem.innerText = activeList.length;
       if (bDir) bDir.innerText = patients.length;
+
+      renderRevenueTrendChart();
     }
+
+    // Retention feature: 6-month revenue trend bar chart on the Revenue Hub page.
+    function renderRevenueTrendChart() {
+      const container = document.getElementById('revenue-trend-chart');
+      if (!container) return;
+
+      const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+      const now = new Date();
+      const months = [];
+      for (let i = 5; i >= 0; i--) {
+        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        months.push({ key: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`, label: monthNames[d.getMonth()] });
+      }
+
+      const totals = {};
+      months.forEach(m => totals[m.key] = 0);
+
+      patients.forEach(p => {
+        (p.paymentHistory || []).forEach(pm => {
+          const key = (pm.date || '').slice(0, 7);
+          if (key in totals) totals[key] += parseFloat(pm.amount || 0);
+        });
+      });
+
+      const maxVal = Math.max(1, ...Object.values(totals));
+
+      container.innerHTML = '';
+      months.forEach(m => {
+        const val = totals[m.key];
+        const pct = Math.max(4, Math.round((val / maxVal) * 100));
+        const col = document.createElement('div');
+        col.style.cssText = 'flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; height:100%; gap:6px;';
+        col.innerHTML = `
+          <span style="font-size:0.68rem; color:var(--text-muted); font-weight:700;">₹${val.toLocaleString('en-IN')}</span>
+          <div style="width:100%; max-width:34px; height:${pct}%; background:linear-gradient(180deg, var(--accent) 0%, var(--primary) 100%); border-radius:6px 6px 2px 2px; min-height:4px;"></div>
+          <span style="font-size:0.72rem; color:var(--text-main); font-weight:700;">${m.label}</span>
+        `;
+        container.appendChild(col);
+      });
+    }
+
+    // ---- Refer & Earn: growth feature that rewards a member with free
+    // subscription days when someone they refer joins and completes their
+    // first payment. Bonus day count is fully controlled by the admin via
+    // Global Settings (system_config/rentals -> referralBonusDays). ----
+
+    function getOwnReferralLink() {
+      const code = activeMemberProfile?.referralCode || (activeFirebaseUser?.uid ? activeFirebaseUser.uid.slice(-6).toUpperCase() : '');
+      return `${window.location.origin}${window.location.pathname}?refcode=${code}`;
+    }
+
+    // Ensures older accounts (created before the Refer & Earn feature) get a
+    // referralCode assigned lazily, without breaking anything already saved.
+    async function ensureOwnReferralCode() {
+      if (!activeFirebaseUser) return null;
+      if (activeMemberProfile && activeMemberProfile.referralCode) return activeMemberProfile.referralCode;
+      const code = activeFirebaseUser.uid.slice(-6).toUpperCase();
+      try {
+        await updateDoc(doc(db, "registered_members", activeFirebaseUser.uid), { referralCode: code });
+        if (activeMemberProfile) activeMemberProfile.referralCode = code;
+      } catch (e) { console.log("Could not assign referral code:", e); }
+      return code;
+    }
+
+    window.shareReferralInvite = function() {
+      const prof = typeof window.getActiveMemberProfile === 'function' ? window.getActiveMemberProfile() : activeMemberProfile;
+      const ownerName = prof?.doctorName || prof?.clinicName || '';
+      const link = getOwnReferralLink();
+      const msg = encodeURIComponent(
+        `Hi! ${ownerName ? `This is ${ownerName}. ` : ''}I'm using the Dharun Portal Manager to manage patient billing, visit calendars and WhatsApp reminders for my clinic — it's saved me a lot of time. Sign up using my referral link and I get free bonus days too!\n\nJoin here: ${link}`
+      );
+      window.open(`https://wa.me/?text=${msg}`, '_blank');
+    };
+
+    window.copyReferralLink = function() {
+      const link = getOwnReferralLink();
+      navigator.clipboard?.writeText(link).then(() => {
+        alert("🔗 Referral link copied! Share it with other clinics/owners.");
+      }).catch(() => {
+        prompt("Copy your referral link:", link);
+      });
+    };
+
+    window.copyReferralCode = function() {
+      const code = activeMemberProfile?.referralCode || (activeFirebaseUser?.uid ? activeFirebaseUser.uid.slice(-6).toUpperCase() : '');
+      navigator.clipboard?.writeText(code).then(() => {
+        alert(`📋 Referral code "${code}" copied!`);
+      }).catch(() => {
+        prompt("Copy your referral code:", code);
+      });
+    };
+
+    window.openReferAndEarnModal = async function() {
+      const modal = document.getElementById('referAndEarnModal');
+      if (!modal) return;
+      modal.classList.add('active');
+
+      const code = await ensureOwnReferralCode();
+      document.getElementById('refer-earn-code').innerText = code || '------';
+      document.getElementById('refer-earn-count').innerText = activeMemberProfile?.referralCount || 0;
+      document.getElementById('refer-earn-days').innerText = activeMemberProfile?.referralBonusDaysEarned || 0;
+
+      const banner = document.getElementById('refer-earn-info-banner');
+      banner.innerText = "Loading your referral rewards...";
+      try {
+        const cfgSnap = await getDoc(doc(db, "system_config", "rentals"));
+        const bonusDays = (cfgSnap.exists() && cfgSnap.data().referralBonusDays !== undefined) ? cfgSnap.data().referralBonusDays : 3;
+        if (bonusDays > 0) {
+          banner.innerText = `🎁 Earn ${bonusDays} free subscription day(s) for every friend who joins with your code and completes their first payment!`;
+        } else {
+          banner.innerText = "The referral rewards program is currently paused by the admin.";
+        }
+      } catch (e) {
+        banner.innerText = "🎁 Invite other clinics/owners and earn free subscription days!";
+      }
+
+      const historyEl = document.getElementById('refer-earn-history');
+      const history = activeMemberProfile?.referralHistory || [];
+      if (!history.length) {
+        historyEl.innerHTML = `<p style="text-align:center; color:var(--text-muted); font-size:0.85rem; padding:14px 0;">No referrals yet. Share your code to get started!</p>`;
+      } else {
+        historyEl.innerHTML = history.map(item => `
+          <div style="display:flex; justify-content:space-between; align-items:center; background:#0c1324; border:1px solid var(--border); border-radius:8px; padding:8px 10px;">
+            <div>
+              <strong style="font-size:0.85rem; color:var(--text-main);">${item.referredName || 'New Member'}</strong><br>
+              <small style="color:var(--text-muted); font-size:0.72rem;">${item.date ? new Date(item.date).toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' }) : ''}</small>
+            </div>
+            <span class="uid-badge" style="color:#10b981; border-color:rgba(16,185,129,0.4); background:rgba(16,185,129,0.12);">+${item.daysAwarded || 0} days</span>
+          </div>
+        `).join('');
+      }
+    };
+
+    window.closeReferAndEarnModal = function() {
+      document.getElementById('referAndEarnModal')?.classList.remove('active');
+    };
 
     function renderTable() {
       const tbody = document.getElementById('patient-table-body');
