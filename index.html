@@ -260,7 +260,7 @@
 
     .auth-corner-ad-badge {
       position: absolute;
-      top: 20px;
+      bottom: 20px;
       right: 20px;
       background: linear-gradient(145deg, #11192e 0%, #0d1426 100%);
       border: 1.5px solid var(--accent);
@@ -1180,8 +1180,8 @@
     <div class="auth-card">
       <div class="auth-brand">
         <div class="auth-brand-icon">🩺</div>
-        <h2>Patient Records</h2>
-        <p>Physiotherapy Rehab </p>
+        <h2>Physio Accounting</h2>
+        <p>Assistant</p>
       </div>
 
       <div class="auth-tabs" id="authTabHeader">
@@ -1206,13 +1206,7 @@
       </form>
 
       <form id="register-form" class="auth-form-section" onsubmit="handleRegisterSubmit(event)">
-        <div class="auth-input-group">
-          <label>Select Business Portal Category *</label>
-          <select id="reg-biz-category" required onchange="handleBizCategorySwitch(this.value)">
-            <option value="physio">🏥 Physiotherapy & Rehab Clinic</option>
-            <option value="parlor">💇 Beauty Parlor, Spa & Salon</option>
-          </select>
-        </div>
+        <input type="hidden" id="reg-biz-category" value="physio">
         <div class="auth-input-group">
           <label id="lbl-doctor-name">Doctor / Practitioner Full Name *</label>
           <input type="text" id="reg-doctor-name" required placeholder="e.g. Dharun">
@@ -1612,7 +1606,10 @@
           </div>
 
           <div class="card">
-            <h2>Active Works Ledger</h2>
+            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+              <h2 style="margin: 0;">Active Works Ledger</h2>
+              <button type="button" class="btn btn-notify" onclick="switchPageById('page-registration')">📝 Go to Manual Registration</button>
+            </div>
             <div class="controls-grid">
               <div class="control-field">
                 <span style="margin-right: 12px; color: var(--accent);">🔍</span>
@@ -1640,18 +1637,15 @@
                     <th id="th-work-details">Assessment & Plan</th>
                     <th>Rate/Fee</th>
                     <th>Visits</th>
-                    <th>Billed</th>
+                    <th>Total Billed</th>
                     <th>Received (Editable)</th>
-                    <th>Balance (Editable)</th>
+                    <th>Total Balance (Editable)</th>
                     <th>Action & Calendar Ledger</th>
                     <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody id="patient-table-body"></tbody>
               </table>
-            </div>
-            <div class="btn-group" style="justify-content:flex-end; margin-top:18px; padding-top:16px; border-top:1px dashed var(--border);">
-              <button type="button" class="btn btn-notify" onclick="switchPageById('page-registration')">📝 Go to Manual Registration</button>
             </div>
           </div>
         </section>
@@ -1892,6 +1886,60 @@
     </div>
   </div>
 
+  <!-- MODAL: ONE-TIME NEW MEMBER ONBOARDING TOUR (shown once after registration + unlock) -->
+  <div class="modal-overlay" id="onboardingTourModal">
+    <div class="modal-content" style="max-width: 620px;">
+      <div class="modal-header">
+        <div>
+          <h3 style="color: #38bdf8;">🎉 Welcome! Here's How Your Portal Works</h3>
+          <p style="font-size: 0.78rem; color: var(--text-muted);">A quick one-time guide to every option in your dashboard.</p>
+        </div>
+        <button class="close-modal" onclick="closeOnboardingTour()">&times;</button>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 18px;">
+        <div style="background:#11192e; border:1px solid var(--border); border-radius:10px; padding:10px 12px; display:flex; gap:10px; align-items:flex-start;">
+          <span style="font-size:1.1rem;">⚡</span>
+          <div><strong style="color:var(--text-main); font-size:0.88rem;">Active Works</strong><br><span style="font-size:0.8rem; color:var(--text-muted);">Your main dashboard — every ongoing client/patient, their billed amount, received amount, and balance. Balance can be edited here.</span></div>
+        </div>
+        <div style="background:#11192e; border:1px solid var(--border); border-radius:10px; padding:10px 12px; display:flex; gap:10px; align-items:flex-start;">
+          <span style="font-size:1.1rem;">📝</span>
+          <div><strong style="color:var(--text-main); font-size:0.88rem;">Manual Registration</strong><br><span style="font-size:0.8rem; color:var(--text-muted);">Add a new client/patient manually — name, service, fee, and schedule.</span></div>
+        </div>
+        <div style="background:#11192e; border:1px solid var(--border); border-radius:10px; padding:10px 12px; display:flex; gap:10px; align-items:flex-start;">
+          <span style="font-size:1.1rem;">🗓️</span>
+          <div><strong style="color:var(--text-main); font-size:0.88rem;">Overall Master Calendar</strong><br><span style="font-size:0.8rem; color:var(--text-muted);">See daily revenue and visits across all clients for any month.</span></div>
+        </div>
+        <div style="background:#11192e; border:1px solid var(--border); border-radius:10px; padding:10px 12px; display:flex; gap:10px; align-items:flex-start;">
+          <span style="font-size:1.1rem;">📅</span>
+          <div><strong style="color:var(--text-main); font-size:0.88rem;">Ledger Calendar (per client)</strong><br><span style="font-size:0.8rem; color:var(--text-muted);">Open from the "📅 Ledger" button on any client — a reference-only session calendar. It cannot change billed amounts or balances.</span></div>
+        </div>
+        <div style="background:#11192e; border:1px solid var(--border); border-radius:10px; padding:10px 12px; display:flex; gap:10px; align-items:flex-start;">
+          <span style="font-size:1.1rem;">📥</span>
+          <div><strong style="color:var(--text-main); font-size:0.88rem;">Online Requests</strong><br><span style="font-size:0.8rem; color:var(--text-muted);">New booking requests submitted through your public booking link land here for you to accept.</span></div>
+        </div>
+        <div style="background:#11192e; border:1px solid var(--border); border-radius:10px; padding:10px 12px; display:flex; gap:10px; align-items:flex-start;">
+          <span style="font-size:1.1rem;">📊</span>
+          <div><strong style="color:var(--text-main); font-size:0.88rem;">1-Click Revenue Hub</strong><br><span style="font-size:0.8rem; color:var(--text-muted);">A quick snapshot of your earnings and outstanding dues.</span></div>
+        </div>
+        <div style="background:#11192e; border:1px solid var(--border); border-radius:10px; padding:10px 12px; display:flex; gap:10px; align-items:flex-start;">
+          <span style="font-size:1.1rem;">📁</span>
+          <div><strong style="color:var(--text-main); font-size:0.88rem;">Completed Works</strong><br><span style="font-size:0.8rem; color:var(--text-muted);">Finished/discharged client records are archived here for reference.</span></div>
+        </div>
+        <div style="background:#11192e; border:1px solid var(--border); border-radius:10px; padding:10px 12px; display:flex; gap:10px; align-items:flex-start;">
+          <span style="font-size:1.1rem;">👥</span>
+          <div><strong style="color:var(--text-main); font-size:0.88rem;">Overall Directory</strong><br><span style="font-size:0.8rem; color:var(--text-muted);">Every client you've ever added, active or completed, in one list.</span></div>
+        </div>
+        <div style="background:#11192e; border:1px solid var(--border); border-radius:10px; padding:10px 12px; display:flex; gap:10px; align-items:flex-start;">
+          <span style="font-size:1.1rem;">📲</span>
+          <div><strong style="color:var(--text-main); font-size:0.88rem;">Morning Reminders</strong><br><span style="font-size:0.8rem; color:var(--text-muted);">Send WhatsApp reminders to clients for upcoming sessions or dues.</span></div>
+        </div>
+      </div>
+
+      <button class="btn" style="width: 100%;" onclick="closeOnboardingTour()">Got it, Let's Start 🚀</button>
+    </div>
+  </div>
+
   <!-- MODAL: PATIENT INDIVIDUAL VISIT & PAYMENT LEDGER CALENDAR -->
   <div class="modal-overlay" id="patientLedgerModal">
     <div class="modal-content" style="max-width: 680px;">
@@ -1916,7 +1964,11 @@
       <div style="background: #090e1c; border: 1px solid var(--border); border-radius: 12px; padding: 12px; margin-bottom: 14px;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
           <h4 style="font-size: 0.85rem; color: var(--accent); text-transform: uppercase;">🗓️ Session Calendar (Click box to toggle Paid/Unpaid)</h4>
-          <span id="pl-cal-month-label" style="font-size: 0.8rem; color: #38bdf8; font-weight: 700;"></span>
+        </div>
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+          <button type="button" class="btn btn-secondary" style="padding: 5px 12px; font-size: 0.78rem;" onclick="changePatientLedgerCalendarMonth(-1)">&lt; Prev</button>
+          <span id="pl-cal-month-label" style="font-size: 0.85rem; color: #38bdf8; font-weight: 700;"></span>
+          <button type="button" class="btn btn-secondary" style="padding: 5px 12px; font-size: 0.78rem;" onclick="changePatientLedgerCalendarMonth(1)">Next &gt;</button>
         </div>
         <div class="patient-cal-grid" id="pl-calendar-grid"></div>
       </div>
@@ -3293,6 +3345,24 @@
       }
     };
 
+    window.maybeShowOnboardingTour = function(uid) {
+      if (!uid) return;
+      try {
+        const seenKey = `dharun_onboarding_seen_${uid}`;
+        if (localStorage.getItem(seenKey)) return;
+        localStorage.setItem(seenKey, '1');
+        const modal = document.getElementById('onboardingTourModal');
+        if (modal) modal.classList.add('active');
+      } catch (err) {
+        console.warn('Onboarding tour check skipped:', err);
+      }
+    };
+
+    window.closeOnboardingTour = function() {
+      const modal = document.getElementById('onboardingTourModal');
+      if (modal) modal.classList.remove('active');
+    };
+
     window.notifySubscriptionPaid = function() {
       const isNewMember = !activeMemberProfile?.lastPaymentDate && (!activeMemberProfile?.paymentHistoryList || activeMemberProfile.paymentHistoryList.length === 0);
       const chargeFee = isNewMember ? (activeMemberProfile?.regAmount || activeMemberProfile?.rentalFee || 599) : (activeMemberProfile?.rentalFee || 599);
@@ -4143,6 +4213,8 @@
         const isAccessGranted = window.checkSubscriptionStatus(activeMemberProfile);
         if (!isAccessGranted) return;
 
+        if (!isImpersonating) window.maybeShowOnboardingTour(uid);
+
         const snap = await getDoc(doc(db, "clinics", uid));
         if (snap.exists()) {
           const d = snap.data();
@@ -4856,11 +4928,16 @@
       }
     }
 
-    window.openPatientLedgerModal = function(id) {
+    window.openPatientLedgerModal = function(id, keepCalendarPosition) {
       const prof = typeof window.getActiveMemberProfile === 'function' ? window.getActiveMemberProfile() : null;
       if (!window.checkSubscriptionStatus(prof)) return;
       const p = patients.find(p => p.id === id);
       if (!p) return;
+
+      if (!keepCalendarPosition || plCalendarPatientId !== id) {
+        plCalendarMonthOffset = 0;
+      }
+      plCalendarPatientId = id;
 
       const billed = getBilledTotal(p);
       const paid = getPaidTotal(p);
@@ -4951,6 +5028,23 @@
       document.getElementById('patientLedgerModal').classList.add('active');
     };
 
+    // Adds/removes a payment entry linked to a specific visit date so that
+    // marking a visit paid/unpaid actually reflects in Billed/Received/Balance.
+    function setVisitPaymentStatus(p, dateStr, newStatus) {
+      const visit = (p.visitHistory || []).find(v => v.date === dateStr);
+      if (!visit || visit.status === newStatus) return;
+      visit.status = newStatus;
+      if (!p.paymentHistory) p.paymentHistory = [];
+
+      if (newStatus === 'paid') {
+        const perVisit = parseFloat(p.dailyCharge) || 0;
+        p.paymentHistory.push({ date: dateStr, amount: perVisit, visitPayment: true });
+      } else {
+        const idx = p.paymentHistory.findIndex(pm => pm.visitPayment && pm.date === dateStr);
+        if (idx !== -1) p.paymentHistory.splice(idx, 1);
+      }
+    }
+
     window.toggleVisitPaymentStatus = function(patientId, dateStr) {
       const prof = typeof window.getActiveMemberProfile === 'function' ? window.getActiveMemberProfile() : null;
       if (!window.checkSubscriptionStatus(prof)) return;
@@ -4958,10 +5052,43 @@
       if (!p || !p.visitHistory) return;
       const visit = p.visitHistory.find(v => v.date === dateStr);
       if (visit) {
-        visit.status = visit.status === 'unpaid' ? 'paid' : 'unpaid';
+        const newStatus = visit.status === 'unpaid' ? 'paid' : 'unpaid';
+        setVisitPaymentStatus(p, dateStr, newStatus);
         saveAndRender();
-        openPatientLedgerModal(patientId);
+        openPatientLedgerModal(patientId, true);
       }
+    };
+
+    // Fires when any date box in the Ledger Calendar is clicked. Asks whether
+    // there was a visit that day and whether it was paid, then updates the
+    // visit log and Billed/Received/Balance amounts to match.
+    window.handleLedgerCalendarDayClick = function(patientId, dateStr) {
+      const prof = typeof window.getActiveMemberProfile === 'function' ? window.getActiveMemberProfile() : null;
+      if (!window.checkSubscriptionStatus(prof)) return;
+      const p = patients.find(x => x.id === patientId);
+      if (!p) return;
+      if (!p.visitHistory) p.visitHistory = [];
+      if (!p.paymentHistory) p.paymentHistory = [];
+
+      const existingVisit = p.visitHistory.find(v => v.date === dateStr);
+
+      if (!existingVisit) {
+        const hadVisit = confirm(`Was there a visit on ${dateStr}?`);
+        if (!hadVisit) return;
+        const wasPaid = confirm(`Was payment received for this visit?\n\nPress OK for Paid, Cancel for Not Paid.`);
+        p.daysVisited = (p.daysVisited || 0) + 1;
+        p.visitHistory.push({ date: dateStr, visitNum: p.daysVisited, status: wasPaid ? 'paid' : 'unpaid' });
+        if (wasPaid) {
+          const perVisit = parseFloat(p.dailyCharge) || 0;
+          p.paymentHistory.push({ date: dateStr, amount: perVisit, visitPayment: true });
+        }
+      } else {
+        const wasPaid = confirm(`Visit on ${dateStr} is currently marked ${existingVisit.status === 'paid' ? 'PAID' : 'NOT PAID'}.\n\nMark this visit as paid?\n\nPress OK for Paid, Cancel for Not Paid.`);
+        setVisitPaymentStatus(p, dateStr, wasPaid ? 'paid' : 'unpaid');
+      }
+
+      saveAndRender();
+      openPatientLedgerModal(patientId, true);
     };
 
     window.removePaymentEntry = function(patientId, payIndex) {
@@ -4971,7 +5098,16 @@
       if (!p || !p.paymentHistory) return;
       p.paymentHistory.splice(payIndex, 1);
       saveAndRender();
-      openPatientLedgerModal(patientId);
+      openPatientLedgerModal(patientId, true);
+    };
+
+    let plCalendarPatientId = null;
+    let plCalendarMonthOffset = 0;
+
+    window.changePatientLedgerCalendarMonth = function(diff) {
+      plCalendarMonthOffset += diff;
+      const p = patients.find(x => x.id === plCalendarPatientId);
+      if (p) renderPatientIndividualCalendar(p);
     };
 
     function renderPatientIndividualCalendar(p) {
@@ -4980,8 +5116,9 @@
       calGrid.innerHTML = '';
 
       const now = new Date();
-      const year = now.getFullYear();
-      const month = now.getMonth();
+      const targetDate = new Date(now.getFullYear(), now.getMonth() + plCalendarMonthOffset, 1);
+      const year = targetDate.getFullYear();
+      const month = targetDate.getMonth();
       const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
       document.getElementById('pl-cal-month-label').innerText = `${monthNames[month]} ${year}`;
 
@@ -5025,16 +5162,15 @@
         }
 
         cell.className = `patient-cal-day-box ${cellClass}`;
-        cell.style.cursor = isVisited ? 'pointer' : 'default';
+        cell.style.cursor = 'pointer';
+        cell.title = isVisited ? 'Click to update this visit' : 'Click to log a visit';
         cell.innerHTML = `
           <strong style="color:${isVisited ? textColor : 'var(--text-muted)'};">${day}</strong>
           ${isVisited ? `<span style="color:${textColor}; font-weight:800; font-size:0.65rem;">${statusText}</span>` : ''}
         `;
-        
-        if (isVisited) {
-          cell.onclick = () => toggleVisitPaymentStatus(p.id, dateStr);
-        }
-        
+
+        cell.onclick = () => handleLedgerCalendarDayClick(p.id, dateStr);
+
         calGrid.appendChild(cell);
       }
     }
