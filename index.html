@@ -806,6 +806,16 @@
       border-color: #38bdf8;
       background: rgba(56, 189, 248, 0.18);
     }
+    .patient-cal-day-box {
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-touch-callout: none;
+    }
+    .patient-cal-day-box.bulk-selected {
+      box-shadow: 0 0 0 2px #f59e0b inset;
+      background: rgba(245, 158, 11, 0.22) !important;
+    }
+    .patient-cal-day-box.bulk-selected strong { color: #f59e0b !important; }
 
     .member-bright-title { color: var(--text-main) !important; font-weight: 800; font-size: 1rem; }
     .member-bright-clinic { color: var(--text-main) !important; font-weight: 700; }
@@ -2040,7 +2050,7 @@
 
       <div style="background: #090e1c; border: 1px solid var(--border); border-radius: 12px; padding: 12px; margin-bottom: 14px;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-          <h4 style="font-size: 0.85rem; color: var(--accent); text-transform: uppercase;">🗓️ Session Calendar (Click box to toggle Paid/Unpaid)</h4>
+          <h4 style="font-size: 0.85rem; color: var(--accent); text-transform: uppercase;">🗓️ Session Calendar (Tap to update · Long-press to select multiple)</h4>
         </div>
         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
           <button type="button" class="btn btn-secondary" style="padding: 5px 12px; font-size: 0.78rem;" onclick="changePatientLedgerCalendarMonth(-1)">&lt; Prev</button>
@@ -2048,6 +2058,25 @@
           <button type="button" class="btn btn-secondary" style="padding: 5px 12px; font-size: 0.78rem;" onclick="changePatientLedgerCalendarMonth(1)">Next &gt;</button>
         </div>
         <div class="patient-cal-grid" id="pl-calendar-grid"></div>
+
+        <div id="pl-bulk-toolbar" style="display: none; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin-top: 12px; padding: 10px; background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.4); border-radius: 10px;">
+          <span id="pl-bulk-count" style="font-size: 0.8rem; font-weight: 800; color: #fbbf24;">0 dates selected</span>
+          <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+            <button type="button" class="btn btn-secondary" style="padding: 5px 10px; font-size: 0.74rem; background:#10b981; color:#fff;" onclick="applyBulkVisitStatus('paid')">✔ Mark Paid</button>
+            <button type="button" class="btn btn-secondary" style="padding: 5px 10px; font-size: 0.74rem; background:#ef4444; color:#fff;" onclick="applyBulkVisitStatus('unpaid')">✖ Mark Unpaid</button>
+            <button type="button" class="btn btn-secondary" style="padding: 5px 10px; font-size: 0.74rem;" onclick="applyBulkRemoveVisits()">🗑️ Remove</button>
+            <button type="button" class="btn btn-secondary" style="padding: 5px 10px; font-size: 0.74rem;" onclick="cancelBulkDateSelection()">Cancel</button>
+          </div>
+        </div>
+      </div>
+
+      <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px;">
+        <label class="action-btn btn-item" style="position: relative; overflow: hidden; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; margin: 0; padding: 8px 14px; flex: 1; min-width: 90px;">
+          + Visit
+          <input type="date" onchange="ledgerQuickAddVisit(this.value); this.value='';" style="position: absolute; left: 0; top: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer;" title="Select date to add visit">
+        </label>
+        <button type="button" class="action-btn btn-item" style="flex: 1; min-width: 90px; padding: 8px 14px;" onclick="openExtraModal(plCalendarPatientId)">+ Extra</button>
+        <button type="button" class="action-btn btn-pay" style="flex: 1; min-width: 90px; padding: 8px 14px;" onclick="openPayModal(plCalendarPatientId)">+ Pay</button>
       </div>
 
       <div style="margin-bottom: 16px;">
@@ -2061,6 +2090,17 @@
       </div>
 
       <button class="btn btn-secondary" style="width: 100%;" onclick="closePatientLedgerModal()">Close Ledger</button>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="visitActionModal">
+    <div class="modal-content" style="max-width: 380px;">
+      <div class="modal-header">
+        <h3 id="visit-action-title">Update Visit</h3>
+        <button class="close-modal" onclick="closeVisitActionModal()">&times;</button>
+      </div>
+      <p id="visit-action-subtitle" style="color: var(--text-muted); font-size: 0.85rem; line-height: 1.5; margin-bottom: 18px;"></p>
+      <div id="visit-action-buttons" style="display: flex; flex-direction: column; gap: 10px;"></div>
     </div>
   </div>
 
@@ -4097,7 +4137,8 @@
 
         const expiryDate = usr.subscriptionExpiry ? new Date(usr.subscriptionExpiry) : null;
         const hasPaidHistory = (usr.paymentHistoryList && usr.paymentHistoryList.length > 0) || usr.lastPaymentDate;
-        const isExpired = !expiryDate || expiryDate < new Date() || (!hasPaidHistory && !isSuper);
+        const isOnTrial = usr.paymentStatus === 'trial' && expiryDate && expiryDate > new Date();
+        const isExpired = !expiryDate || expiryDate < new Date() || (!hasPaidHistory && !isSuper && !isOnTrial);
         const isStopped = usr.paymentStatus === 'stopped';
 
         let matchesStatus = true;
@@ -4116,7 +4157,8 @@
       filtered.forEach((usr, idx) => {
         const expiryDate = usr.subscriptionExpiry ? new Date(usr.subscriptionExpiry) : null;
         const hasPaidHistory = (usr.paymentHistoryList && usr.paymentHistoryList.length > 0) || usr.lastPaymentDate;
-        const isExpired = !expiryDate || expiryDate < new Date() || !hasPaidHistory;
+        const isOnTrial = usr.paymentStatus === 'trial' && expiryDate && expiryDate > new Date();
+        const isExpired = !expiryDate || expiryDate < new Date() || (!hasPaidHistory && !isOnTrial);
         const isStopped = usr.paymentStatus === 'stopped';
         
         let daysLeftText = "Expired";
@@ -4130,8 +4172,9 @@
         }
 
         let statusBadge = isStopped ? `<span class="badge badge-not-cured" style="background:#7f1d1d; border-color:#ef4444; color:#ffffff; font-weight:800;">🛑 Suspended</span>` 
+                          : (isOnTrial ? `<span class="badge badge-cured" style="background:rgba(245, 158, 11, 0.25); color:#f59e0b; font-weight:800;">🕒 Trial Active</span>`
                           : (!isExpired ? `<span class="badge badge-cured" style="background:rgba(16, 185, 129, 0.25); color:#10b981; font-weight:800;">🟢 Active Subscription</span>` 
-                          : `<span class="badge badge-not-cured" style="background:rgba(239, 68, 68, 0.25); color:#fca5a5; font-weight:800;">🔴 Expired / Unpaid</span>`);
+                          : `<span class="badge badge-not-cured" style="background:rgba(239, 68, 68, 0.25); color:#fca5a5; font-weight:800;">🔴 Expired / Unpaid</span>`));
 
         let paymentHistoryDisplay = "<span style='color:#cbd5e1; font-weight:600; font-size:0.84rem;'>No Rental Paid</span>";
         const histCount = usr.paymentHistoryList ? usr.paymentHistoryList.length : (usr.lastPaymentDate ? 1 : 0);
@@ -4360,7 +4403,14 @@
         }
 
         const isSuper = email.toLowerCase() === SUPER_ADMIN_EMAIL.toLowerCase();
-        const initialExpiry = isSuper ? new Date(2099, 1, 1).toISOString() : new Date(Date.now() - 86400000).toISOString();
+        // New registrations get a 7-day free trial. This value is written
+        // only once, inside the setDoc() below, at the moment a brand-new
+        // account is created — so it never touches existing members who are
+        // already registered/logged in; it only ever applies to new sign-ups.
+        const TRIAL_DAYS = 7;
+        const trialExpiry = new Date(Date.now() + TRIAL_DAYS * 86400000);
+        trialExpiry.setHours(23, 59, 59);
+        const initialExpiry = isSuper ? new Date(2099, 1, 1).toISOString() : trialExpiry.toISOString();
         const newUid = userCredential.user.uid;
         const ownReferralCode = newUid.slice(-6).toUpperCase();
 
@@ -4378,7 +4428,7 @@
           rentalFee: defaultRentalFee,
           role: isSuper ? 'super_admin' : 'member',
           subscriptionExpiry: initialExpiry,
-          paymentStatus: isSuper ? 'free_admin' : 'unpaid',
+          paymentStatus: isSuper ? 'free_admin' : 'trial',
           registeredAt: new Date().toISOString(),
           referralCode: ownReferralCode,
           referredBy: (referrerUid && referrerUid !== newUid) ? referrerUid : null,
@@ -5015,6 +5065,15 @@
       renderStats();
     }
 
+    // Used by the + Visit control inside the ledger modal itself, so the
+    // calendar and totals refresh in place instead of requiring the user
+    // to close and reopen the ledger.
+    window.ledgerQuickAddVisit = function(visitDate) {
+      if (!plCalendarPatientId || !visitDate) return;
+      window.quickAddVisit(plCalendarPatientId, visitDate);
+      openPatientLedgerModal(plCalendarPatientId, true);
+    };
+
     window.quickAddVisit = function(id, visitDate) {
       const prof = typeof window.getActiveMemberProfile === 'function' ? window.getActiveMemberProfile() : null;
       if (!window.checkSubscriptionStatus(prof)) return;
@@ -5302,6 +5361,9 @@
         p.extraCharges.push({ id: Date.now(), title, amount, date: new Date().toISOString().slice(0,10) });
         closeExtraModal();
         saveAndRender();
+        if (document.getElementById('patientLedgerModal').classList.contains('active')) {
+          openPatientLedgerModal(id, true);
+        }
       }
     }
 
@@ -5332,6 +5394,9 @@
         p.paymentHistory.push({ date: dateVal, amount });
         closePayModal();
         saveAndRender();
+        if (document.getElementById('patientLedgerModal').classList.contains('active')) {
+          openPatientLedgerModal(id, true);
+        }
       }
     }
 
@@ -5369,6 +5434,10 @@
 
       if (!keepCalendarPosition || plCalendarPatientId !== id) {
         plCalendarMonthOffset = 0;
+      }
+      if (plCalendarPatientId !== id) {
+        plBulkMode = false;
+        plSelectedDates.clear();
       }
       plCalendarPatientId = id;
 
@@ -5503,23 +5572,89 @@
       if (!p.visitHistory) p.visitHistory = [];
       if (!p.paymentHistory) p.paymentHistory = [];
 
+      openVisitActionModal(patientId, dateStr);
+    };
+
+    let vaPatientId = null;
+    let vaDateStr = null;
+
+    function openVisitActionModal(patientId, dateStr) {
+      const p = patients.find(x => x.id === patientId);
+      if (!p) return;
+      vaPatientId = patientId;
+      vaDateStr = dateStr;
+
+      const existingVisit = (p.visitHistory || []).find(v => v.date === dateStr);
+      const niceDate = new Date(dateStr + 'T00:00:00').toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+
+      const title = document.getElementById('visit-action-title');
+      const subtitle = document.getElementById('visit-action-subtitle');
+      const buttonsWrap = document.getElementById('visit-action-buttons');
+
+      if (existingVisit) {
+        const isPaid = existingVisit.status === 'paid';
+        title.innerText = 'Update Visit';
+        subtitle.innerHTML = `Visit on <strong style="color:var(--text-main);">${niceDate}</strong> is currently marked <strong style="color:${isPaid ? '#10b981' : '#ef4444'};">${isPaid ? 'PAID' : 'NOT PAID'}</strong>.`;
+        buttonsWrap.innerHTML = `
+          ${!isPaid ? `<button type="button" class="btn btn-notify" style="width:100%; background:#10b981;" onclick="confirmVisitAction('paid')">✔ Mark as Paid</button>` : ''}
+          ${isPaid ? `<button type="button" class="btn" style="width:100%; background:#ef4444;" onclick="confirmVisitAction('unpaid')">✖ Mark as Unpaid</button>` : ''}
+          <button type="button" class="btn btn-secondary" style="width:100%;" onclick="confirmVisitAction('remove')">🗑️ Remove This Visit</button>
+          <button type="button" class="btn btn-secondary" style="width:100%;" onclick="closeVisitActionModal()">Cancel</button>
+        `;
+      } else {
+        title.innerText = 'Log a Visit';
+        subtitle.innerHTML = `No visit recorded yet for <strong style="color:var(--text-main);">${niceDate}</strong>. What would you like to log?`;
+        buttonsWrap.innerHTML = `
+          <button type="button" class="btn btn-notify" style="width:100%; background:#10b981;" onclick="confirmVisitAction('paid')">✔ Visited — Paid</button>
+          <button type="button" class="btn" style="width:100%; background:#ef4444;" onclick="confirmVisitAction('unpaid')">✖ Visited — Not Paid</button>
+          <button type="button" class="btn btn-secondary" style="width:100%;" onclick="closeVisitActionModal()">Cancel</button>
+        `;
+      }
+
+      document.getElementById('visitActionModal').classList.add('active');
+    }
+
+    window.closeVisitActionModal = function() {
+      document.getElementById('visitActionModal').classList.remove('active');
+      vaPatientId = null;
+      vaDateStr = null;
+    };
+
+    window.confirmVisitAction = function(action) {
+      const p = patients.find(x => x.id === vaPatientId);
+      const dateStr = vaDateStr;
+      if (!p || !dateStr) { closeVisitActionModal(); return; }
+      if (!p.visitHistory) p.visitHistory = [];
+      if (!p.paymentHistory) p.paymentHistory = [];
+
       const existingVisit = p.visitHistory.find(v => v.date === dateStr);
 
-      if (!existingVisit) {
-        const hadVisit = confirm(`Was there a visit on ${dateStr}?`);
-        if (!hadVisit) return;
-        const wasPaid = confirm(`Was payment received for this visit?\n\nPress OK for Paid, Cancel for Not Paid.`);
+      if (action === 'remove') {
+        if (existingVisit) {
+          if (p.visitHistory.length <= 1) {
+            closeVisitActionModal();
+            alert('Cannot remove the initial registration visit.');
+            return;
+          }
+          const idx = p.visitHistory.findIndex(v => v.date === dateStr);
+          p.visitHistory.splice(idx, 1);
+          p.daysVisited = Math.max(0, (p.daysVisited || 1) - 1);
+          const payIdx = p.paymentHistory.findIndex(pm => pm.visitPayment && pm.date === dateStr);
+          if (payIdx !== -1) p.paymentHistory.splice(payIdx, 1);
+        }
+      } else if (existingVisit) {
+        setVisitPaymentStatus(p, dateStr, action);
+      } else {
         p.daysVisited = (p.daysVisited || 0) + 1;
-        p.visitHistory.push({ date: dateStr, visitNum: p.daysVisited, status: wasPaid ? 'paid' : 'unpaid' });
-        if (wasPaid) {
+        p.visitHistory.push({ date: dateStr, visitNum: p.daysVisited, status: action });
+        if (action === 'paid') {
           const perVisit = parseFloat(p.dailyCharge) || 0;
           p.paymentHistory.push({ date: dateStr, amount: perVisit, visitPayment: true });
         }
-      } else {
-        const wasPaid = confirm(`Visit on ${dateStr} is currently marked ${existingVisit.status === 'paid' ? 'PAID' : 'NOT PAID'}.\n\nMark this visit as paid?\n\nPress OK for Paid, Cancel for Not Paid.`);
-        setVisitPaymentStatus(p, dateStr, wasPaid ? 'paid' : 'unpaid');
       }
 
+      const patientId = p.id;
+      closeVisitActionModal();
       saveAndRender();
       openPatientLedgerModal(patientId, true);
     };
@@ -5536,6 +5671,9 @@
 
     let plCalendarPatientId = null;
     let plCalendarMonthOffset = 0;
+    let plBulkMode = false;
+    let plSelectedDates = new Set();
+    const PL_LONG_PRESS_MS = 500;
 
     window.changePatientLedgerCalendarMonth = function(diff) {
       plCalendarMonthOffset += diff;
@@ -5594,19 +5732,153 @@
           }
         }
 
-        cell.className = `patient-cal-day-box ${cellClass}`;
+        cell.className = `patient-cal-day-box ${cellClass}${plBulkMode && plSelectedDates.has(dateStr) ? ' bulk-selected' : ''}`;
         cell.style.cursor = 'pointer';
-        cell.title = isVisited ? 'Click to update this visit' : 'Click to log a visit';
+        cell.title = plBulkMode ? 'Tap to select/deselect this date' : (isVisited ? 'Click to update this visit, or long-press to select multiple dates' : 'Click to log a visit, or long-press to select multiple dates');
         cell.innerHTML = `
           <strong style="color:${isVisited ? textColor : 'var(--text-muted)'};">${day}</strong>
           ${isVisited ? `<span style="color:${textColor}; font-weight:800; font-size:0.65rem;">${statusText}</span>` : ''}
         `;
 
-        cell.onclick = () => handleLedgerCalendarDayClick(p.id, dateStr);
+        attachLedgerCellPressHandlers(cell, p.id, dateStr);
 
         calGrid.appendChild(cell);
       }
+
+      updateBulkToolbarUI();
     }
+
+    // Distinguishes a normal tap (single-date update, existing behavior)
+    // from a long-press (enters/extends multi-date selection mode) on a
+    // ledger calendar day cell. Works with both touch and mouse.
+    function attachLedgerCellPressHandlers(cell, patientId, dateStr) {
+      let pressTimer = null;
+      let isLongPress = false;
+
+      const startPress = () => {
+        isLongPress = false;
+        pressTimer = setTimeout(() => {
+          isLongPress = true;
+          if (navigator.vibrate) navigator.vibrate(15);
+          toggleBulkDateSelection(dateStr, cell);
+        }, PL_LONG_PRESS_MS);
+      };
+      const cancelTimer = () => clearTimeout(pressTimer);
+
+      cell.addEventListener('mousedown', startPress);
+      cell.addEventListener('touchstart', startPress, { passive: true });
+      cell.addEventListener('mouseup', cancelTimer);
+      cell.addEventListener('mouseleave', cancelTimer);
+      cell.addEventListener('touchend', cancelTimer);
+      cell.addEventListener('touchcancel', cancelTimer);
+      cell.addEventListener('contextmenu', (e) => e.preventDefault());
+
+      cell.addEventListener('click', () => {
+        if (isLongPress) { isLongPress = false; return; }
+        if (plBulkMode) {
+          toggleBulkDateSelection(dateStr, cell);
+        } else {
+          handleLedgerCalendarDayClick(patientId, dateStr);
+        }
+      });
+    }
+
+    function toggleBulkDateSelection(dateStr, cell) {
+      if (!plBulkMode) plBulkMode = true;
+      if (plSelectedDates.has(dateStr)) {
+        plSelectedDates.delete(dateStr);
+        cell.classList.remove('bulk-selected');
+      } else {
+        plSelectedDates.add(dateStr);
+        cell.classList.add('bulk-selected');
+      }
+      updateBulkToolbarUI();
+    }
+
+    function updateBulkToolbarUI() {
+      const toolbar = document.getElementById('pl-bulk-toolbar');
+      const countEl = document.getElementById('pl-bulk-count');
+      if (!toolbar || !countEl) return;
+      if (plBulkMode && plSelectedDates.size > 0) {
+        toolbar.style.display = 'flex';
+        countEl.innerText = `${plSelectedDates.size} date${plSelectedDates.size > 1 ? 's' : ''} selected`;
+      } else {
+        toolbar.style.display = 'none';
+      }
+    }
+
+    window.cancelBulkDateSelection = function() {
+      plBulkMode = false;
+      plSelectedDates.clear();
+      const p = patients.find(x => x.id === plCalendarPatientId);
+      if (p) renderPatientIndividualCalendar(p);
+    };
+
+    // Applies a single Paid/Unpaid status to every selected date in one go —
+    // creating a visit record for any date that doesn't have one yet, and
+    // updating the status (plus payment history) for dates that already do.
+    window.applyBulkVisitStatus = function(status) {
+      const prof = typeof window.getActiveMemberProfile === 'function' ? window.getActiveMemberProfile() : null;
+      if (!window.checkSubscriptionStatus(prof)) return;
+      if (plSelectedDates.size === 0) return;
+      const p = patients.find(x => x.id === plCalendarPatientId);
+      if (!p) return;
+      if (!p.visitHistory) p.visitHistory = [];
+      if (!p.paymentHistory) p.paymentHistory = [];
+
+      const count = plSelectedDates.size;
+      const label = status === 'paid' ? 'Visited & Paid' : 'Visited & Unpaid';
+      if (!confirm(`Mark ${count} selected date${count > 1 ? 's' : ''} as ${label}?`)) return;
+
+      Array.from(plSelectedDates).sort().forEach(dateStr => {
+        const existing = p.visitHistory.find(v => v.date === dateStr);
+        if (existing) {
+          setVisitPaymentStatus(p, dateStr, status);
+        } else {
+          p.daysVisited = (p.daysVisited || 0) + 1;
+          p.visitHistory.push({ date: dateStr, visitNum: p.daysVisited, status });
+          if (status === 'paid') {
+            const perVisit = parseFloat(p.dailyCharge) || 0;
+            p.paymentHistory.push({ date: dateStr, amount: perVisit, visitPayment: true });
+          }
+        }
+      });
+
+      const patientId = p.id;
+      window.cancelBulkDateSelection();
+      saveAndRender();
+      openPatientLedgerModal(patientId, true);
+    };
+
+    // Removes the visit record (and any linked visit-payment entry) for
+    // every selected date at once.
+    window.applyBulkRemoveVisits = function() {
+      const prof = typeof window.getActiveMemberProfile === 'function' ? window.getActiveMemberProfile() : null;
+      if (!window.checkSubscriptionStatus(prof)) return;
+      if (plSelectedDates.size === 0) return;
+      const p = patients.find(x => x.id === plCalendarPatientId);
+      if (!p || !p.visitHistory) return;
+
+      const count = plSelectedDates.size;
+      if (!confirm(`Remove the visit record for ${count} selected date${count > 1 ? 's' : ''}? Any linked payment for those visits will also be removed.`)) return;
+
+      plSelectedDates.forEach(dateStr => {
+        const idx = p.visitHistory.findIndex(v => v.date === dateStr);
+        if (idx !== -1) {
+          p.visitHistory.splice(idx, 1);
+          p.daysVisited = Math.max(0, (p.daysVisited || 1) - 1);
+        }
+        if (p.paymentHistory) {
+          const payIdx = p.paymentHistory.findIndex(pm => pm.visitPayment && pm.date === dateStr);
+          if (payIdx !== -1) p.paymentHistory.splice(payIdx, 1);
+        }
+      });
+
+      const patientId = p.id;
+      window.cancelBulkDateSelection();
+      saveAndRender();
+      openPatientLedgerModal(patientId, true);
+    };
 
     window.closePatientLedgerModal = function() {
       document.getElementById('patientLedgerModal').classList.remove('active');
