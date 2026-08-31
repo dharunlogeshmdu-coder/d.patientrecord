@@ -735,6 +735,7 @@
 
     .action-btn { border: none; padding: 6px 10px; border-radius: 6px; font-size: 0.8rem; font-weight: 700; cursor: pointer; min-height: 32px; }
     .btn-item { background: #8b5cf6; color: white; }
+    .btn-extra { background: #f97316; color: white; }
     .btn-pay { background: var(--success); color: white; }
     .btn-finish { background: #06d6a0; color: #060913; }
     .btn-print { background: #64748b; color: #ffffff; }
@@ -1751,7 +1752,7 @@
                     <th>UID, Name & Address</th>
                     <th>Fees & Package</th>
                     <th>Action & Calendar Ledger</th>
-                    <th>Visits</th>
+                    <th>Total Visits</th>
                     <th>Total Billed</th>
                     <th>Received (Editable)</th>
                     <th>Remaining Balance (Editable)</th>
@@ -2078,7 +2079,7 @@
 
       <div style="background: #090e1c; border: 1px solid var(--border); border-radius: 12px; padding: 12px; margin-bottom: 14px;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-          <h4 style="font-size: 0.85rem; color: var(--accent); text-transform: uppercase;">🗓️ Session Calendar (Tap to update · Long-press to select multiple)</h4>
+          <h4 style="font-size: 0.85rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.4px; background: linear-gradient(90deg, #f472b6, #fb923c, #facc15); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;">🗓️ Session Calendar (Tap to update · Long-press to select multiple)</h4>
         </div>
         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
           <button type="button" class="btn btn-secondary" style="padding: 5px 12px; font-size: 0.78rem;" onclick="changePatientLedgerCalendarMonth(-1)">&lt; Prev</button>
@@ -2108,11 +2109,11 @@
 
       <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px;">
         <label class="action-btn btn-item" style="position: relative; overflow: hidden; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; margin: 0; padding: 8px 14px; flex: 1; min-width: 90px;">
-          + Visit
+          + Visited
           <input type="date" onchange="ledgerQuickAddVisit(this.value); this.value='';" style="position: absolute; left: 0; top: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer;" title="Select date to add visit">
         </label>
-        <button type="button" class="action-btn btn-item" style="flex: 1; min-width: 90px; padding: 8px 14px;" onclick="openExtraModal(plCalendarPatientId)">+ Extra</button>
-        <button type="button" class="action-btn btn-pay" style="flex: 1; min-width: 90px; padding: 8px 14px;" onclick="openPayModal(plCalendarPatientId)">+ Pay</button>
+        <button type="button" class="action-btn btn-extra" style="flex: 1; min-width: 90px; padding: 8px 14px;" onclick="openExtraModal(plCalendarPatientId)">+ Extra</button>
+        <button type="button" class="action-btn btn-pay" style="flex: 1; min-width: 90px; padding: 8px 14px;" onclick="openPayModal(plCalendarPatientId)">+ Paid</button>
       </div>
 
       <div style="margin-bottom: 16px;">
@@ -5062,12 +5063,12 @@
            <td>
              <div style="display:flex; gap:4px; flex-wrap:wrap;">
                <label class="action-btn btn-item" style="position: relative; overflow: hidden; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; margin: 0; padding: 6px 10px;">
-                 + Visit
+                 + Visited
                  <input type="date" onchange="quickAddVisit(${p.id}, this.value); this.value='';" style="position: absolute; left: 0; top: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer;" title="Select date to add visit">
                </label>
                
-               <button class="action-btn btn-item" onclick="openExtraModal(${p.id})">+ Extra</button>
-               <button class="action-btn btn-pay" onclick="openPayModal(${p.id})">+ Pay</button>
+               <button class="action-btn btn-extra" onclick="openExtraModal(${p.id})">+ Extra</button>
+               <button class="action-btn btn-pay" onclick="openPayModal(${p.id})">+ Paid</button>
                <button class="action-btn btn-ledger" onclick="openPatientLedgerModal(${p.id})">📅 Ledger</button>
              </div>
              ${(p.extraCharges && p.extraCharges.length > 0) ? `
@@ -5747,10 +5748,17 @@
         // A visit is being logged (paid/unpaid) on a date that may have
         // carried a planning marker — clear the marker since it's now an
         // actual recorded visit.
+        const priorMarker = (p.dateMarkers || {})[dateStr] || null;
         if (p.dateMarkers) delete p.dateMarkers[dateStr];
         p.daysVisited = (p.daysVisited || 0) + 1;
         p.visitHistory.push({ date: dateStr, visitNum: p.daysVisited, status: action });
-        if (action === 'paid') {
+        // If this date was already marked "Planned (Advance Paid)", the
+        // money was collected earlier as an advance — it already sits in
+        // paymentHistory and shows up as "Advance Available". Converting
+        // the plan into an actual visit should just consume that advance
+        // (by raising Total Billed via the visit above), NOT add a second
+        // payment entry — otherwise the same cash gets counted twice.
+        if (action === 'paid' && priorMarker !== 'planned') {
           const perVisit = parseFloat(p.dailyCharge) || 0;
           p.paymentHistory.push({ date: dateStr, amount: perVisit, visitPayment: true });
         }
@@ -5960,9 +5968,14 @@
         if (existing) {
           setVisitPaymentStatus(p, dateStr, status);
         } else {
+          const priorMarker = (p.dateMarkers || {})[dateStr] || null;
+          if (p.dateMarkers) delete p.dateMarkers[dateStr];
           p.daysVisited = (p.daysVisited || 0) + 1;
           p.visitHistory.push({ date: dateStr, visitNum: p.daysVisited, status });
-          if (status === 'paid') {
+          // Same fix as the single-date flow: a date already marked
+          // "Planned (Advance Paid)" already has its payment recorded —
+          // don't add a second payment entry when it's confirmed as visited.
+          if (status === 'paid' && priorMarker !== 'planned') {
             const perVisit = parseFloat(p.dailyCharge) || 0;
             p.paymentHistory.push({ date: dateStr, amount: perVisit, visitPayment: true });
           }
