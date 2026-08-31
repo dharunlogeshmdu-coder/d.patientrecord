@@ -806,6 +806,10 @@
       border-color: #38bdf8;
       background: rgba(56, 189, 248, 0.18);
     }
+    .patient-cal-day-box.payment-due-marker {
+      border-color: #f59e0b;
+      background: rgba(245, 158, 11, 0.18);
+    }
     .patient-cal-day-box {
       -webkit-user-select: none;
       user-select: none;
@@ -2058,12 +2062,20 @@
           <button type="button" class="btn btn-secondary" style="padding: 5px 12px; font-size: 0.78rem;" onclick="changePatientLedgerCalendarMonth(1)">Next &gt;</button>
         </div>
         <div class="patient-cal-grid" id="pl-calendar-grid"></div>
+        <div style="display:flex; gap:12px; flex-wrap:wrap; margin-top:10px; font-size:0.7rem; color:var(--text-muted);">
+          <span><span style="display:inline-block; width:9px; height:9px; border-radius:2px; background:#10b981; margin-right:4px;"></span>Visited & Paid</span>
+          <span><span style="display:inline-block; width:9px; height:9px; border-radius:2px; background:#ef4444; margin-right:4px;"></span>Visited & Unpaid</span>
+          <span><span style="display:inline-block; width:9px; height:9px; border-radius:2px; background:#38bdf8; margin-right:4px;"></span>Planned Visit (Advance)</span>
+          <span><span style="display:inline-block; width:9px; height:9px; border-radius:2px; background:#f59e0b; margin-right:4px;"></span>Payment Due</span>
+        </div>
 
         <div id="pl-bulk-toolbar" style="display: none; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin-top: 12px; padding: 10px; background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.4); border-radius: 10px;">
           <span id="pl-bulk-count" style="font-size: 0.8rem; font-weight: 800; color: #fbbf24;">0 dates selected</span>
           <div style="display: flex; gap: 6px; flex-wrap: wrap;">
             <button type="button" class="btn btn-secondary" style="padding: 5px 10px; font-size: 0.74rem; background:#10b981; color:#fff;" onclick="applyBulkVisitStatus('paid')">✔ Mark Paid</button>
             <button type="button" class="btn btn-secondary" style="padding: 5px 10px; font-size: 0.74rem; background:#ef4444; color:#fff;" onclick="applyBulkVisitStatus('unpaid')">✖ Mark Unpaid</button>
+            <button type="button" class="btn btn-secondary" style="padding: 5px 10px; font-size: 0.74rem; background:#38bdf8; color:#060913;" onclick="applyBulkMarker('planned')">📌 Plan Visit</button>
+            <button type="button" class="btn btn-secondary" style="padding: 5px 10px; font-size: 0.74rem; background:#f59e0b; color:#060913;" onclick="applyBulkMarker('due')">💰 Mark Due</button>
             <button type="button" class="btn btn-secondary" style="padding: 5px 10px; font-size: 0.74rem;" onclick="applyBulkRemoveVisits()">🗑️ Remove</button>
             <button type="button" class="btn btn-secondary" style="padding: 5px 10px; font-size: 0.74rem;" onclick="cancelBulkDateSelection()">Cancel</button>
           </div>
@@ -5602,13 +5614,37 @@
           <button type="button" class="btn btn-secondary" style="width:100%;" onclick="closeVisitActionModal()">Cancel</button>
         `;
       } else {
-        title.innerText = 'Log a Visit';
-        subtitle.innerHTML = `No visit recorded yet for <strong style="color:var(--text-main);">${niceDate}</strong>. What would you like to log?`;
-        buttonsWrap.innerHTML = `
-          <button type="button" class="btn btn-notify" style="width:100%; background:#10b981;" onclick="confirmVisitAction('paid')">✔ Visited — Paid</button>
-          <button type="button" class="btn" style="width:100%; background:#ef4444;" onclick="confirmVisitAction('unpaid')">✖ Visited — Not Paid</button>
-          <button type="button" class="btn btn-secondary" style="width:100%;" onclick="closeVisitActionModal()">Cancel</button>
-        `;
+        const marker = (p.dateMarkers || {})[dateStr] || null;
+
+        if (marker === 'planned') {
+          title.innerText = 'Planned Visit';
+          subtitle.innerHTML = `<strong style="color:var(--text-main);">${niceDate}</strong> is currently marked <strong style="color:#38bdf8;">📌 PLANNED (Advance Paid)</strong>.`;
+          buttonsWrap.innerHTML = `
+            <button type="button" class="btn btn-notify" style="width:100%; background:#10b981;" onclick="confirmVisitAction('paid')">✔ Visit Happened — Paid</button>
+            <button type="button" class="btn" style="width:100%; background:#ef4444;" onclick="confirmVisitAction('unpaid')">✖ Visit Happened — Not Paid</button>
+            <button type="button" class="btn btn-secondary" style="width:100%;" onclick="confirmVisitAction('remove-marker')">🗑️ Remove This Marker</button>
+            <button type="button" class="btn btn-secondary" style="width:100%;" onclick="closeVisitActionModal()">Cancel</button>
+          `;
+        } else if (marker === 'due') {
+          title.innerText = 'Payment Due';
+          subtitle.innerHTML = `<strong style="color:var(--text-main);">${niceDate}</strong> is currently marked <strong style="color:#f59e0b;">💰 PAYMENT DUE</strong> — a reminder to collect money from the client.`;
+          buttonsWrap.innerHTML = `
+            <button type="button" class="btn btn-notify" style="width:100%; background:#10b981;" onclick="confirmVisitAction('paid')">✔ Visit Happened — Paid</button>
+            <button type="button" class="btn" style="width:100%; background:#ef4444;" onclick="confirmVisitAction('unpaid')">✖ Visit Happened — Not Paid</button>
+            <button type="button" class="btn btn-secondary" style="width:100%;" onclick="confirmVisitAction('remove-marker')">🗑️ Remove This Marker</button>
+            <button type="button" class="btn btn-secondary" style="width:100%;" onclick="closeVisitActionModal()">Cancel</button>
+          `;
+        } else {
+          title.innerText = 'Mark This Date';
+          subtitle.innerHTML = `No visit recorded yet for <strong style="color:var(--text-main);">${niceDate}</strong>. What would you like to log?`;
+          buttonsWrap.innerHTML = `
+            <button type="button" class="btn btn-notify" style="width:100%; background:#10b981;" onclick="confirmVisitAction('paid')">✔ Visited — Paid</button>
+            <button type="button" class="btn" style="width:100%; background:#ef4444;" onclick="confirmVisitAction('unpaid')">✖ Visited — Not Paid</button>
+            <button type="button" class="btn" style="width:100%; background:#38bdf8; color:#060913;" onclick="confirmVisitAction('mark-planned')">📌 Plan Visit (Advance Paid)</button>
+            <button type="button" class="btn" style="width:100%; background:#f59e0b; color:#060913;" onclick="confirmVisitAction('mark-due')">💰 Mark Payment Due</button>
+            <button type="button" class="btn btn-secondary" style="width:100%;" onclick="closeVisitActionModal()">Cancel</button>
+          `;
+        }
       }
 
       document.getElementById('visitActionModal').classList.add('active');
@@ -5629,7 +5665,12 @@
 
       const existingVisit = p.visitHistory.find(v => v.date === dateStr);
 
-      if (action === 'remove') {
+      if (action === 'mark-planned' || action === 'mark-due') {
+        if (!p.dateMarkers) p.dateMarkers = {};
+        p.dateMarkers[dateStr] = action === 'mark-planned' ? 'planned' : 'due';
+      } else if (action === 'remove-marker') {
+        if (p.dateMarkers) delete p.dateMarkers[dateStr];
+      } else if (action === 'remove') {
         if (existingVisit) {
           if (p.visitHistory.length <= 1) {
             closeVisitActionModal();
@@ -5645,6 +5686,10 @@
       } else if (existingVisit) {
         setVisitPaymentStatus(p, dateStr, action);
       } else {
+        // A visit is being logged (paid/unpaid) on a date that may have
+        // carried a planning marker — clear the marker since it's now an
+        // actual recorded visit.
+        if (p.dateMarkers) delete p.dateMarkers[dateStr];
         p.daysVisited = (p.daysVisited || 0) + 1;
         p.visitHistory.push({ date: dateStr, visitNum: p.daysVisited, status: action });
         if (action === 'paid') {
@@ -5714,6 +5759,7 @@
 
         const visitRecord = (p.visitHistory || []).find(v => v.date === dateStr);
         const isVisited = !!visitRecord;
+        const marker = !isVisited ? ((p.dateMarkers || {})[dateStr] || null) : null;
         const cell = document.createElement('div');
         
         let cellClass = '';
@@ -5730,14 +5776,24 @@
             statusText = '✔ Paid';
             textColor = '#10b981';
           }
+        } else if (marker === 'planned') {
+          cellClass = 'advance-paid';
+          statusText = '📌 Planned';
+          textColor = '#38bdf8';
+        } else if (marker === 'due') {
+          cellClass = 'payment-due-marker';
+          statusText = '💰 Due';
+          textColor = '#f59e0b';
         }
+
+        const hasMark = isVisited || !!marker;
 
         cell.className = `patient-cal-day-box ${cellClass}${plBulkMode && plSelectedDates.has(dateStr) ? ' bulk-selected' : ''}`;
         cell.style.cursor = 'pointer';
-        cell.title = plBulkMode ? 'Tap to select/deselect this date' : (isVisited ? 'Click to update this visit, or long-press to select multiple dates' : 'Click to log a visit, or long-press to select multiple dates');
+        cell.title = plBulkMode ? 'Tap to select/deselect this date' : (hasMark ? 'Click to update this date, or long-press to select multiple dates' : 'Click to mark this date, or long-press to select multiple dates');
         cell.innerHTML = `
-          <strong style="color:${isVisited ? textColor : 'var(--text-muted)'};">${day}</strong>
-          ${isVisited ? `<span style="color:${textColor}; font-weight:800; font-size:0.65rem;">${statusText}</span>` : ''}
+          <strong style="color:${hasMark ? textColor : 'var(--text-muted)'};">${day}</strong>
+          ${hasMark ? `<span style="color:${textColor}; font-weight:800; font-size:0.65rem;">${statusText}</span>` : ''}
         `;
 
         attachLedgerCellPressHandlers(cell, p.id, dateStr);
@@ -5850,6 +5906,38 @@
       openPatientLedgerModal(patientId, true);
     };
 
+    // Applies a Planned Visit / Payment Due marker to every selected date
+    // in one go. These are lightweight planning notes, not actual visits —
+    // any date that already has a real visit recorded is skipped.
+    window.applyBulkMarker = function(markerType) {
+      const prof = typeof window.getActiveMemberProfile === 'function' ? window.getActiveMemberProfile() : null;
+      if (!window.checkSubscriptionStatus(prof)) return;
+      if (plSelectedDates.size === 0) return;
+      const p = patients.find(x => x.id === plCalendarPatientId);
+      if (!p) return;
+      if (!p.visitHistory) p.visitHistory = [];
+      if (!p.dateMarkers) p.dateMarkers = {};
+
+      const count = plSelectedDates.size;
+      const label = markerType === 'planned' ? 'Planned Visit (Advance Paid)' : 'Payment Due';
+      if (!confirm(`Mark ${count} selected date${count > 1 ? 's' : ''} as "${label}"?`)) return;
+
+      let skipped = 0;
+      plSelectedDates.forEach(dateStr => {
+        const hasVisit = p.visitHistory.some(v => v.date === dateStr);
+        if (hasVisit) { skipped++; return; }
+        p.dateMarkers[dateStr] = markerType;
+      });
+
+      const patientId = p.id;
+      window.cancelBulkDateSelection();
+      saveAndRender();
+      openPatientLedgerModal(patientId, true);
+      if (skipped > 0) {
+        alert(`${skipped} selected date${skipped > 1 ? 's' : ''} already had a recorded visit and were left unchanged.`);
+      }
+    };
+
     // Removes the visit record (and any linked visit-payment entry) for
     // every selected date at once.
     window.applyBulkRemoveVisits = function() {
@@ -5857,10 +5945,11 @@
       if (!window.checkSubscriptionStatus(prof)) return;
       if (plSelectedDates.size === 0) return;
       const p = patients.find(x => x.id === plCalendarPatientId);
-      if (!p || !p.visitHistory) return;
+      if (!p) return;
+      if (!p.visitHistory) p.visitHistory = [];
 
       const count = plSelectedDates.size;
-      if (!confirm(`Remove the visit record for ${count} selected date${count > 1 ? 's' : ''}? Any linked payment for those visits will also be removed.`)) return;
+      if (!confirm(`Remove the visit record and/or marker for ${count} selected date${count > 1 ? 's' : ''}? Any linked payment for those visits will also be removed.`)) return;
 
       plSelectedDates.forEach(dateStr => {
         const idx = p.visitHistory.findIndex(v => v.date === dateStr);
@@ -5872,6 +5961,7 @@
           const payIdx = p.paymentHistory.findIndex(pm => pm.visitPayment && pm.date === dateStr);
           if (payIdx !== -1) p.paymentHistory.splice(payIdx, 1);
         }
+        if (p.dateMarkers) delete p.dateMarkers[dateStr];
       });
 
       const patientId = p.id;
