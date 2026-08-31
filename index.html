@@ -2097,6 +2097,11 @@
       </div>
 
       <div style="margin-bottom: 16px;">
+        <h4 style="font-size: 0.85rem; color: #fbbf24; margin-bottom: 8px; text-transform: uppercase;">🧾 Extra Charges / Additional Services:</h4>
+        <div id="patientLedgerExtrasList" style="display: flex; flex-direction: column; gap: 6px; max-height: 120px; overflow-y: auto;"></div>
+      </div>
+
+      <div style="margin-bottom: 16px;">
         <h4 style="font-size: 0.85rem; color: #38bdf8; margin-bottom: 8px; text-transform: uppercase;">💵 Payment Transactions History:</h4>
         <div id="patientLedgerPaymentsList" style="display: flex; flex-direction: column; gap: 6px; max-height: 120px; overflow-y: auto;"></div>
       </div>
@@ -5041,6 +5046,13 @@
                <button class="action-btn btn-pay" onclick="openPayModal(${p.id})">+ Pay</button>
                <button class="action-btn btn-ledger" onclick="openPatientLedgerModal(${p.id})">📅 Ledger</button>
              </div>
+             ${(p.extraCharges && p.extraCharges.length > 0) ? `
+               <div style="margin-top:6px;">
+                 <span class="uid-badge" style="background:rgba(245, 158, 11, 0.15); color:#fbbf24; border:1px solid rgba(245,158,11,0.4); cursor:pointer;" onclick="openPatientLedgerModal(${p.id})" title="View extra charge details in the ledger">
+                   🧾 ${p.extraCharges.length} Extra · ₹${getExtraTotal(p).toLocaleString('en-IN')}
+                 </span>
+               </div>
+             ` : ''}
            </td>
           <td>
             <div style="display:flex; align-items:center; gap:6px;">
@@ -5517,6 +5529,28 @@
         });
       }
 
+      const extrasContainer = document.getElementById('patientLedgerExtrasList');
+      extrasContainer.innerHTML = '';
+      if (!p.extraCharges || p.extraCharges.length === 0) {
+        extrasContainer.innerHTML = '<p style="color:var(--text-muted); font-size:0.85rem;">No extra charges added yet.</p>';
+      } else {
+        p.extraCharges.forEach((ex, idx) => {
+          const div = document.createElement('div');
+          div.style.cssText = "background:#11192e; border:1px solid rgba(245, 158, 11, 0.4); padding:8px 12px; border-radius:8px; display:flex; justify-content:space-between; align-items:center;";
+          div.innerHTML = `
+            <div>
+              <strong style="color:var(--text-main); font-size:0.88rem;">${ex.title}</strong>
+              <span style="color:var(--text-muted); font-size:0.78rem; margin-left:8px;">📅 ${ex.date}</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span class="uid-badge" style="background:rgba(245, 158, 11, 0.15); color:#fbbf24; border:1px solid rgba(245,158,11,0.4);">₹${parseFloat(ex.amount).toFixed(2)}</span>
+              <button class="action-btn btn-undo" style="padding:3px 8px; font-size:0.72rem;" onclick="removeExtraCharge(${p.id}, ${idx})">❌ Remove</button>
+            </div>
+          `;
+          extrasContainer.appendChild(div);
+        });
+      }
+
       const paymentsContainer = document.getElementById('patientLedgerPaymentsList');
       paymentsContainer.innerHTML = '';
       if (!p.paymentHistory || p.paymentHistory.length === 0) {
@@ -5700,6 +5734,17 @@
 
       const patientId = p.id;
       closeVisitActionModal();
+      saveAndRender();
+      openPatientLedgerModal(patientId, true);
+    };
+
+    window.removeExtraCharge = function(patientId, extraIndex) {
+      const prof = typeof window.getActiveMemberProfile === 'function' ? window.getActiveMemberProfile() : null;
+      if (!window.checkSubscriptionStatus(prof)) return;
+      const p = patients.find(x => x.id === patientId);
+      if (!p || !p.extraCharges) return;
+      if (!confirm('Remove this extra charge? This will reduce the Total Billed amount.')) return;
+      p.extraCharges.splice(extraIndex, 1);
       saveAndRender();
       openPatientLedgerModal(patientId, true);
     };
