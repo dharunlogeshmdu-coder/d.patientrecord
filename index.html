@@ -2114,8 +2114,12 @@
 
       <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px;">
         <label class="action-btn btn-item" style="position: relative; overflow: hidden; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; margin: 0; padding: 8px 14px; flex: 1; min-width: 90px;">
-          + Visited
-          <input type="date" onchange="ledgerQuickAddVisit(this.value); this.value='';" style="position: absolute; left: 0; top: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer;" title="Select date to add visit">
+          + Visited (Paid)
+          <input type="date" onchange="ledgerQuickAddVisit(this.value, 'paid'); this.value='';" style="position: absolute; left: 0; top: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer;" title="Select date to add a PAID visit">
+        </label>
+        <label class="action-btn btn-item" style="position: relative; overflow: hidden; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; margin: 0; padding: 8px 14px; flex: 1; min-width: 90px; background:#ef4444; color:#fff;">
+          + Visited (Unpaid)
+          <input type="date" onchange="ledgerQuickAddVisit(this.value, 'unpaid'); this.value='';" style="position: absolute; left: 0; top: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer;" title="Select date to add an UNPAID visit">
         </label>
         <button type="button" class="action-btn btn-extra" style="flex: 1; min-width: 90px; padding: 8px 14px;" onclick="openExtraModal(plCalendarPatientId)">+ Extra</button>
         <button type="button" class="action-btn btn-pay" style="flex: 1; min-width: 90px; padding: 8px 14px;" onclick="openPayModal(plCalendarPatientId)">+ Paid</button>
@@ -5086,8 +5090,12 @@
            <td>
              <div style="display:flex; gap:4px; flex-wrap:wrap;">
                <label class="action-btn btn-item" style="position: relative; overflow: hidden; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; margin: 0; padding: 6px 10px;">
-                 + Visited
-                 <input type="date" onchange="quickAddVisit(${p.id}, this.value); this.value='';" style="position: absolute; left: 0; top: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer;" title="Select date to add visit">
+                 + Visited (Paid)
+                 <input type="date" onchange="quickAddVisit(${p.id}, this.value, 'paid'); this.value='';" style="position: absolute; left: 0; top: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer;" title="Select date to add a PAID visit">
+               </label>
+               <label class="action-btn btn-item" style="position: relative; overflow: hidden; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; margin: 0; padding: 6px 10px; background:#ef4444; color:#fff;">
+                 + Visited (Unpaid)
+                 <input type="date" onchange="quickAddVisit(${p.id}, this.value, 'unpaid'); this.value='';" style="position: absolute; left: 0; top: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer;" title="Select date to add an UNPAID visit">
                </label>
                
                <button class="action-btn btn-extra" onclick="openExtraModal(${p.id})">+ Extra</button>
@@ -5140,16 +5148,17 @@
     // Used by the + Visit control inside the ledger modal itself, so the
     // calendar and totals refresh in place instead of requiring the user
     // to close and reopen the ledger.
-    window.ledgerQuickAddVisit = function(visitDate) {
+    window.ledgerQuickAddVisit = function(visitDate, status) {
       if (!plCalendarPatientId || !visitDate) return;
-      window.quickAddVisit(plCalendarPatientId, visitDate);
+      window.quickAddVisit(plCalendarPatientId, visitDate, status);
       openPatientLedgerModal(plCalendarPatientId, true);
     };
 
-    window.quickAddVisit = function(id, visitDate) {
+    window.quickAddVisit = function(id, visitDate, status) {
       const prof = typeof window.getActiveMemberProfile === 'function' ? window.getActiveMemberProfile() : null;
       if (!window.checkSubscriptionStatus(prof)) return;
       if (!visitDate) return;
+      const visitStatus = (status === 'unpaid') ? 'unpaid' : 'paid';
       const p = patients.find(p => p.id === id);
       if (!p) return;
 
@@ -5158,7 +5167,12 @@
       
       if (!alreadyExists) {
         p.daysVisited = (p.daysVisited || 0) + 1;
-        p.visitHistory.push({ date: visitDate, visitNum: p.daysVisited, status: 'paid' });
+        p.visitHistory.push({ date: visitDate, visitNum: p.daysVisited, status: visitStatus });
+        if (visitStatus === 'paid') {
+          const perVisit = parseFloat(p.dailyCharge) || 0;
+          if (!p.paymentHistory) p.paymentHistory = [];
+          p.paymentHistory.push({ date: visitDate, amount: perVisit, visitPayment: true });
+        }
         saveAndRender();
       } else {
         alert("A visit for this member on " + visitDate + " is already recorded.");
