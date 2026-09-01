@@ -753,6 +753,25 @@
     .btn-restore { background: #38bdf8; color: #060913; font-weight: 800; }
     .btn-view-archive { background: #8b5cf6; color: white; font-weight: 800; }
 
+    /* Paid / Unpaid switch (used on the patient ledger visit list) */
+    .paid-switch-wrap { display: flex; align-items: center; gap: 6px; }
+    .paid-switch { position: relative; display: inline-block; width: 46px; height: 24px; flex-shrink: 0; }
+    .paid-switch input { opacity: 0; width: 0; height: 0; }
+    .paid-switch-slider {
+      position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+      background-color: #ef4444; transition: 0.25s; border-radius: 999px;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08);
+    }
+    .paid-switch-slider::before {
+      content: ""; position: absolute; height: 18px; width: 18px; left: 3px; bottom: 3px;
+      background-color: #fff; transition: 0.25s; border-radius: 50%;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+    }
+    .paid-switch input:checked + .paid-switch-slider { background-color: #10b981; }
+    .paid-switch input:checked + .paid-switch-slider::before { transform: translateX(22px); }
+    .paid-switch input:focus-visible + .paid-switch-slider { box-shadow: 0 0 0 2px rgba(56,189,248,0.6); }
+    .paid-switch-label { font-size: 0.68rem; font-weight: 800; letter-spacing: 0.02em; }
+
     .controls-grid { display: grid; grid-template-columns: 2fr 1.2fr; gap: 16px; margin-bottom: 22px; align-items: center; }
     .control-field {
       display: flex;
@@ -2132,7 +2151,7 @@
           <span>Received: <strong id="pl-received-display" style="color: var(--success);">₹0</strong></span>
           <span>Due: <strong id="pl-due-display" style="color: var(--danger);">₹0</strong></span>
         </div>
-        <div id="pl-advance-info" style="display: none; justify-content: space-between; align-items: center; margin-top: 10px; padding-top: 10px; border-top: 1px dashed rgba(56, 189, 248, 0.4); font-size: 0.85rem;">
+        <div id="pl-advance-info" style="display: none; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px; margin-top: 10px; padding-top: 10px; border-top: 1px dashed rgba(56, 189, 248, 0.4); font-size: 0.85rem;">
         </div>
       </div>
 
@@ -3996,23 +4015,42 @@
         return;
       }
 
+      // The Render backend URL is still the placeholder — calling it would
+      // always fail (DNS/404), which is why delete was silently failing.
+      // Detect that and fall back to deleting the member's Firestore records
+      // directly instead of throwing an error.
+      const backendConfigured = !!DELETE_MEMBER_API && !DELETE_MEMBER_API.includes("REPLACE-WITH-YOUR-RENDER-URL");
+
       try {
-        // Get a fresh ID token to prove to the backend who is calling.
-        const idToken = await activeFirebaseUser.getIdToken(true);
+        if (backendConfigured) {
+          // Get a fresh ID token to prove to the backend who is calling.
+          const idToken = await activeFirebaseUser.getIdToken(true);
 
-        const resp = await fetch(DELETE_MEMBER_API, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ targetUid, idToken }),
-        });
+          const resp = await fetch(DELETE_MEMBER_API, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ targetUid, idToken }),
+          });
 
-        const result = await resp.json();
+          const result = await resp.json();
 
-        if (!resp.ok) {
-          throw new Error(result.error || "Delete request failed.");
+          if (!resp.ok) {
+            throw new Error(result.error || "Delete request failed.");
+          }
+
+          alert("🗑️ Member account and login fully deleted! They can now register again with the same email.");
+          window.loadAllRegisteredUsers();
+          return;
         }
 
-        alert("🗑️ Member account and login fully deleted! They can now register again with the same email.");
+        // Fallback: no backend deployed yet, so we can't remove the Firebase
+        // Auth login itself (that requires server-side Admin SDK access).
+        // Instead, wipe the member's Firestore profile + clinic data so
+        // their portal access and records are gone immediately.
+        await deleteDoc(doc(db, "registered_members", targetUid));
+        await deleteDoc(doc(db, "clinics", targetUid)).catch(() => {});
+
+        alert("🗑️ Member deleted — their portal data and access are removed.\n\nNote: their email/login itself can't be freed for re-registration until you deploy the delete-member backend and set DELETE_MEMBER_API to its real URL.");
         window.loadAllRegisteredUsers();
       } catch (err) {
         alert("Failed to delete member: " + err.message);
@@ -5625,15 +5663,27 @@
         dueDisplayEl.style.color = "#38bdf8"; 
         
         let remainingSessions = 0;
+        let leftoverBalance = 0;
         if (dailyRate > 0) {
             remainingSessions = Math.floor(advanceAmt / dailyRate);
+            // Advance doesn't always divide evenly into full-priced visits —
+            // whatever's left over after covering full sessions is a running
+            // balance that carries forward and applies toward the next visit.
+            leftoverBalance = Math.round((advanceAmt - (remainingSessions * dailyRate)) * 100) / 100;
         }
-        
+
         if (advanceInfoEl) {
             advanceInfoEl.style.display = "flex";
+            let coverageBadges = `<span style="color:#fbbf24; font-weight:800; background:rgba(245, 158, 11, 0.15); padding:4px 10px; border-radius:6px; border:1px solid rgba(245, 158, 11, 0.4);">🔄 Covers ${remainingSessions} future visit(s)</span>`;
+
+            if (leftoverBalance > 0.01) {
+              const shortfallNextVisit = Math.round((dailyRate - leftoverBalance) * 100) / 100;
+              coverageBadges += `<span style="color:#38bdf8; font-weight:800; background:rgba(56, 189, 248, 0.15); padding:4px 10px; border-radius:6px; border:1px solid rgba(56, 189, 248, 0.4); margin-left:6px;">💰 ₹${leftoverBalance.toLocaleString('en-IN')} balance carries to next visit (₹${shortfallNextVisit.toLocaleString('en-IN')} more due that day)</span>`;
+            }
+
             advanceInfoEl.innerHTML = `
               <span style="color:#06d6a0; font-weight:700;">✨ Advance Available: ₹${advanceAmt.toLocaleString('en-IN')}</span> 
-              <span style="color:#fbbf24; font-weight:800; background:rgba(245, 158, 11, 0.15); padding:4px 10px; border-radius:6px; border:1px solid rgba(245, 158, 11, 0.4);">🔄 Covers ${remainingSessions} future visit(s)</span>
+              ${coverageBadges}
             `;
         }
       } else {
@@ -5663,7 +5713,10 @@
             </div>
             <div style="display:flex; align-items:center; gap:8px;">
               ${statusBadge}
-              <button class="action-btn btn-undo" style="padding:3px 8px; font-size:0.72rem;" onclick="toggleVisitPaymentStatus(${p.id}, '${v.date}')">🔄 Toggle Paid/Unpaid</button>
+              <label class="paid-switch" title="Toggle paid/unpaid">
+                <input type="checkbox" ${v.status !== 'unpaid' ? 'checked' : ''} onchange="toggleVisitPaymentStatus(${p.id}, '${v.date}')">
+                <span class="paid-switch-slider"></span>
+              </label>
             </div>
           `;
           visitsContainer.appendChild(div);
@@ -5726,8 +5779,12 @@
       if (!p.paymentHistory) p.paymentHistory = [];
 
       if (newStatus === 'paid') {
-        const perVisit = parseFloat(p.dailyCharge) || 0;
-        p.paymentHistory.push({ date: dateStr, amount: perVisit, visitPayment: true });
+        // Advance-first rule: if existing advance already covers what's
+        // billed, this is just an identification change — no new payment.
+        if (getPaidTotal(p) < getBilledTotal(p)) {
+          const perVisit = parseFloat(p.dailyCharge) || 0;
+          p.paymentHistory.push({ date: dateStr, amount: perVisit, visitPayment: true });
+        }
       } else {
         const idx = p.paymentHistory.findIndex(pm => pm.visitPayment && pm.date === dateStr);
         if (idx !== -1) p.paymentHistory.splice(idx, 1);
@@ -5793,10 +5850,10 @@
 
         if (marker === 'planned') {
           title.innerText = 'Planned Visit';
-          subtitle.innerHTML = `<strong style="color:var(--text-main);">${niceDate}</strong> is currently marked <strong style="color:#38bdf8;">📌 PLANNED (Advance Paid)</strong>.`;
+          subtitle.innerHTML = `<strong style="color:var(--text-main);">${niceDate}</strong> is currently marked <strong style="color:#38bdf8;">📌 PLANNED (Advance Paid)</strong>. This is only an identification marker — no separate "Paid" action is taken here; the visit will automatically draw from the existing advance.`;
           buttonsWrap.innerHTML = `
-            <button type="button" class="btn btn-notify" style="width:100%; background:#10b981;" onclick="confirmVisitAction('paid')">✔ Visit Happened — Paid</button>
-            <button type="button" class="btn" style="width:100%; background:#ef4444;" onclick="confirmVisitAction('unpaid')">✖ Visit Happened — Not Paid</button>
+            <button type="button" class="btn btn-notify" style="width:100%; background:#38bdf8; color:#060913;" onclick="confirmVisitAction('paid')">📌 Confirm Visit Happened (Advance Used)</button>
+            <button type="button" class="btn" style="width:100%; background:#ef4444;" onclick="confirmVisitAction('unpaid')">✖ Visit Happened — Advance Insufficient</button>
             <button type="button" class="btn btn-secondary" style="width:100%;" onclick="confirmVisitAction('remove-marker')">🗑️ Remove This Marker</button>
             <button type="button" class="btn btn-secondary" style="width:100%;" onclick="closeVisitActionModal()">Cancel</button>
           `;
@@ -5864,17 +5921,17 @@
         // A visit is being logged (paid/unpaid) on a date that may have
         // carried a planning marker — clear the marker since it's now an
         // actual recorded visit.
-        const priorMarker = (p.dateMarkers || {})[dateStr] || null;
         if (p.dateMarkers) delete p.dateMarkers[dateStr];
         p.daysVisited = (p.daysVisited || 0) + 1;
         p.visitHistory.push({ date: dateStr, visitNum: p.daysVisited, status: action });
-        // If this date was already marked "Planned (Advance Paid)", the
-        // money was collected earlier as an advance — it already sits in
-        // paymentHistory and shows up as "Advance Available". Converting
-        // the plan into an actual visit should just consume that advance
-        // (by raising Total Billed via the visit above), NOT add a second
-        // payment entry — otherwise the same cash gets counted twice.
-        if (action === 'paid' && priorMarker !== 'planned') {
+        // Advance-first rule: any existing advance (Paid Total already
+        // ahead of Billed Total — e.g. from a "Planned (Advance Paid)"
+        // marker, or any other overpayment) is used to cover this visit's
+        // charge FIRST. We only record a brand-new payment if the advance
+        // doesn't already cover the newly billed amount — this stops the
+        // same cash being counted twice and keeps "Mark as Paid" purely an
+        // identification action whenever advance is available.
+        if (action === 'paid' && getPaidTotal(p) < getBilledTotal(p)) {
           const perVisit = parseFloat(p.dailyCharge) || 0;
           p.paymentHistory.push({ date: dateStr, amount: perVisit, visitPayment: true });
         }
@@ -6084,14 +6141,12 @@
         if (existing) {
           setVisitPaymentStatus(p, dateStr, status);
         } else {
-          const priorMarker = (p.dateMarkers || {})[dateStr] || null;
           if (p.dateMarkers) delete p.dateMarkers[dateStr];
           p.daysVisited = (p.daysVisited || 0) + 1;
           p.visitHistory.push({ date: dateStr, visitNum: p.daysVisited, status });
-          // Same fix as the single-date flow: a date already marked
-          // "Planned (Advance Paid)" already has its payment recorded —
-          // don't add a second payment entry when it's confirmed as visited.
-          if (status === 'paid' && priorMarker !== 'planned') {
+          // Same advance-first rule as the single-date flow: use any
+          // existing advance to cover this visit before recording new cash.
+          if (status === 'paid' && getPaidTotal(p) < getBilledTotal(p)) {
             const perVisit = parseFloat(p.dailyCharge) || 0;
             p.paymentHistory.push({ date: dateStr, amount: perVisit, visitPayment: true });
           }
