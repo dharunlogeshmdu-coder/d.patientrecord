@@ -1,13 +1,13 @@
 {
-  "name": "Dharun Portal Manager",
-  "short_name": "Dharun Portal",
-  "description": "Clinic billing, scheduling & patient ledger manager",
+  "name": "Physio Accounting Assistant",
+  "short_name": "Physio Accounting",
+  "description": "Run your clinic's billing and scheduling from one screen.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#0f172a",
-  "theme_color": "#0f172a",
+  "background_color": "#0a0f1d",
+  "theme_color": "#0a0f1d",
   "icons": [
     {
       "src": "/icons/icon-192.png",
