@@ -2624,6 +2624,12 @@
     const db = getFirestore(app);
 
     const SUPER_ADMIN_EMAIL = "dharunlogeshmdu@gmail.com";
+
+    // Backend that fully deletes a member (Firestore doc + Firebase Auth
+    // login). Replace with your real Render URL once deployed — see the
+    // backend's README.md for deployment steps.
+    const DELETE_MEMBER_API = "https://REPLACE-WITH-YOUR-RENDER-URL.onrender.com/api/delete-member";
+
     const MANAGER_EMAIL = "dharun@gmail.com";
     const MANAGER_PASSWORD = "232323";
     const APP_OWNER_PHONE = "8248090433"; 
@@ -3929,11 +3935,30 @@
     };
 
     window.deleteUserAccount = async function(targetUid) {
-      if (!confirm("🚨 PERMANENT DELETE: Completely delete this member account?")) return;
+      if (!confirm("🚨 PERMANENT DELETE: Completely delete this member account? This also removes their login, so their email becomes free to register again.")) return;
+
+      if (!activeFirebaseUser) {
+        alert("You must be logged in as the master admin to delete members.");
+        return;
+      }
+
       try {
-        await deleteDoc(doc(db, "registered_members", targetUid));
-        await deleteDoc(doc(db, "clinics", targetUid));
-        alert("🗑️ Member account deleted successfully!");
+        // Get a fresh ID token to prove to the backend who is calling.
+        const idToken = await activeFirebaseUser.getIdToken(true);
+
+        const resp = await fetch(DELETE_MEMBER_API, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ targetUid, idToken }),
+        });
+
+        const result = await resp.json();
+
+        if (!resp.ok) {
+          throw new Error(result.error || "Delete request failed.");
+        }
+
+        alert("🗑️ Member account and login fully deleted! They can now register again with the same email.");
         window.loadAllRegisteredUsers();
       } catch (err) {
         alert("Failed to delete member: " + err.message);
