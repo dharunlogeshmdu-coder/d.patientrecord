@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#0f172a">
+  <link rel="apple-touch-icon" href="/icons/icon-192.png">
   <title>Dharun Portal Manager</title>
   
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1887,10 +1890,10 @@
           <div class="card" style="border-color: rgba(212, 175, 87, 0.55);">
             <div class="manager-summary">
               <h2 style="margin-bottom: 4px;">🧭 Manager Directory</h2>
-              <p>Member specialist identity, mobile number, active expiry date, and account actions.</p>
-              <p style="margin-top: 7px;"><strong>Manager access:</strong> Message, Unlock (QR), Cash, WA Reminder, Edit, and Delete are available below.</p>
+              <p>Read-only view of member specialist identity, mobile number, and active expiry date.</p>
+              <p style="margin-top: 7px;"><strong>Manager access:</strong> No payment, password, edit, delete, or admin controls are shown.</p>
             </div>
-            <div class="controls-grid" style="grid-template-columns: 2fr 1fr 1fr; margin-bottom: 16px;">
+            <div class="controls-grid" style="grid-template-columns: 2fr 1fr; margin-bottom: 16px;">
               <div class="control-field">
                 <span style="margin-right: 12px; color: var(--accent);">🔍</span>
                 <input type="text" id="manager-search-input" placeholder="Search specialist, business, mobile..." oninput="filterManagerUsers()">
@@ -1898,10 +1901,6 @@
               <div class="control-field">
                 <span style="margin-right: 12px; color: var(--accent);">🔄</span>
                 <button class="btn btn-secondary" style="width:100%;" onclick="loadAllRegisteredUsers()">Refresh Directory</button>
-              </div>
-              <div class="control-field">
-                <span style="margin-right: 12px; color: var(--accent);">⚙️</span>
-                <button class="btn btn-secondary" style="width:100%;" onclick="openGlobalSettingsModal()">Global Settings</button>
               </div>
             </div>
             <div class="table-container">
@@ -1912,11 +1911,10 @@
                     <th>Specialist Name & Business Identity</th>
                     <th>Mobile Number</th>
                     <th>Active Expiry Date</th>
-                    <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody id="manager-users-table-body">
-                  <tr><td colspan="5" style="text-align:center; padding:20px;">Loading member directory...</td></tr>
+                  <tr><td colspan="4" style="text-align:center; padding:20px;">Loading member directory...</td></tr>
                 </tbody>
               </table>
             </div>
@@ -4142,7 +4140,7 @@
 
       if (countBadge) countBadge.innerText = members.length;
       if (members.length === 0) {
-        tableBody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:20px; color:var(--text-muted);">No member accounts found.</td></tr>`;
+        tableBody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding:20px; color:var(--text-muted);">No member accounts found.</td></tr>`;
         return;
       }
 
@@ -4152,23 +4150,6 @@
           ? expiry.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
           : 'Not available';
         const category = user.businessCategory === 'parlor' ? '💇 Beauty Parlor' : '🏥 Physiotherapy';
-        const shortMemberUid = user.id ? user.id.slice(-6).toUpperCase() : "UID";
-        const timeDiff = expiry ? expiry.getTime() - new Date().getTime() : 0;
-        const daysLeftNum = expiry ? Math.ceil(timeDiff / (1000 * 3600 * 24)) : 0;
-
-        const actions = `
-          <div style="display: flex; gap: 4px; flex-wrap: wrap;">
-            <button class="btn btn-item" style="padding: 4px 8px; font-size: 0.72rem; position:relative;" onclick="openSingleMsgModal('${user.id}')">
-              💬 Message ${user.memberReply ? '<span style="position:absolute; top:-3px; right:-3px; background:#ef4444; width:10px; height:10px; border-radius:50%; box-shadow:0 0 5px rgba(0,0,0,0.5);"></span>' : ''}
-            </button>
-            <button class="btn btn-primary" style="padding: 4px 8px; font-size: 0.72rem;" onclick="extendUserRental('${user.id}', 30, 'UPI/QR')">⚡ Unlock (QR)</button>
-            <button class="btn btn-secondary" style="padding: 4px 8px; font-size: 0.72rem;" onclick="extendUserRental('${user.id}', 30, 'Cash')">💵 Cash</button>
-            <button class="btn btn-whatsapp" style="padding: 4px 8px; font-size: 0.72rem;" onclick="sendRenewalWhatsApp('${user.mobile}', '${shortMemberUid}', ${daysLeftNum})">📲 WA Reminder</button>
-            <button class="btn btn-admin" style="padding: 4px 8px; font-size: 0.72rem;" onclick="openAdminEditModal('${user.id}')">✏️ Edit</button>
-            <button class="btn btn-danger" style="padding: 4px 8px; font-size: 0.72rem;" onclick="deleteUserAccount('${user.id}')">🗑️ Delete</button>
-          </div>
-        `;
-
         return `
           <tr>
             <td><strong>${index + 1}</strong></td>
@@ -4178,7 +4159,6 @@
             </td>
             <td class="member-bright-phone">${user.mobile || 'No Mobile'}</td>
             <td><strong style="color:var(--accent);">${expiryText}</strong></td>
-            <td>${actions}</td>
           </tr>
         `;
       }).join('');
@@ -5158,7 +5138,7 @@
       
       if (!alreadyExists) {
         p.daysVisited = (p.daysVisited || 0) + 1;
-        p.visitHistory.push({ date: visitDate, visitNum: p.daysVisited, status: 'paid' });
+        p.visitHistory.push({ date: visitDate, visitNum: p.daysVisited, status: 'unpaid' });
         saveAndRender();
       } else {
         alert("A visit for this member on " + visitDate + " is already recorded.");
@@ -6364,6 +6344,17 @@
     renderTable();
     renderGeneralCalendar();
     renderStats();
+  </script>
+
+  <script>
+    // Register service worker so the app can be installed on mobile home screens
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+          .then(() => console.log('Service worker registered'))
+          .catch(err => console.error('SW registration failed:', err));
+      });
+    }
   </script>
 </body>
 </html>
