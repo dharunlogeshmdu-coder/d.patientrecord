@@ -79,6 +79,20 @@
       }
     };
 
+    // Puts a red notification mark on the installed app icon (home-screen
+    // shortcut on mobile, taskbar/dock icon on laptop/desktop) using the
+    // Web App Badging API. Silently no-ops on browsers/devices that don't
+    // support it or when the app isn't installed — it just never shows.
+    window.updateAppIconBadge = function(count) {
+      try {
+        if (count > 0 && 'setAppBadge' in navigator) {
+          navigator.setAppBadge(count).catch(() => {});
+        } else if (count <= 0 && 'clearAppBadge' in navigator) {
+          navigator.clearAppBadge().catch(() => {});
+        }
+      } catch (e) { /* Badging API unsupported — ignore */ }
+    };
+
     window.handleBizCategorySwitch = function(val) {
       const lblDoctor = document.getElementById('lbl-doctor-name');
       const lblClinic = document.getElementById('lbl-clinic-name');
@@ -668,6 +682,19 @@
     .pro-kpi-card .amount.text-info { color: #38bdf8; }
     .pro-kpi-card .amount.text-purple { color: #c084fc; }
     .pro-kpi-card .amount.text-gold { color: #fbbf24; }
+
+    /* Admin Revenue & Analytics additions */
+    .id-list-box { max-height: 92px; overflow-y: auto; margin-top: 10px; display: flex; flex-wrap: wrap; gap: 5px; padding-right: 2px; }
+    .id-list-box::-webkit-scrollbar { width: 5px; }
+    .id-list-box::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 4px; }
+    .id-list-box .uid-badge { font-size: 0.68rem; padding: 2px 7px; cursor: pointer; }
+    .id-list-empty { color: var(--text-muted); font-size: 0.76rem; font-weight: 600; }
+    .rev-chart-container { display: flex; align-items: flex-end; gap: 16px; height: 190px; padding: 14px 8px 0; overflow-x: auto; }
+    .rev-bar-col { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; min-width: 54px; height: 100%; }
+    .rev-bar-value { font-size: 0.7rem; font-weight: 800; color: var(--accent); margin-bottom: 6px; white-space: nowrap; }
+    .rev-bar-track { width: 28px; height: 130px; background: rgba(255,255,255,0.05); border-radius: 6px; display: flex; align-items: flex-end; overflow: hidden; }
+    .rev-bar-fill { width: 100%; min-height: 3px; background: linear-gradient(180deg, var(--accent) 0%, var(--primary) 100%); border-radius: 6px 6px 0 0; transition: height 0.5s ease; }
+    .rev-bar-label { font-size: 0.68rem; color: var(--text-muted); margin-top: 8px; font-weight: 700; white-space: nowrap; }
 
     .card { background: var(--bg-card); padding: 26px; border-radius: 16px; border: 1px solid var(--border); margin-bottom: 26px; }
     .card h2 { font-size: 1.35rem; margin-bottom: 20px; color: var(--text-main); font-weight: 800; border-left: 4px solid var(--primary); padding-left: 12px; }
@@ -1952,6 +1979,43 @@
                   <tr><td colspan="7" style="text-align:center; padding:20px;">Loading rented member accounts...</td></tr>
                 </tbody>
               </table>
+            </div>
+          </div>
+
+          <div class="card" style="border-color: rgba(56, 189, 248, 0.35); margin-top: 22px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:12px;">
+              <div>
+                <h2>📊 Revenue & Analytics</h2>
+                <p style="font-size:0.8rem; color:var(--text-muted);">Unique member IDs by status, plus your monthly rental collection trend.</p>
+              </div>
+            </div>
+
+            <div class="top-pro-stats" style="margin-bottom: 22px;">
+              <div class="pro-kpi-card kpi-purple">
+                <h3>Overall Unique IDs</h3>
+                <div class="amount text-purple" id="admin-overall-id-count">0</div>
+                <div class="id-list-box" id="admin-overall-id-list"><span class="id-list-empty">Loading...</span></div>
+              </div>
+              <div class="pro-kpi-card kpi-received">
+                <h3>Active Unique IDs</h3>
+                <div class="amount text-success" id="admin-active-id-count">0</div>
+                <div class="id-list-box" id="admin-active-id-list"><span class="id-list-empty">Loading...</span></div>
+              </div>
+              <div class="pro-kpi-card kpi-gold">
+                <h3>Trial Unique IDs</h3>
+                <div class="amount text-gold" id="admin-trial-id-count">0</div>
+                <div class="id-list-box" id="admin-trial-id-list"><span class="id-list-empty">Loading...</span></div>
+              </div>
+              <div class="pro-kpi-card kpi-outstanding">
+                <h3>Unpaid Unique IDs</h3>
+                <div class="amount text-danger" id="admin-unpaid-id-count">0</div>
+                <div class="id-list-box" id="admin-unpaid-id-list"><span class="id-list-empty">Loading...</span></div>
+              </div>
+            </div>
+
+            <h3 style="font-size:0.8rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:1.2px; margin-bottom:6px; font-weight:700;">💰 Monthly Rental Collection (Last 6 Months)</h3>
+            <div class="rev-chart-container" id="admin-revenue-chart">
+              <span class="id-list-empty">Loading chart...</span>
             </div>
           </div>
         </section>
@@ -3349,19 +3413,44 @@
       const badge = document.getElementById('badge-admin-msg');
       const content = document.getElementById('page-admin-msg-content');
       if (!badge || !content) return;
-      
+
       if (activeUserRole === 'super_admin' && !isImpersonating) {
         badge.style.display = 'none';
+        window.updateAppIconBadge(0);
         return;
       }
+
       if (memberData && memberData.adminMessage) {
         content.innerText = memberData.adminMessage;
-        badge.style.display = 'inline-block';
-        badge.innerText = "1";
+        const seenKey = 'dharun_seen_msg_' + (memberData.uid || memberData.mobile || 'anon');
+        const alreadySeen = localStorage.getItem(seenKey) === memberData.adminMessage;
+        if (alreadySeen) {
+          badge.style.display = 'none';
+          window.updateAppIconBadge(0);
+        } else {
+          badge.style.display = 'inline-block';
+          badge.innerText = "1";
+          window.updateAppIconBadge(1);
+        }
       } else {
         content.innerText = "No new messages.";
         badge.style.display = 'none';
+        window.updateAppIconBadge(0);
       }
+    };
+
+    // Called when the member actually opens the Admin Messages page — marks
+    // the current message as "seen" so both the red nav badge and the
+    // installed app icon's red notification mark clear, without deleting
+    // the message itself (it stays readable until the admin sends a new one).
+    window.markAdminMessageSeen = function() {
+      const prof = typeof window.getActiveMemberProfile === "function" ? window.getActiveMemberProfile() : activeMemberProfile;
+      if (!prof || !prof.adminMessage) return;
+      const seenKey = 'dharun_seen_msg_' + (prof.uid || prof.mobile || 'anon');
+      localStorage.setItem(seenKey, prof.adminMessage);
+      const badge = document.getElementById('badge-admin-msg');
+      if (badge) badge.style.display = 'none';
+      window.updateAppIconBadge(0);
     };
 
     window.captureLiveLocation = function(btnEl) {
@@ -4247,8 +4336,123 @@
 
         renderAdminTableFull();
         renderManagerTable();
+        window.renderAdminAnalytics();
+        window.updateAdminReplyBadge();
       } catch (err) {
         console.error(err);
+      }
+    };
+
+    // Puts a red app-icon mark for the Master Admin when members have sent
+    // replies that haven't been opened yet. Clears when the admin visits
+    // the Rented Portals Directory (see switchPage below).
+    window.updateAdminReplyBadge = function() {
+      if (activeUserRole !== 'super_admin' || isImpersonating) return;
+      const unseenCount = allUsersList.filter(usr => {
+        if (!usr.memberReply) return false;
+        const seenKey = 'dharun_admin_seen_reply_' + usr.id;
+        return localStorage.getItem(seenKey) !== usr.memberReply;
+      }).length;
+      window.updateAppIconBadge(unseenCount);
+    };
+
+    // Called when the Master Admin opens the Rented Portals Directory —
+    // marks every currently-visible member reply as seen so the app icon's
+    // red mark clears (the replies themselves stay visible in the table).
+    window.markAdminRepliesSeen = function() {
+      allUsersList.forEach(usr => {
+        if (usr.memberReply) {
+          localStorage.setItem('dharun_admin_seen_reply_' + usr.id, usr.memberReply);
+        }
+      });
+      window.updateAppIconBadge(0);
+    };
+
+    // Builds the Revenue & Analytics card: unique ID buckets (Overall / Active /
+    // Trial / Unpaid) plus a 6-month rental collection trend chart.
+    window.renderAdminAnalytics = function() {
+      const overall = [], active = [], trial = [], unpaid = [];
+      const monthlyRevenue = {};
+
+      allUsersList.forEach((usr) => {
+        const identity = (usr.identity || "").toLowerCase();
+        const isSuper = usr.role === 'super_admin' || identity === SUPER_ADMIN_EMAIL.toLowerCase();
+        const isManager = usr.role === 'manager' || identity === MANAGER_EMAIL.toLowerCase();
+        if (isSuper || isManager) return;
+
+        const shortId = usr.id ? usr.id.slice(-6).toUpperCase() : '------';
+        overall.push({ shortId, id: usr.id });
+
+        const expiryDate = usr.subscriptionExpiry ? new Date(usr.subscriptionExpiry) : null;
+        const hasPaidHistory = (usr.paymentHistoryList && usr.paymentHistoryList.length > 0) || usr.lastPaymentDate;
+        const isOnTrial = usr.paymentStatus === 'trial' && expiryDate && expiryDate > new Date();
+        const isStopped = usr.paymentStatus === 'stopped';
+        const isExpired = !expiryDate || expiryDate < new Date() || (!hasPaidHistory && !isOnTrial);
+
+        if (isOnTrial && !isStopped) {
+          trial.push({ shortId, id: usr.id });
+        } else if (!isExpired && !isStopped) {
+          active.push({ shortId, id: usr.id });
+        } else {
+          unpaid.push({ shortId, id: usr.id });
+        }
+
+        const memFee = parseFloat(usr.rentalFee) || 599;
+        if (usr.paymentHistoryList && usr.paymentHistoryList.length) {
+          usr.paymentHistoryList.forEach((item) => {
+            const d = item.paidAt ? new Date(item.paidAt) : null;
+            if (!d || isNaN(d)) return;
+            const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+            monthlyRevenue[key] = (monthlyRevenue[key] || 0) + (parseFloat(item.amount) || memFee);
+          });
+        } else if (usr.lastPaymentDate) {
+          const d = new Date(usr.lastPaymentDate);
+          if (!isNaN(d)) {
+            const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+            monthlyRevenue[key] = (monthlyRevenue[key] || 0) + memFee;
+          }
+        }
+      });
+
+      const fillIdBox = (elId, arr) => {
+        const el = document.getElementById(elId);
+        if (!el) return;
+        el.innerHTML = arr.length
+          ? arr.map(u => `<span class="uid-badge" title="Open member" onclick="openAdminEditModal('${u.id}')">${u.shortId}</span>`).join('')
+          : `<span class="id-list-empty">None</span>`;
+      };
+
+      document.getElementById('admin-overall-id-count').innerText = overall.length;
+      document.getElementById('admin-active-id-count').innerText = active.length;
+      document.getElementById('admin-trial-id-count').innerText = trial.length;
+      document.getElementById('admin-unpaid-id-count').innerText = unpaid.length;
+      fillIdBox('admin-overall-id-list', overall);
+      fillIdBox('admin-active-id-list', active);
+      fillIdBox('admin-trial-id-list', trial);
+      fillIdBox('admin-unpaid-id-list', unpaid);
+
+      const now = new Date();
+      const months = [];
+      for (let i = 5; i >= 0; i--) {
+        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+        months.push({
+          label: d.toLocaleDateString('en-GB', { month: 'short', year: '2-digit' }),
+          amount: monthlyRevenue[key] || 0
+        });
+      }
+      const maxAmount = Math.max(1, ...months.map(m => m.amount));
+      const chartEl = document.getElementById('admin-revenue-chart');
+      if (chartEl) {
+        chartEl.innerHTML = months.map(m => `
+          <div class="rev-bar-col">
+            <div class="rev-bar-value">₹${m.amount.toLocaleString('en-IN')}</div>
+            <div class="rev-bar-track">
+              <div class="rev-bar-fill" style="height:${Math.max(3, Math.round((m.amount / maxAmount) * 100))}%;"></div>
+            </div>
+            <div class="rev-bar-label">${m.label}</div>
+          </div>
+        `).join('');
       }
     };
 
@@ -4877,6 +5081,8 @@
       document.getElementById('screen-heading-title').innerText = titles[pageId] || 'Portal Hub';
 
       if (pageId === 'page-general-calendar') renderGeneralCalendar();
+      if (pageId === 'page-admin-messages' && typeof window.markAdminMessageSeen === "function") window.markAdminMessageSeen();
+      if (pageId === 'page-admin-portal' && typeof window.markAdminRepliesSeen === "function") window.markAdminRepliesSeen();
       if (pageId === 'page-patient-requests' && typeof window.renderRequestsPage === "function") window.renderRequestsPage();
       if (pageId === 'page-overall-directory') renderDirectoryTable();
       if (pageId === 'page-completed-works') renderArchiveTable();
