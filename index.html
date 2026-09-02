@@ -2186,11 +2186,11 @@
       </div>
 
       <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px;">
-        <label class="action-btn btn-item" style="position: relative; overflow: hidden; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; margin: 0; padding: 8px 14px; flex: 1; min-width: 90px;">
-          + Visited (Paid)
+        <label id="pl-visited-paid-btn" class="action-btn btn-item" style="position: relative; overflow: hidden; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; margin: 0; padding: 8px 14px; flex: 1; min-width: 90px;">
+          <span id="pl-visited-paid-label">+ Visited (Paid)</span>
           <input type="date" onchange="ledgerQuickAddVisit(this.value, 'paid'); this.value='';" style="position: absolute; left: 0; top: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer;" title="Select date to add a PAID visit">
         </label>
-        <label class="action-btn btn-item" style="position: relative; overflow: hidden; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; margin: 0; padding: 8px 14px; flex: 1; min-width: 90px; background:#ef4444; color:#fff;">
+        <label id="pl-visited-unpaid-btn" class="action-btn btn-item" style="position: relative; overflow: hidden; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; margin: 0; padding: 8px 14px; flex: 1; min-width: 90px; background:#ef4444; color:#fff;">
           + Visited (Unpaid)
           <input type="date" onchange="ledgerQuickAddVisit(this.value, 'unpaid'); this.value='';" style="position: absolute; left: 0; top: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer;" title="Select date to add an UNPAID visit">
         </label>
@@ -2263,6 +2263,25 @@
         <input type="number" id="pay-amount">
       </div>
       <button class="btn btn-pay" style="width: 100%;" onclick="confirmPayment()">Save Payment</button>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="insufficientAdvanceModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 style="color:#f59e0b;">⚠️ Advance Insufficient</h3>
+        <button class="close-modal" onclick="closeInsufficientAdvanceModal()">&times;</button>
+      </div>
+      <p id="ia-modal-subtitle" style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 16px; line-height: 1.5;"></p>
+      <div style="display:flex; flex-direction:column; gap: 10px;">
+        <button type="button" class="btn btn-notify" style="width:100%; background:#10b981;" onclick="resolveInsufficientAdvance('collect')">
+          💵 <span id="ia-collect-label">Collect Balance & Mark Visited</span>
+        </button>
+        <button type="button" class="btn" style="width:100%; background:#f59e0b; color:#060913;" onclick="resolveInsufficientAdvance('due')">
+          📌 <span id="ia-due-label">Use Advance Only, Leave Balance Due</span>
+        </button>
+        <button type="button" class="btn btn-secondary" style="width:100%;" onclick="closeInsufficientAdvanceModal()">Cancel</button>
+      </div>
     </div>
   </div>
 
@@ -4894,6 +4913,56 @@
       return (perVisit * visits) + getExtraTotal(p);
     }
 
+    // Advance in hand right now = however much Paid Total is currently
+    // ahead of Billed Total. Used everywhere a "+ Visited" action needs to
+    // know whether this next visit is already covered, partly covered, or
+    // not covered at all by money already collected.
+    function getAdvanceInHand(p) {
+      return Math.max(0, getPaidTotal(p) - getBilledTotal(p));
+    }
+
+    // Decides what the "+ Visited (Paid)" / "+ Visited (Unpaid)" pair should
+    // say and look like for a given patient right now, based on advance in
+    // hand vs the per-visit charge. Shared by the patient table row and the
+    // ledger modal's own quick-add buttons so both stay in sync.
+    function getQuickAddVisitedButtonState(p) {
+      const perVisit = parseFloat(p.dailyCharge) || 0;
+      const advance = getAdvanceInHand(p);
+
+      if (perVisit > 0 && advance >= perVisit) {
+        return {
+          paidLabel: '📌 Visited (Advance Used)',
+          paidBg: '#38bdf8', paidColor: '#060913',
+          showUnpaid: false
+        };
+      }
+      if (perVisit > 0 && advance > 0) {
+        return {
+          paidLabel: `📌 Visited (₹${advance.toLocaleString('en-IN')} Advance, ₹${Math.round((perVisit - advance) * 100) / 100} Due)`,
+          paidBg: '#f59e0b', paidColor: '#060913',
+          showUnpaid: true
+        };
+      }
+      return {
+        paidLabel: '+ Visited (Paid)',
+        paidBg: null, paidColor: null, // default styling
+        showUnpaid: true
+      };
+    }
+
+    // Applies getQuickAddVisitedButtonState() to a live pair of DOM elements
+    // (used by the ledger modal, whose buttons are static markup rather
+    // than re-rendered per patient like the table row).
+    function applyAdvanceAwareQuickAddButtons(p, els) {
+      const state = getQuickAddVisitedButtonState(p);
+      if (els.paidLabel) els.paidLabel.innerText = state.paidLabel;
+      if (els.paidBtn) {
+        els.paidBtn.style.background = state.paidBg || '';
+        els.paidBtn.style.color = state.paidColor || '';
+      }
+      if (els.unpaidBtn) els.unpaidBtn.style.display = state.showUnpaid ? '' : 'none';
+    }
+
     function renderStats() {
       const activeList = patients.filter(p => !p.isFinished);
       const finishedList = patients.filter(p => p.isFinished);
@@ -5187,6 +5256,7 @@
         const amountPaid = getPaidTotal(p);
         const outstanding = totalBilled - amountPaid;
         const hasGps = p.location && p.location.startsWith('http');
+        const qaState = getQuickAddVisitedButtonState(p);
 
         const tr = document.createElement('tr');
         tr.innerHTML = `
@@ -5206,14 +5276,15 @@
           </td>
            <td>
              <div style="display:flex; gap:4px; flex-wrap:wrap;">
-               <label class="action-btn btn-item" style="position: relative; overflow: hidden; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; margin: 0; padding: 6px 10px;">
-                 + Visited (Paid)
+               <label class="action-btn btn-item" style="position: relative; overflow: hidden; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; margin: 0; padding: 6px 10px; ${qaState.paidBg ? `background:${qaState.paidBg}; color:${qaState.paidColor};` : ''}">
+                 ${qaState.paidLabel}
                  <input type="date" onchange="quickAddVisit(${p.id}, this.value, 'paid'); this.value='';" style="position: absolute; left: 0; top: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer;" title="Select date to add a PAID visit">
                </label>
+               ${qaState.showUnpaid ? `
                <label class="action-btn btn-item" style="position: relative; overflow: hidden; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; margin: 0; padding: 6px 10px; background:#ef4444; color:#fff;">
                  + Visited (Unpaid)
                  <input type="date" onchange="quickAddVisit(${p.id}, this.value, 'unpaid'); this.value='';" style="position: absolute; left: 0; top: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer;" title="Select date to add an UNPAID visit">
-               </label>
+               </label>` : ''}
                
                <button class="action-btn btn-extra" onclick="openExtraModal(${p.id})">+ Extra</button>
                <button class="action-btn btn-pay" onclick="openPayModal(${p.id})">+ Paid</button>
@@ -5267,34 +5338,118 @@
     // to close and reopen the ledger.
     window.ledgerQuickAddVisit = function(visitDate, status) {
       if (!plCalendarPatientId || !visitDate) return;
-      window.quickAddVisit(plCalendarPatientId, visitDate, status);
-      openPatientLedgerModal(plCalendarPatientId, true);
+      // If quickAddVisit had to pause for the Insufficient Advance prompt,
+      // it returns false — don't refresh the ledger yet, the resolver will
+      // do that once the user picks how to handle the shortfall.
+      const completed = window.quickAddVisit(plCalendarPatientId, visitDate, status);
+      if (completed) openPatientLedgerModal(plCalendarPatientId, true);
     };
 
     window.quickAddVisit = function(id, visitDate, status) {
       const prof = typeof window.getActiveMemberProfile === 'function' ? window.getActiveMemberProfile() : null;
-      if (!window.checkSubscriptionStatus(prof)) return;
-      if (!visitDate) return;
+      if (!window.checkSubscriptionStatus(prof)) return false;
+      if (!visitDate) return false;
       const visitStatus = (status === 'unpaid') ? 'unpaid' : 'paid';
       const p = patients.find(p => p.id === id);
-      if (!p) return;
+      if (!p) return false;
 
       if (!p.visitHistory) p.visitHistory = [];
       const alreadyExists = p.visitHistory.some(v => v.date === visitDate);
-      
-      if (!alreadyExists) {
-        p.daysVisited = (p.daysVisited || 0) + 1;
-        p.visitHistory.push({ date: visitDate, visitNum: p.daysVisited, status: visitStatus });
-        if (visitStatus === 'paid') {
-          const perVisit = parseFloat(p.dailyCharge) || 0;
-          if (!p.paymentHistory) p.paymentHistory = [];
+      if (alreadyExists) {
+        alert("A visit for this member on " + visitDate + " is already recorded.");
+        return false;
+      }
+
+      const perVisit = parseFloat(p.dailyCharge) || 0;
+      const advance = getAdvanceInHand(p);
+
+      // Advance only partly covers this visit — pause and ask the user how
+      // to handle the shortfall instead of silently over/under-recording.
+      if (visitStatus === 'paid' && perVisit > 0 && advance > 0 && advance < perVisit) {
+        openInsufficientAdvanceModal(id, visitDate, advance, perVisit);
+        return false;
+      }
+
+      p.daysVisited = (p.daysVisited || 0) + 1;
+      p.visitHistory.push({ date: visitDate, visitNum: p.daysVisited, status: visitStatus });
+      if (visitStatus === 'paid') {
+        if (!p.paymentHistory) p.paymentHistory = [];
+        // Advance-first: only record a fresh payment if existing advance
+        // doesn't already cover this visit in full (avoids double-counting
+        // money that's already sitting in paymentHistory as advance).
+        if (advance < perVisit) {
           p.paymentHistory.push({ date: visitDate, amount: perVisit, visitPayment: true });
         }
-        saveAndRender();
+      }
+      saveAndRender();
+      return true;
+    };
+
+    let iaPatientId = null;
+    let iaVisitDate = null;
+    let iaAdvance = 0;
+    let iaPerVisit = 0;
+
+    // Shown when a patient's advance in hand covers only part of today's
+    // per-visit charge (e.g. ₹200 in hand, ₹400 per visit). Lets the front
+    // desk either collect the shortfall right now, or log the visit and
+    // leave the shortfall sitting as Due for later.
+    function openInsufficientAdvanceModal(patientId, visitDate, advance, perVisit) {
+      iaPatientId = patientId;
+      iaVisitDate = visitDate;
+      iaAdvance = advance;
+      iaPerVisit = perVisit;
+      const shortfall = Math.round((perVisit - advance) * 100) / 100;
+
+      document.getElementById('ia-modal-subtitle').innerHTML =
+        `This visit costs <strong style="color:var(--text-main);">₹${perVisit.toLocaleString('en-IN')}</strong>, but only ` +
+        `<strong style="color:#38bdf8;">₹${advance.toLocaleString('en-IN')}</strong> advance is in hand right now — ` +
+        `<strong style="color:#f59e0b;">₹${shortfall.toLocaleString('en-IN')}</strong> short. How would you like to log this visit?`;
+      document.getElementById('ia-collect-label').innerText = `Collect ₹${shortfall.toLocaleString('en-IN')} Now & Mark Visited`;
+      document.getElementById('ia-due-label').innerText = `Use ₹${advance.toLocaleString('en-IN')} Advance, Leave ₹${shortfall.toLocaleString('en-IN')} Due`;
+
+      document.getElementById('insufficientAdvanceModal').classList.add('active');
+    }
+
+    window.closeInsufficientAdvanceModal = function() {
+      document.getElementById('insufficientAdvanceModal').classList.remove('active');
+      iaPatientId = null;
+      iaVisitDate = null;
+      iaAdvance = 0;
+      iaPerVisit = 0;
+    };
+
+    window.resolveInsufficientAdvance = function(choice) {
+      const p = patients.find(x => x.id === iaPatientId);
+      const visitDate = iaVisitDate;
+      const shortfall = Math.round((iaPerVisit - iaAdvance) * 100) / 100;
+      if (!p || !visitDate) { window.closeInsufficientAdvanceModal(); return; }
+
+      if (!p.visitHistory) p.visitHistory = [];
+      if (!p.paymentHistory) p.paymentHistory = [];
+
+      p.daysVisited = (p.daysVisited || 0) + 1;
+
+      if (choice === 'collect') {
+        // Existing advance covers part of it; record one more payment for
+        // the shortfall to close this visit out fully as Paid.
+        p.visitHistory.push({ date: visitDate, visitNum: p.daysVisited, status: 'paid' });
+        p.paymentHistory.push({ date: visitDate, amount: shortfall, dueAmount: shortfall, advanceAmount: 0 });
       } else {
-        alert("A visit for this member on " + visitDate + " is already recorded.");
+        // Use the advance as far as it goes and leave the rest as Due —
+        // no new payment recorded, the existing advance already covers its
+        // share and Billed-minus-Paid will correctly show the shortfall.
+        p.visitHistory.push({ date: visitDate, visitNum: p.daysVisited, status: 'unpaid' });
+      }
+
+      const patientId = p.id;
+      window.closeInsufficientAdvanceModal();
+      saveAndRender();
+      if (document.getElementById('patientLedgerModal').classList.contains('active') && plCalendarPatientId === patientId) {
+        openPatientLedgerModal(patientId, true);
       }
     };
+
 
     window.undoLastVisit = function(id) {
       const prof = typeof window.getActiveMemberProfile === 'function' ? window.getActiveMemberProfile() : null;
@@ -5747,6 +5902,12 @@
         if (advanceInfoEl) advanceInfoEl.style.display = "none";
       }
 
+      applyAdvanceAwareQuickAddButtons(p, {
+        paidBtn: document.getElementById('pl-visited-paid-btn'),
+        paidLabel: document.getElementById('pl-visited-paid-label'),
+        unpaidBtn: document.getElementById('pl-visited-unpaid-btn')
+      });
+
       renderPatientIndividualCalendar(p);
 
       const visitsContainer = document.getElementById('patientLedgerVisitsList');
@@ -5903,6 +6064,11 @@
 
       const existingVisit = (p.visitHistory || []).find(v => v.date === dateStr);
       const niceDate = new Date(dateStr + 'T00:00:00').toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+      // If there's advance money already in hand right now (Paid Total ahead
+      // of Billed Total), a plain Paid/Unpaid choice doesn't apply — the
+      // visit is simply covered by that advance, so only offer the single
+      // "Confirm Visit Happened (Advance Used)" action instead of the pair.
+      const hasAdvanceInHand = getPaidTotal(p) > getBilledTotal(p);
 
       const title = document.getElementById('visit-action-title');
       const subtitle = document.getElementById('visit-action-subtitle');
@@ -5913,7 +6079,8 @@
         title.innerText = 'Update Visit';
         subtitle.innerHTML = `Visit on <strong style="color:var(--text-main);">${niceDate}</strong> is currently marked <strong style="color:${isPaid ? '#10b981' : '#ef4444'};">${isPaid ? 'PAID' : 'NOT PAID'}</strong>.`;
         buttonsWrap.innerHTML = `
-          ${!isPaid ? `<button type="button" class="btn btn-notify" style="width:100%; background:#10b981;" onclick="confirmVisitAction('paid')">✔ Mark as Paid</button>` : ''}
+          ${!isPaid && hasAdvanceInHand ? `<button type="button" class="btn btn-notify" style="width:100%; background:#38bdf8; color:#060913;" onclick="confirmVisitAction('paid')">📌 Confirm Visit Happened (Advance Used)</button>` : ''}
+          ${!isPaid && !hasAdvanceInHand ? `<button type="button" class="btn btn-notify" style="width:100%; background:#10b981;" onclick="confirmVisitAction('paid')">✔ Mark as Paid</button>` : ''}
           ${isPaid ? `<button type="button" class="btn" style="width:100%; background:#ef4444;" onclick="confirmVisitAction('unpaid')">✖ Mark as Unpaid</button>` : ''}
           <button type="button" class="btn btn-secondary" style="width:100%;" onclick="confirmVisitAction('remove')">🗑️ Remove This Visit</button>
           <button type="button" class="btn btn-secondary" style="width:100%;" onclick="closeVisitActionModal()">Cancel</button>
@@ -5933,7 +6100,11 @@
         } else if (marker === 'due') {
           title.innerText = 'Payment Due';
           subtitle.innerHTML = `<strong style="color:var(--text-main);">${niceDate}</strong> is currently marked <strong style="color:#f59e0b;">💰 PAYMENT DUE</strong> — a reminder to collect money from the client.`;
-          buttonsWrap.innerHTML = `
+          buttonsWrap.innerHTML = hasAdvanceInHand ? `
+            <button type="button" class="btn btn-notify" style="width:100%; background:#38bdf8; color:#060913;" onclick="confirmVisitAction('paid')">📌 Confirm Visit Happened (Advance Used)</button>
+            <button type="button" class="btn btn-secondary" style="width:100%;" onclick="confirmVisitAction('remove-marker')">🗑️ Remove This Marker</button>
+            <button type="button" class="btn btn-secondary" style="width:100%;" onclick="closeVisitActionModal()">Cancel</button>
+          ` : `
             <button type="button" class="btn btn-notify" style="width:100%; background:#10b981;" onclick="confirmVisitAction('paid')">✔ Visit Happened — Paid</button>
             <button type="button" class="btn" style="width:100%; background:#ef4444;" onclick="confirmVisitAction('unpaid')">✖ Visit Happened — Not Paid</button>
             <button type="button" class="btn btn-secondary" style="width:100%;" onclick="confirmVisitAction('remove-marker')">🗑️ Remove This Marker</button>
@@ -5941,8 +6112,14 @@
           `;
         } else {
           title.innerText = 'Mark This Date';
-          subtitle.innerHTML = `No visit recorded yet for <strong style="color:var(--text-main);">${niceDate}</strong>. What would you like to log?`;
-          buttonsWrap.innerHTML = `
+          subtitle.innerHTML = hasAdvanceInHand
+            ? `No visit recorded yet for <strong style="color:var(--text-main);">${niceDate}</strong>. There's advance money already in hand for this patient, so this visit is simply covered by it.`
+            : `No visit recorded yet for <strong style="color:var(--text-main);">${niceDate}</strong>. What would you like to log?`;
+          buttonsWrap.innerHTML = hasAdvanceInHand ? `
+            <button type="button" class="btn btn-notify" style="width:100%; background:#38bdf8; color:#060913;" onclick="confirmVisitAction('paid')">📌 Confirm Visit Happened (Advance Used)</button>
+            <button type="button" class="btn" style="width:100%; background:#f59e0b; color:#060913;" onclick="confirmVisitAction('mark-due')">💰 Mark Payment Due</button>
+            <button type="button" class="btn btn-secondary" style="width:100%;" onclick="closeVisitActionModal()">Cancel</button>
+          ` : `
             <button type="button" class="btn btn-notify" style="width:100%; background:#10b981;" onclick="confirmVisitAction('paid')">✔ Visited — Paid</button>
             <button type="button" class="btn" style="width:100%; background:#ef4444;" onclick="confirmVisitAction('unpaid')">✖ Visited — Not Paid</button>
             <button type="button" class="btn" style="width:100%; background:#38bdf8; color:#060913;" onclick="confirmVisitAction('mark-planned')">📌 Plan Visit (Advance Paid)</button>
