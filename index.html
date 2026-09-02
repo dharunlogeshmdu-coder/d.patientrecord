@@ -5273,6 +5273,7 @@
             <div>${p.packageType === 'daily' ? 'Daily' : p.packageType} Package</div>
             <strong style="color:var(--text-main);">₹${p.dailyCharge}</strong>
             <br><span class="uid-badge" style="background:#1e293b; color:#38bdf8; margin-top:4px; display:inline-block;">⏰ ${p.reminderTime || '09:00'}</span>
+            <br><span style="font-size:0.78rem; font-weight:800; color:${outstanding > 0 ? 'var(--danger)' : '#10b981'}; margin-top:4px; display:inline-block;">${outstanding > 0 ? `⚠️ Due: ₹${outstanding.toLocaleString('en-IN')}` : (outstanding < 0 ? `✨ Advance: ₹${Math.abs(outstanding).toLocaleString('en-IN')}` : '✔ Balance Cleared')}</span>
           </td>
            <td>
              <div style="display:flex; gap:4px; flex-wrap:wrap;">
