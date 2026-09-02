@@ -5477,12 +5477,15 @@
 
     // Builds one clickable row for the KPI detail modal. Clicking a row
     // opens that client's full ledger (visit/payment calendar).
-    function buildKpiDetailRow(p, rightLabel, rightValue, rightColor) {
+    function buildKpiDetailRow(p, rightLabel, rightValue, rightColor, isAlert) {
+      const bg = isAlert ? 'rgba(239, 68, 68, 0.08)' : '#0d1426';
+      const border = isAlert ? '1px solid rgba(239, 68, 68, 0.45)' : '1px solid var(--border)';
+      const nameColor = isAlert ? 'var(--danger)' : 'var(--text-main)';
       return `
         <div onclick="closeKpiDetailModal(); window.openPatientLedgerModal(${p.id});"
-             style="display:flex; justify-content:space-between; align-items:center; gap:10px; background:#0d1426; border:1px solid var(--border); border-radius:10px; padding:12px 14px; cursor:pointer;">
+             style="display:flex; justify-content:space-between; align-items:center; gap:10px; background:${bg}; border:${border}; border-radius:10px; padding:12px 14px; cursor:pointer;">
           <div style="min-width:0;">
-            <div style="font-weight:700; color:var(--text-main); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${p.name}</div>
+            <div style="font-weight:700; color:${nameColor}; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${p.name}</div>
             <div style="font-size:0.76rem; color:var(--text-muted); margin-top:2px;">${p.mobile || ''}${p.diagnosis ? ' · ' + p.diagnosis : ''}</div>
           </div>
           <div style="text-align:right; flex-shrink:0;">
@@ -5503,14 +5506,28 @@
       let rowsHtml = '';
 
       if (type === 'visited') {
-        const list = activeList.filter(p =>
+        const visitedList = activeList.filter(p =>
           (p.visitHistory && p.visitHistory.some(v => v.date === todayStr)) || (p.recordDate === todayStr)
         );
-        title = "🟦 Today's Visited Clients";
-        subtitle = `${list.length} client${list.length === 1 ? '' : 's'} visited today`;
-        rowsHtml = list.length
-          ? list.map(p => buildKpiDetailRow(p, "Today's Charge", `₹${parseFloat(p.dailyCharge || 0).toLocaleString('en-IN')}`, '#38bdf8')).join('')
-          : '<p style="color:var(--text-muted); text-align:center; padding:20px 0;">No clients visited today yet.</p>';
+        const notVisitedList = activeList.filter(p => !visitedList.includes(p));
+
+        title = "🟦 Today's Visit Status";
+        subtitle = `${visitedList.length} visited · ${notVisitedList.length} not visited yet`;
+
+        const visitedHtml = visitedList.length
+          ? visitedList.map(p => buildKpiDetailRow(p, "Today's Charge", `₹${parseFloat(p.dailyCharge || 0).toLocaleString('en-IN')}`, '#38bdf8')).join('')
+          : '<p style="color:var(--text-muted); text-align:center; padding:10px 0;">No clients visited today yet.</p>';
+
+        const notVisitedHtml = notVisitedList.length
+          ? notVisitedList.map(p => buildKpiDetailRow(p, 'Status', 'NOT VISITED', 'var(--danger)', true)).join('')
+          : '<p style="color:var(--text-muted); text-align:center; padding:10px 0;">Everyone active has visited today. 🎉</p>';
+
+        rowsHtml = `
+          <div style="font-size:0.8rem; font-weight:800; color:#38bdf8; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:2px;">✅ Visited Today (${visitedList.length})</div>
+          ${visitedHtml}
+          <div style="font-size:0.8rem; font-weight:800; color:var(--danger); text-transform:uppercase; letter-spacing:0.5px; margin-top:14px; margin-bottom:2px;">🔴 Not Visited Today (${notVisitedList.length})</div>
+          ${notVisitedHtml}
+        `;
 
       } else if (type === 'received') {
         const rows = [];
