@@ -1933,19 +1933,19 @@
             </div>
           </div>
           <div class="top-pro-stats" style="margin-bottom: 22px;">
-            <div class="pro-kpi-card kpi-count">
+            <div class="pro-kpi-card kpi-count" style="cursor:pointer;" onclick="openKpiDetailModal('visited')" title="Tap to see who visited today">
               <h3>TODAY'S VISITED CLIENTS</h3>
               <div class="amount text-info" id="active-summary-visited-count">0</div>
             </div>
-            <div class="pro-kpi-card kpi-today">
+            <div class="pro-kpi-card kpi-today" style="cursor:pointer;" onclick="openKpiDetailModal('received')" title="Tap to see today's payments">
               <h3>TODAY'S RECEIVED</h3>
               <div class="amount text-accent" id="active-summary-today-rev">₹0.00</div>
             </div>
-            <div class="pro-kpi-card kpi-outstanding">
+            <div class="pro-kpi-card kpi-outstanding" style="cursor:pointer;" onclick="openKpiDetailModal('due')" title="Tap to see who has balance due">
               <h3>ACTIVE DUE</h3>
               <div class="amount text-danger" id="active-summary-outstanding">₹0.00</div>
             </div>
-            <div class="pro-kpi-card kpi-received">
+            <div class="pro-kpi-card kpi-received" style="cursor:pointer;" onclick="openKpiDetailModal('billed')" title="Tap to see all active clients billed">
               <h3>TOTAL ACTIVE BILLED</h3>
               <div class="amount text-success" id="active-summary-total-earn">₹0.00</div>
             </div>
@@ -2405,6 +2405,20 @@
       </div>
 
       <button class="btn btn-secondary" style="width: 100%;" onclick="closePatientLedgerModal()">Close Ledger</button>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="kpiDetailModal">
+    <div class="modal-content" style="max-width: 520px;">
+      <div class="modal-header">
+        <div>
+          <h3 id="kpiDetailModalTitle" style="color: #38bdf8;">Details</h3>
+          <p id="kpiDetailModalSubtitle" style="font-size: 0.78rem; color: var(--text-muted);"></p>
+        </div>
+        <button class="close-modal" onclick="closeKpiDetailModal()">&times;</button>
+      </div>
+      <div id="kpi-detail-list" style="display: flex; flex-direction: column; gap: 10px; max-height: 60vh; overflow-y: auto;"></div>
+      <button class="btn btn-secondary" style="width: 100%; margin-top: 14px;" onclick="closeKpiDetailModal()">Close</button>
     </div>
   </div>
 
@@ -5460,6 +5474,91 @@
 
       renderRevenueTrendChart();
     }
+
+    // Builds one clickable row for the KPI detail modal. Clicking a row
+    // opens that client's full ledger (visit/payment calendar).
+    function buildKpiDetailRow(p, rightLabel, rightValue, rightColor) {
+      return `
+        <div onclick="closeKpiDetailModal(); window.openPatientLedgerModal(${p.id});"
+             style="display:flex; justify-content:space-between; align-items:center; gap:10px; background:#0d1426; border:1px solid var(--border); border-radius:10px; padding:12px 14px; cursor:pointer;">
+          <div style="min-width:0;">
+            <div style="font-weight:700; color:var(--text-main); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${p.name}</div>
+            <div style="font-size:0.76rem; color:var(--text-muted); margin-top:2px;">${p.mobile || ''}${p.diagnosis ? ' · ' + p.diagnosis : ''}</div>
+          </div>
+          <div style="text-align:right; flex-shrink:0;">
+            <div style="font-weight:800; color:${rightColor};">${rightValue}</div>
+            ${rightLabel ? `<div style="font-size:0.7rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px;">${rightLabel}</div>` : ''}
+          </div>
+        </div>
+      `;
+    }
+
+    // Powers the click-to-expand behaviour on the 4 Active Works KPI cards.
+    // type: 'visited' | 'received' | 'due' | 'billed'
+    window.openKpiDetailModal = function(type) {
+      const activeList = patients.filter(p => !p.isFinished);
+      const todayStr = new Date().toISOString().slice(0, 10);
+      let title = '';
+      let subtitle = '';
+      let rowsHtml = '';
+
+      if (type === 'visited') {
+        const list = activeList.filter(p =>
+          (p.visitHistory && p.visitHistory.some(v => v.date === todayStr)) || (p.recordDate === todayStr)
+        );
+        title = "🟦 Today's Visited Clients";
+        subtitle = `${list.length} client${list.length === 1 ? '' : 's'} visited today`;
+        rowsHtml = list.length
+          ? list.map(p => buildKpiDetailRow(p, "Today's Charge", `₹${parseFloat(p.dailyCharge || 0).toLocaleString('en-IN')}`, '#38bdf8')).join('')
+          : '<p style="color:var(--text-muted); text-align:center; padding:20px 0;">No clients visited today yet.</p>';
+
+      } else if (type === 'received') {
+        const rows = [];
+        patients.forEach(p => {
+          if (p.paymentHistory && Array.isArray(p.paymentHistory)) {
+            const amt = p.paymentHistory
+              .filter(pm => pm.date === todayStr)
+              .reduce((acc, pm) => acc + (parseFloat(pm.amount) || 0), 0);
+            if (amt > 0) rows.push({ p, amt });
+          }
+        });
+        title = "💚 Today's Received Payments";
+        subtitle = `${rows.length} payment${rows.length === 1 ? '' : 's'} received today`;
+        rowsHtml = rows.length
+          ? rows.map(r => buildKpiDetailRow(r.p, 'Paid Today', `₹${r.amt.toLocaleString('en-IN')}`, 'var(--success)')).join('')
+          : '<p style="color:var(--text-muted); text-align:center; padding:20px 0;">No payments received today yet.</p>';
+
+      } else if (type === 'due') {
+        const rows = activeList
+          .map(p => ({ p, due: Math.max(0, getBilledTotal(p) - getPaidTotal(p)) }))
+          .filter(r => r.due > 0)
+          .sort((a, b) => b.due - a.due);
+        title = "🔴 Clients With Active Due";
+        subtitle = `${rows.length} client${rows.length === 1 ? '' : 's'} with outstanding balance`;
+        rowsHtml = rows.length
+          ? rows.map(r => buildKpiDetailRow(r.p, 'Balance Due', `₹${r.due.toLocaleString('en-IN')}`, 'var(--danger)')).join('')
+          : '<p style="color:var(--text-muted); text-align:center; padding:20px 0;">No outstanding balances. 🎉</p>';
+
+      } else if (type === 'billed') {
+        const rows = activeList
+          .map(p => ({ p, billed: getBilledTotal(p) }))
+          .sort((a, b) => b.billed - a.billed);
+        title = "💰 Total Active Billed";
+        subtitle = `${rows.length} active client${rows.length === 1 ? '' : 's'}`;
+        rowsHtml = rows.length
+          ? rows.map(r => buildKpiDetailRow(r.p, 'Total Billed', `₹${r.billed.toLocaleString('en-IN')}`, 'var(--success)')).join('')
+          : '<p style="color:var(--text-muted); text-align:center; padding:20px 0;">No active clients yet.</p>';
+      }
+
+      document.getElementById('kpiDetailModalTitle').innerText = title;
+      document.getElementById('kpiDetailModalSubtitle').innerText = subtitle;
+      document.getElementById('kpi-detail-list').innerHTML = rowsHtml;
+      document.getElementById('kpiDetailModal').classList.add('active');
+    };
+
+    window.closeKpiDetailModal = function() {
+      document.getElementById('kpiDetailModal').classList.remove('active');
+    };
 
     // Retention feature: 6-month revenue trend bar chart on the Revenue Hub page.
     function renderRevenueTrendChart() {
