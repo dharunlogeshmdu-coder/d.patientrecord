@@ -5570,6 +5570,46 @@
       }
     }
 
+    // When a lump-sum payment is recorded (💵 Record Payment), this walks the
+    // patient's unpaid visit days — oldest first — and flips as many of them
+    // to "paid" as the amount fully covers (using the per-visit daily
+    // charge). Any amount left after every unpaid day is cleared counts as
+    // a fresh advance for future visits (handled automatically elsewhere by
+    // the existing advance-first billed/paid comparison). Returns how many
+    // days got settled plus how the amount splits between due vs advance —
+    // used to label the payment entry correctly.
+    function allocateDuePayment(p, amount) {
+      const dailyRate = parseFloat(p.dailyCharge) || 0;
+      const dueBefore = Math.max(0, getBilledTotal(p) - getPaidTotal(p));
+
+      const unpaidVisits = (p.visitHistory || [])
+        .filter(v => v.status === 'unpaid')
+        .sort((a, b) => a.date.localeCompare(b.date));
+
+      let remaining = amount;
+      let daysSettled = 0;
+      const settledDates = [];
+
+      if (dailyRate > 0) {
+        for (const v of unpaidVisits) {
+          // small epsilon guards against float rounding (e.g. 999.999999)
+          if (remaining + 0.01 >= dailyRate) {
+            v.status = 'paid';
+            settledDates.push(v.date);
+            remaining = Math.round((remaining - dailyRate) * 100) / 100;
+            daysSettled++;
+          } else {
+            break;
+          }
+        }
+      }
+
+      const duePortion = Math.round(Math.min(amount, dueBefore) * 100) / 100;
+      const advancePortion = Math.round(Math.max(0, amount - dueBefore) * 100) / 100;
+
+      return { daysSettled, duePortion, advancePortion, settledDates };
+    }
+
     function openPayModal(id) {
       const prof = typeof window.getActiveMemberProfile === 'function' ? window.getActiveMemberProfile() : null;
       if (!window.checkSubscriptionStatus(prof)) return;
@@ -5594,11 +5634,26 @@
       const p = patients.find(p => p.id === id);
       if (p) {
         if (!p.paymentHistory) p.paymentHistory = [];
-        p.paymentHistory.push({ date: dateVal, amount });
+        if (!p.visitHistory) p.visitHistory = [];
+
+        // Auto-settle outstanding unpaid visit days (oldest first) with this
+        // payment — full or partial — before recording it. dueAmount /
+        // advanceAmount are stored on the entry purely so the payments list
+        // can label it "Due Paid" vs "Advance" correctly.
+        const { daysSettled, duePortion, advancePortion, settledDates } = allocateDuePayment(p, amount);
+        p.paymentHistory.push({ date: dateVal, amount, dueAmount: duePortion, advanceAmount: advancePortion, settledDates });
+
         closePayModal();
         saveAndRender();
         if (document.getElementById('patientLedgerModal').classList.contains('active')) {
           openPatientLedgerModal(id, true);
+        }
+
+        if (daysSettled > 0 || advancePortion > 0) {
+          let msg = '';
+          if (daysSettled > 0) msg += `✔ ${daysSettled} previously unpaid visit day(s) marked as Paid.\n`;
+          if (advancePortion > 0) msg += `✨ ₹${advancePortion.toLocaleString('en-IN')} recorded as Advance for future visits.`;
+          if (msg) alert(msg.trim());
         }
       }
     }
@@ -5753,13 +5808,28 @@
         p.paymentHistory.forEach((pm, idx) => {
           const div = document.createElement('div');
           div.style.cssText = "background:#11192e; border:1px solid #10b981; padding:6px 12px; border-radius:8px; display:flex; justify-content:space-between; align-items:center;";
+
+          // Label this specific payment as Advance / Due Paid / plain Paid —
+          // scoped to this one patient's own ledger, based on how the
+          // amount was actually applied when it was recorded.
+          let badgeLabel = 'Paid ✔';
+          if (pm.catchUp) {
+            badgeLabel = '💰 Due Paid ✔';
+          } else if (pm.dueAmount > 0 && pm.advanceAmount > 0) {
+            badgeLabel = '💰 Due Paid + ✨ Advance';
+          } else if (pm.advanceAmount > 0) {
+            badgeLabel = '✨ Advance ✔';
+          } else if (pm.dueAmount > 0) {
+            badgeLabel = '💰 Due Paid ✔';
+          }
+
           div.innerHTML = `
             <div>
               <strong style="color:#10b981; font-size:0.9rem;">₹${pm.amount} Received</strong>
               <small style="color:var(--text-muted); margin-left:8px;">📅 ${pm.date}</small>
             </div>
             <div style="display:flex; align-items:center; gap:8px;">
-              <span class="badge badge-cured" style="font-size:0.7rem;">Paid ✔</span>
+              <span class="badge badge-cured" style="font-size:0.7rem;">${badgeLabel}</span>
               <button class="action-btn btn-undo" style="padding:3px 8px; font-size:0.72rem;" onclick="removePaymentEntry(${p.id}, ${idx})">❌ Undo Pay</button>
             </div>
           `;
@@ -5783,7 +5853,10 @@
         // billed, this is just an identification change — no new payment.
         if (getPaidTotal(p) < getBilledTotal(p)) {
           const perVisit = parseFloat(p.dailyCharge) || 0;
-          p.paymentHistory.push({ date: dateStr, amount: perVisit, visitPayment: true });
+          // catchUp:true marks this as settling an already-recorded (past)
+          // visit that was sitting unpaid — shown as "Due Paid" in the
+          // payments list rather than a plain "Paid".
+          p.paymentHistory.push({ date: dateStr, amount: perVisit, visitPayment: true, catchUp: true });
         }
       } else {
         const idx = p.paymentHistory.findIndex(pm => pm.visitPayment && pm.date === dateStr);
@@ -5959,6 +6032,15 @@
       if (!window.checkSubscriptionStatus(prof)) return;
       const p = patients.find(x => x.id === patientId);
       if (!p || !p.paymentHistory) return;
+      const removed = p.paymentHistory[payIndex];
+      // If this payment had auto-settled unpaid visit days, put those
+      // specific days back to unpaid so the ledger stays consistent.
+      if (removed && Array.isArray(removed.settledDates) && removed.settledDates.length && p.visitHistory) {
+        removed.settledDates.forEach(d => {
+          const v = p.visitHistory.find(x => x.date === d);
+          if (v) v.status = 'unpaid';
+        });
+      }
       p.paymentHistory.splice(payIndex, 1);
       saveAndRender();
       openPatientLedgerModal(patientId, true);
