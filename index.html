@@ -93,6 +93,20 @@
       } catch (e) { /* Badging API unsupported — ignore */ }
     };
 
+    // Returns today's date (or a given Date object) as a YYYY-MM-DD string in the
+    // user's LOCAL timezone. Using new Date().toISOString() instead converts to
+    // UTC first, which silently rolls the date back for anyone east of UTC (e.g.
+    // India, UTC+5:30) during the first several hours after midnight — that was
+    // causing "Today's Visited Clients" / "Today's Received" to miss same-day
+    // records or not reset for the new day until later in the morning.
+    window.getLocalDateStr = function(d) {
+      const dateObj = d instanceof Date ? d : new Date();
+      const year = dateObj.getFullYear();
+      const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+      const day = String(dateObj.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    };
+
     window.handleBizCategorySwitch = function(val) {
       const lblDoctor = document.getElementById('lbl-doctor-name');
       const lblClinic = document.getElementById('lbl-clinic-name');
@@ -1760,6 +1774,10 @@
               <h3>OVERALL TOTAL PAYMENT EARNED</h3>
               <div class="amount text-success" id="overall-total-earned">₹0.00</div>
             </div>
+            <div class="pro-kpi-card kpi-count">
+              <h3>OVERALL TOTAL BILLED</h3>
+              <div class="amount text-info" id="overall-total-billed">₹0.00</div>
+            </div>
             <div class="pro-kpi-card kpi-outstanding">
               <h3>OVERALL TOTAL OUTSTANDING</h3>
               <div class="amount text-danger" id="overall-total-outstanding">₹0.00</div>
@@ -1948,6 +1966,10 @@
             <div class="pro-kpi-card kpi-received" style="cursor:pointer;" onclick="openKpiDetailModal('billed')" title="Tap to see all active clients billed">
               <h3>TOTAL ACTIVE BILLED</h3>
               <div class="amount text-success" id="active-summary-total-earn">₹0.00</div>
+            </div>
+            <div class="pro-kpi-card kpi-today" title="Charges billed today only (visit charges + extra charges added today)">
+              <h3>TODAY'S BILLED</h3>
+              <div class="amount text-accent" id="active-summary-today-billed">₹0.00</div>
             </div>
           </div>
 
@@ -2965,7 +2987,7 @@
 
     if (publicClinicUid) {
       document.getElementById('patient-self-reg-view').classList.add('active');
-      document.getElementById('public-patient-date').value = new Date().toISOString().slice(0, 10);
+      document.getElementById('public-patient-date').value = window.getLocalDateStr();
 
       getDoc(doc(db, "registered_members", publicClinicUid)).then((snap) => {
         if (snap.exists()) {
@@ -3957,7 +3979,7 @@
         uid: `UID-${patients.length + 1001}`,
         name: req.name,
         mobile: req.mobile,
-        recordDate: req.preferredDate || new Date().toISOString().slice(0,10),
+        recordDate: req.preferredDate || window.getLocalDateStr(),
         reminderTime: req.preferredTime || '09:00',
         packageType: pkg,
         dailyCharge: fee,
@@ -3966,7 +3988,7 @@
         address: req.address || '',
         location: req.location || '',
         daysVisited: 1,
-        visitHistory: [{ date: req.preferredDate || new Date().toISOString().slice(0,10), visitNum: 1, status: 'paid' }],
+        visitHistory: [{ date: req.preferredDate || window.getLocalDateStr(), visitNum: 1, status: 'paid' }],
         paymentHistory: [],
         extraCharges: [],
         isFinished: false
@@ -5402,7 +5424,7 @@
     function renderStats() {
       const activeList = patients.filter(p => !p.isFinished);
       const finishedList = patients.filter(p => p.isFinished);
-      const todayStr = new Date().toISOString().slice(0, 10);
+      const todayStr = window.getLocalDateStr();
 
       let allTimeReceived = 0;
       let allTimeBilled = 0;
@@ -5439,6 +5461,14 @@
           todayWorkedAmt += parseFloat(p.dailyCharge || 0);
           todayVisitedCount++;
         }
+
+        if (p.extraCharges && Array.isArray(p.extraCharges)) {
+          p.extraCharges.forEach(ex => {
+            if (ex.date === todayStr) {
+              todayWorkedAmt += parseFloat(ex.amount || 0);
+            }
+          });
+        }
       });
 
       const activeDue = Math.max(0, activeBilled - activeReceived);
@@ -5448,17 +5478,21 @@
       const elActiveTodayRev = document.getElementById('active-summary-today-rev');
       const elActiveDue = document.getElementById('active-summary-outstanding');
       const elActiveBilled = document.getElementById('active-summary-total-earn');
+      const elActiveTodayBilled = document.getElementById('active-summary-today-billed');
 
       if (elActiveVisited) elActiveVisited.innerText = todayVisitedCount;
       if (elActiveTodayRev) elActiveTodayRev.innerText = `₹${todayReceivedAmt.toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
       if (elActiveDue) elActiveDue.innerText = `₹${activeDue.toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
       if (elActiveBilled) elActiveBilled.innerText = `₹${activeBilled.toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
+      if (elActiveTodayBilled) elActiveTodayBilled.innerText = `₹${todayWorkedAmt.toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
 
       const elOverallEarned = document.getElementById('overall-total-earned');
+      const elOverallBilled = document.getElementById('overall-total-billed');
       const elOverallDue = document.getElementById('overall-total-outstanding');
       const elTodayWorked = document.getElementById('today-worked-amount');
 
       if (elOverallEarned) elOverallEarned.innerText = `₹${allTimeReceived.toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
+      if (elOverallBilled) elOverallBilled.innerText = `₹${allTimeBilled.toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
       if (elOverallDue) elOverallDue.innerText = `₹${allTimeDue.toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
       if (elTodayWorked) elTodayWorked.innerText = `₹${todayWorkedAmt.toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
 
@@ -5500,7 +5534,7 @@
     // type: 'visited' | 'received' | 'due' | 'billed'
     window.openKpiDetailModal = function(type) {
       const activeList = patients.filter(p => !p.isFinished);
-      const todayStr = new Date().toISOString().slice(0, 10);
+      const todayStr = window.getLocalDateStr();
       let title = '';
       let subtitle = '';
       let rowsHtml = '';
@@ -6023,7 +6057,7 @@
       const p = patients.find(p => p.id === id);
       if (!p) return;
       const newPaid = parseFloat(val) || 0;
-      p.paymentHistory = [{ date: new Date().toISOString().slice(0, 10), amount: newPaid }];
+      p.paymentHistory = [{ date: window.getLocalDateStr(), amount: newPaid }];
       saveAndRender();
     };
 
@@ -6035,7 +6069,7 @@
       const newDue = parseFloat(val) || 0;
       const totalBilled = getBilledTotal(p);
       const targetPaid = Math.max(0, totalBilled - newDue);
-      p.paymentHistory = [{ date: new Date().toISOString().slice(0, 10), amount: targetPaid }];
+      p.paymentHistory = [{ date: window.getLocalDateStr(), amount: targetPaid }];
       saveAndRender();
     };
 
@@ -6206,7 +6240,7 @@
     window.markAllVisitedToday = function() {
       const prof = typeof window.getActiveMemberProfile === 'function' ? window.getActiveMemberProfile() : null;
       if (!window.checkSubscriptionStatus(prof)) return;
-      const todayStr = new Date().toISOString().slice(0, 10);
+      const todayStr = window.getLocalDateStr();
       patients.filter(p => !p.isFinished).forEach(p => {
         if (!p.visitHistory) p.visitHistory = [];
         const alreadyVisited = p.visitHistory.some(v => v.date === todayStr);
@@ -6255,7 +6289,7 @@
       const p = patients.find(p => p.id === id);
       if (p) {
         if (!p.extraCharges) p.extraCharges = [];
-        p.extraCharges.push({ id: Date.now(), title, amount, date: new Date().toISOString().slice(0,10) });
+        p.extraCharges.push({ id: Date.now(), title, amount, date: window.getLocalDateStr() });
         closeExtraModal();
         saveAndRender();
         if (document.getElementById('patientLedgerModal').classList.contains('active')) {
@@ -6311,7 +6345,7 @@
       if (!p) return;
       const due = Math.max(0, getBilledTotal(p) - getPaidTotal(p));
       document.getElementById('pay-patient-id').value = p.id;
-      document.getElementById('pay-date-picker').value = new Date().toISOString().slice(0, 10);
+      document.getElementById('pay-date-picker').value = window.getLocalDateStr();
       document.getElementById('pay-amount').value = due > 0 ? due : '';
       document.getElementById('payModal').classList.add('active');
     }
@@ -6371,7 +6405,7 @@
         p.isFinished = true;
         p.finishStatus = document.getElementById('finish-status').value;
         p.finishFeedback = document.getElementById('finish-feedback').value.trim();
-        p.finishDate = new Date().toISOString().slice(0, 10);
+        p.finishDate = window.getLocalDateStr();
         closeFinishModal();
         saveAndRender();
         switchPageById('page-completed-works');
@@ -7048,7 +7082,7 @@
 
       const firstDayIndex = new Date(year, month, 1).getDay();
       const totalDays = new Date(year, month + 1, 0).getDate();
-      const todayStr = new Date().toISOString().slice(0, 10);
+      const todayStr = window.getLocalDateStr();
 
       ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"].forEach(d => {
         const dh = document.createElement('div');
@@ -7310,6 +7344,20 @@
     renderTable();
     renderGeneralCalendar();
     renderStats();
+
+    // Keep "Today's Visited Clients" / "Today's Received" honest if the app is
+    // left open across midnight — re-check the local date every minute and
+    // re-render stats (and the calendar's today-highlight) the moment it changes,
+    // instead of waiting for the next click/reload to pick up the new day.
+    let lastKnownLocalDate = window.getLocalDateStr();
+    setInterval(() => {
+      const currentLocalDate = window.getLocalDateStr();
+      if (currentLocalDate !== lastKnownLocalDate) {
+        lastKnownLocalDate = currentLocalDate;
+        renderStats();
+        renderGeneralCalendar();
+      }
+    }, 60000);
   </script>
 </body>
 </html>
