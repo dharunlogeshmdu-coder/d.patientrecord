@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Physio Accounting">
   <meta name="theme-color" content="#0a0f1d">
-  <title>Dharun Portal Manager</title>
+  <title>Physio Accounting Assistant</title>
 
   <!-- PWA manifest + icons (required for the browser's install/download prompt) -->
   <link rel="manifest" href="/manifest.json">
@@ -462,6 +462,34 @@
 
     .auth-form-section { display: none; }
     .auth-form-section.active { display: flex; flex-direction: column; gap: 10px; }
+
+    /* First-time visitor pointer hint on the login screen (points at Register tab) */
+    .auth-pointer-hint { position: absolute; top: 100%; right: 6px; margin-top: 8px; display: flex; flex-direction: column; align-items: flex-end; gap: 2px; z-index: 5; pointer-events: none; }
+    .auth-pointer-hand { font-size: 1.8rem; align-self: flex-end; margin-right: 18px; animation: authHandPoint 1.1s ease-in-out infinite; filter: drop-shadow(0 2px 6px rgba(0,0,0,0.5)); }
+    .auth-pointer-bubble { background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%); color: #fff; font-size: 0.72rem; font-weight: 700; padding: 6px 10px; border-radius: 8px; box-shadow: 0 4px 14px rgba(0,0,0,0.35); white-space: nowrap; max-width: 220px; white-space: normal; text-align: right; }
+    @keyframes authHandPoint { 0%, 100% { transform: translateY(0) rotate(0deg); } 50% { transform: translateY(-6px) rotate(-8deg); } }
+
+    /* ---- Interactive Guided Tour (coach-mark) engine ---- */
+    #tourOverlay { position: fixed; inset: 0; z-index: 10500; display: none; }
+    #tourOverlay.active { display: block; }
+    #tourDim { position: fixed; inset: 0; background: rgba(3, 7, 18, 0.72); transition: clip-path 0.35s ease; z-index: 10500; }
+    #tourHighlightRing { position: fixed; border-radius: 12px; box-shadow: 0 0 0 4px var(--accent), 0 0 0 9999px rgba(3, 7, 18, 0.72), 0 0 24px 4px rgba(6, 214, 160, 0.55); transition: top 0.3s ease, left 0.3s ease, width 0.3s ease, height 0.3s ease; z-index: 10501; pointer-events: none; }
+    #tourHand { position: fixed; font-size: 2rem; z-index: 10503; pointer-events: none; animation: tourHandBounce 1s ease-in-out infinite; filter: drop-shadow(0 3px 8px rgba(0,0,0,0.6)); transition: top 0.3s ease, left 0.3s ease; }
+    @keyframes tourHandBounce { 0%, 100% { transform: translate(0, 0) rotate(-6deg); } 50% { transform: translate(-4px, -10px) rotate(-14deg); } }
+    #tourTooltip { position: fixed; z-index: 10502; max-width: 300px; background: #0f172a; border: 1px solid var(--accent); border-radius: 14px; padding: 16px 18px; box-shadow: 0 12px 40px rgba(0,0,0,0.55); transition: top 0.3s ease, left 0.3s ease; }
+    #tourTooltip .tour-step-count { font-size: 0.68rem; font-weight: 800; color: var(--accent); text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 4px; }
+    #tourTooltip h4 { font-size: 0.95rem; color: var(--text-main); margin: 0 0 6px; }
+    #tourTooltip p { font-size: 0.8rem; color: var(--text-muted); margin: 0 0 12px; line-height: 1.45; }
+    #tourTooltip .tour-actions { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    #tourTooltip .tour-actions-right { display: flex; gap: 6px; }
+    #tourTooltip button { cursor: pointer; border: none; border-radius: 8px; font-weight: 700; font-size: 0.76rem; padding: 7px 12px; }
+    #tourTooltip .tour-skip-btn { background: transparent; color: var(--text-muted); }
+    #tourTooltip .tour-skip-btn:hover { color: var(--danger); }
+    #tourTooltip .tour-back-btn { background: #1e293b; color: var(--text-main); }
+    #tourTooltip .tour-next-btn { background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%); color: #fff; }
+    @media (max-width: 640px) {
+      #tourTooltip { max-width: calc(100vw - 32px); }
+    }
 
     .auth-input-group { display: flex; flex-direction: column; gap: 4px; }
     .auth-input-group label { font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; }
@@ -1426,6 +1454,25 @@
 
   <div class="sidebar-overlay-backdrop" id="sidebarBackdrop" onclick="toggleSidebarMenu(false)"></div>
 
+  <!-- Interactive guided tour overlay (coach-mark style walkthrough for new users) -->
+  <div id="tourOverlay">
+    <div id="tourDim"></div>
+    <div id="tourHighlightRing"></div>
+    <div id="tourHand">👆</div>
+    <div id="tourTooltip">
+      <div class="tour-step-count" id="tourStepCount">Step 1 of 8</div>
+      <h4 id="tourStepTitle">Welcome</h4>
+      <p id="tourStepText">Let's take a quick look around.</p>
+      <div class="tour-actions">
+        <button type="button" class="tour-skip-btn" onclick="window.skipGuidedTour()">Skip Tour</button>
+        <div class="tour-actions-right">
+          <button type="button" class="tour-back-btn" id="tourBackBtn" onclick="window.tourGoBack()">Back</button>
+          <button type="button" class="tour-next-btn" id="tourNextBtn" onclick="window.tourGoNext()">Next →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div id="subscription-lock-overlay">
     <div class="paywall-card">
       <span class="paywall-badge" id="paywall-badge-text">⚠️ Plan Expired</span>
@@ -1503,7 +1550,7 @@
 
   <div id="auth-screen-overlay">
     <div class="auth-corner-ad-badge" id="auth-top-right-ad">
-      <div class="ad-title">👑 Dharun Portal Manager</div>
+      <div class="ad-title">👑 Physio Accounting Assistant</div>
       <div class="ad-subtitle">Custom Software Portals & Cloud Apps</div>
       <a class="ad-contact-link" href="https://wa.me/918248090433?text=Hello%20Dharun%2C%20I%20am%20interested%20in%20custom%20software%20portal%20creation." target="_blank">
         📞 Owner Dharun: <strong>8248090433</strong>
@@ -1520,6 +1567,7 @@
         <li><span class="fi-icon">📲</span><div><strong>WhatsApp Reminders</strong>Notify patients about visits & dues in one tap</div></li>
         <li><span class="fi-icon">🔗</span><div><strong>Your Own Booking Link</strong>Let patients request appointments online</div></li>
       </ul>
+      <button type="button" class="btn btn-secondary" id="auth-howitworks-btn" style="margin-top:14px;" onclick="window.openHowItWorksModal && window.openHowItWorksModal()">❓ New Here? See How It Works (30 sec)</button>
     </div>
 
     <div class="auth-card">
@@ -1529,9 +1577,13 @@
         <p>Assistant</p>
       </div>
 
-      <div class="auth-tabs" id="authTabHeader">
+      <div class="auth-tabs" id="authTabHeader" style="position:relative;">
         <button class="auth-tab-btn active" id="tab-btn-login" onclick="switchAuthTab('login')">Sign In</button>
         <button class="auth-tab-btn" id="tab-btn-register" onclick="switchAuthTab('register')">Register Member Account</button>
+        <div id="auth-register-hint" class="auth-pointer-hint" style="display:none;">
+          <span class="auth-pointer-hand">👆</span>
+          <span class="auth-pointer-bubble">New user? Tap here to create your free account</span>
+        </div>
       </div>
 
       <form id="login-form" class="auth-form-section active" onsubmit="handleLoginSubmit(event)">
@@ -1609,6 +1661,39 @@
     </div>
   </div>
 
+  <!-- MODAL: FIRST-TIME VISITOR "HOW IT WORKS" QUICK-START GUIDE (shown before login) -->
+  <div class="modal-overlay" id="howItWorksModal" style="z-index: 10600;">
+    <div class="modal-content" style="max-width: 560px;">
+      <div class="modal-header">
+        <div>
+          <h3 style="color: #38bdf8;">👋 Welcome to Physio Accounting Assistant</h3>
+          <p style="font-size: 0.78rem; color: var(--text-muted);">Here's how to get your clinic online in 3 quick steps.</p>
+        </div>
+        <button class="close-modal" onclick="window.closeHowItWorksModal && window.closeHowItWorksModal()">&times;</button>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 18px;">
+        <div style="background:#11192e; border:1px solid var(--border); border-radius:10px; padding:12px 14px; display:flex; gap:12px; align-items:flex-start;">
+          <span style="font-size:1.3rem; font-weight:900; color: var(--accent); min-width: 22px;">1</span>
+          <div><strong style="color:var(--text-main); font-size:0.9rem;">✍️ Register Your Clinic</strong><br><span style="font-size:0.8rem; color:var(--text-muted);">Tap "Register Member Account" above, fill your name, clinic name, mobile & email — takes under a minute.</span></div>
+        </div>
+        <div style="background:#11192e; border:1px solid var(--border); border-radius:10px; padding:12px 14px; display:flex; gap:12px; align-items:flex-start;">
+          <span style="font-size:1.3rem; font-weight:900; color: var(--accent); min-width: 22px;">2</span>
+          <div><strong style="color:var(--text-main); font-size:0.9rem;">🚀 Sign In & Take the Tour</strong><br><span style="font-size:0.8rem; color:var(--text-muted);">You'll land straight in your dashboard. A one-tap guided tour walks you through every screen, hand-holding style.</span></div>
+        </div>
+        <div style="background:#11192e; border:1px solid var(--border); border-radius:10px; padding:12px 14px; display:flex; gap:12px; align-items:flex-start;">
+          <span style="font-size:1.3rem; font-weight:900; color: var(--accent); min-width: 22px;">3</span>
+          <div><strong style="color:var(--text-main); font-size:0.9rem;">📲 Share Your Booking Link</strong><br><span style="font-size:0.8rem; color:var(--text-muted);">Send your own booking link on WhatsApp so patients can request appointments directly into your portal.</span></div>
+        </div>
+      </div>
+
+      <div style="display:flex; gap:10px; flex-wrap:wrap;">
+        <button class="btn" style="flex:2; min-width:180px;" onclick="window.closeHowItWorksModal && window.closeHowItWorksModal(); window.switchAuthTab('register');">📝 Register Now</button>
+        <button class="btn btn-secondary" style="flex:1; min-width:120px;" onclick="window.closeHowItWorksModal && window.closeHowItWorksModal()">Maybe Later</button>
+      </div>
+    </div>
+  </div>
+
   <div class="app-layout">
     <aside class="sidebar" id="sidebarMenu">
       <div class="sidebar-brand">
@@ -1631,40 +1716,40 @@
       </div>
 
       <nav class="sidebar-nav" id="main-sidebar-nav">
-        <div class="nav-item member-item active" onclick="switchPage('page-active-works', this)">
+        <div class="nav-item member-item active" id="tour-nav-active-works" onclick="switchPage('page-active-works', this)">
           <span class="nav-icon">⚡</span>
           <span>Active Works</span>
           <span class="nav-badge" id="badge-active-count">0</span>
         </div>
 
-        <div class="nav-item member-item" onclick="switchPage('page-registration', this)">
+        <div class="nav-item member-item" id="tour-nav-registration" onclick="switchPage('page-registration', this)">
           <span class="nav-icon">📝</span>
           <span id="nav-reg-label">Manual Registration</span>
         </div>
 
-        <div class="nav-item member-item" onclick="switchPage('page-general-calendar', this)">
+        <div class="nav-item member-item" id="tour-nav-calendar" onclick="switchPage('page-general-calendar', this)">
           <span class="nav-icon">🗓️</span>
           <span>Overall Master Calendar</span>
         </div>
 
-        <div class="nav-item member-item" onclick="switchPage('page-patient-requests', this)">
+        <div class="nav-item member-item" id="tour-nav-requests" onclick="switchPage('page-patient-requests', this)">
           <span class="nav-icon">📥</span>
           <span>Online Requests</span>
           <span class="nav-badge alert-badge" id="badge-requests-count">0</span>
         </div>
         
-        <div class="nav-item member-item" onclick="switchPage('page-dashboard', this)">
+        <div class="nav-item member-item" id="tour-nav-revenue" onclick="switchPage('page-dashboard', this)">
           <span class="nav-icon">📊</span>
           <span>1-Click Revenue Hub</span>
         </div>
         
-        <div class="nav-item member-item" onclick="switchPage('page-completed-works', this)">
+        <div class="nav-item member-item" id="tour-nav-completed" onclick="switchPage('page-completed-works', this)">
           <span class="nav-icon">📁</span>
           <span>Completed Works</span>
           <span class="nav-badge" id="badge-completed-count">0</span>
         </div>
         
-        <div class="nav-item member-item" onclick="switchPage('page-overall-directory', this)">
+        <div class="nav-item member-item" id="tour-nav-directory" onclick="switchPage('page-overall-directory', this)">
           <span class="nav-icon">👥</span>
           <span>Overall Directory</span>
           <span class="nav-badge" id="badge-overall-total-count">0</span>
@@ -1676,7 +1761,7 @@
           <span class="nav-badge alert-badge" id="badge-admin-msg" style="display:none;">1</span>
         </div>
 
-        <div class="nav-item member-item" onclick="switchPage('page-reminders', this)">
+        <div class="nav-item member-item" id="tour-nav-reminders" onclick="switchPage('page-reminders', this)">
           <span class="nav-icon">📲</span>
           <span>Morning Reminders</span>
           <span class="nav-badge" id="badge-reminder-count">0</span>
@@ -1700,7 +1785,8 @@
         <button class="btn btn-notify member-footer-btn" style="width: 100%; font-size: 0.85rem; background: linear-gradient(135deg, #059669 0%, #0284c7 100%);" onclick="openRenewalPlanModal()">⚡ Subscription</button>
         <button class="btn btn-leave member-footer-btn" style="width: 100%; font-size: 0.85rem;" onclick="openLeaveModal()">🏖️ Send Leave Update</button>
         <button class="btn btn-export member-footer-btn" style="width: 100%; font-size: 0.85rem;" onclick="exportCSV()">💾 Export Database (CSV)</button>
-        <button class="btn btn-whatsapp member-footer-btn" style="width: 100%; font-size: 0.85rem;" onclick="openReferAndEarnModal()">🎁 Refer & Earn</button>
+        <button id="tour-refer-btn" class="btn btn-whatsapp member-footer-btn" style="width: 100%; font-size: 0.85rem;" onclick="openReferAndEarnModal()">🎁 Refer & Earn</button>
+        <button type="button" class="btn btn-secondary member-footer-btn" style="width: 100%; font-size: 0.85rem;" onclick="window.startGuidedTour && window.startGuidedTour()">🧭 Take a Guided Tour</button>
       </div>
     </aside>
 
@@ -1727,11 +1813,11 @@
             </div>
           </div>
           <div id="top-member-buttons" style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
-            <button class="btn btn-notify" onclick="openShareLinkModal()">🔗 Share Reg Link</button>
-            <button class="btn btn-notify" onclick="openRenewalPlanModal()" style="background: linear-gradient(135deg, #059669 0%, #0284c7 100%);">⚡ Subscription</button>
+            <button id="tour-share-link-btn" class="btn btn-notify" onclick="openShareLinkModal()">🔗 Share Reg Link</button>
+            <button id="tour-subscription-btn" class="btn btn-notify" onclick="openRenewalPlanModal()" style="background: linear-gradient(135deg, #059669 0%, #0284c7 100%);">⚡ Subscription</button>
             <button id="btn-return-admin" class="btn btn-admin" style="display:none;" onclick="returnToSuperAdminPortal()">👑 Return to Master Admin</button>
             <button class="btn btn-leave" onclick="openLeaveModal()">🏖️ Leave Notice</button>
-            <button class="btn btn-primary" onclick="markAllVisitedToday()">⚡ Check-In All</button>
+            <button id="tour-checkin-btn" class="btn btn-primary" onclick="markAllVisitedToday()">⚡ Check-In All</button>
           </div>
         </header>
 
@@ -1972,15 +2058,6 @@
         </section>
 
         <section id="page-active-works" class="page-view active-page">
-          <div id="member-renewal-summary" class="card" style="display:none; margin-bottom: 18px; border-color: rgba(212, 175, 87, 0.55);">
-            <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;">
-              <div>
-                <div style="font-size:0.76rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.08em; font-weight:800;">Portal Subscription</div>
-                <div style="font-size:0.88rem; color:var(--text-muted); margin-top:3px;">Current 1-month renewal amount</div>
-              </div>
-              <strong id="member-renewal-amount" style="font-size:1.5rem; color:#fbbf24;">₹599</strong>
-            </div>
-          </div>
           <div class="top-pro-stats" style="margin-bottom: 22px;">
             <div class="pro-kpi-card kpi-count" style="cursor:pointer;" onclick="openKpiDetailModal('visited')" title="Tap to see who visited today">
               <h3>TODAY'S VISITED CLIENTS</h3>
@@ -2374,7 +2451,10 @@
         </div>
       </div>
 
-      <button class="btn" style="width: 100%;" onclick="closeOnboardingTour()">Got it, Let's Start 🚀</button>
+      <div style="display:flex; gap:10px; flex-wrap:wrap;">
+        <button class="btn" style="flex:2; min-width:180px;" onclick="closeOnboardingTour(); window.startGuidedTour && window.startGuidedTour();">👆 Show Me Around (Guided Tour)</button>
+        <button class="btn btn-secondary" style="flex:1; min-width:140px;" onclick="closeOnboardingTour()">Skip, I'll Explore Myself</button>
+      </div>
     </div>
   </div>
 
@@ -3307,7 +3387,7 @@
         key: RAZORPAY_KEY_ID,
         amount: Math.round(chargeFee * 100),
         currency: "INR",
-        name: "Dharun Portal Manager",
+        name: "Physio Accounting Assistant",
         description: isNewMember ? `Portal Activation - ${userTag}` : `Portal Subscription Renewal (${planText}) - ${userTag}`,
         image: "https://cdn-icons-png.flaticon.com/512/3135/3135715.png",
         handler: async function (response) {
@@ -3916,7 +3996,7 @@
         `✅ Received Today: *₹${s.received.toLocaleString('en-IN')}*\n` +
         `🔴 Due (Today's Shortfall): *₹${s.due.toLocaleString('en-IN')}*\n\n` +
         `📌 Total Outstanding (All Clients): *₹${overallDue.toLocaleString('en-IN')}*\n\n` +
-        `— Auto-generated by Dharun Portal Manager`;
+        `— Auto-generated by Physio Accounting Assistant`;
     };
 
     window.buildMonthSummaryText = function(s) {
@@ -3928,7 +4008,7 @@
         `✅ Total Received: *₹${s.received.toLocaleString('en-IN')}*\n` +
         `🔴 Due Generated This Month: *₹${s.due.toLocaleString('en-IN')}*\n\n` +
         `📌 Total Outstanding (All Clients): *₹${overallDue.toLocaleString('en-IN')}*\n\n` +
-        `— Auto-generated by Dharun Portal Manager`;
+        `— Auto-generated by Physio Accounting Assistant`;
     };
 
     // auto=true means this came from the unattended once-a-day/month check
@@ -5345,7 +5425,7 @@
             identity: MANAGER_EMAIL,
             displayName: "Dharun Manager",
             doctorName: "Dharun Manager",
-            clinicName: "Dharun Portal Manager",
+            clinicName: "Physio Accounting Assistant",
             doctorRole: "Manager",
             mobile: APP_OWNER_PHONE,
             role: "manager",
@@ -5636,8 +5716,8 @@
           if (managerNavItem) managerNavItem.style.display = 'flex';
           if (adminCustomBadge) adminCustomBadge.style.display = 'none';
           document.getElementById('sidebar-logo-initial').style.display = 'flex';
-          document.getElementById('sidebar-display-name').innerText = "DHARUN PORTAL";
-          window.generateUniqueLogo("Dharun Portal");
+          document.getElementById('sidebar-display-name').innerText = "PHYSIO ACCOUNTING";
+          window.generateUniqueLogo("Physio Accounting");
           document.getElementById('user-role-label').innerText = "🧭 INDIVIDUAL MANAGER";
           document.getElementById('screen-heading-title').innerText = "Member Specialist Directory";
           document.getElementById('doc-badge-name').innerText = "Dharun Manager";
@@ -6121,7 +6201,7 @@
       const ownerName = prof?.doctorName || prof?.clinicName || '';
       const link = getOwnReferralLink();
       const msg = encodeURIComponent(
-        `Hi! ${ownerName ? `This is ${ownerName}. ` : ''}I'm using the Dharun Portal Manager to manage patient billing, visit calendars and WhatsApp reminders for my clinic — it's saved me a lot of time. Sign up using my referral link and I get free bonus days too!\n\nJoin here: ${link}`
+        `Hi! ${ownerName ? `This is ${ownerName}. ` : ''}I'm using the Physio Accounting Assistant to manage patient billing, visit calendars and WhatsApp reminders for my clinic — it's saved me a lot of time. Sign up using my referral link and I get free bonus days too!\n\nJoin here: ${link}`
       );
       const waUrl = `https://wa.me/?text=${msg}`;
       // Navigate directly instead of window.open(): popup-block detection
@@ -7784,6 +7864,164 @@
       if (typeof window.checkAutoDaySummary === 'function') window.checkAutoDaySummary();
       if (typeof window.checkAutoMonthSummary === 'function') window.checkAutoMonthSummary();
     }, 60000);
+  </script>
+
+  <!-- ============================================================
+       NEW-USER ONBOARDING: "How It Works" login-screen guide +
+       interactive hand-pointer Guided Tour of the dashboard.
+       Self-contained — does not touch any existing app logic.
+  ============================================================= -->
+  <script>
+    (function () {
+      // ---------- 1) First-time-visitor nudge on the LOGIN screen ----------
+      // Shows a bouncing hand pointing at "Register Member Account" plus an
+      // auto "How It Works" modal, once per browser, only while logged out.
+      window.openHowItWorksModal = function () {
+        const m = document.getElementById('howItWorksModal');
+        if (m) m.classList.add('active');
+      };
+      window.closeHowItWorksModal = function () {
+        const m = document.getElementById('howItWorksModal');
+        if (m) m.classList.remove('active');
+        try { localStorage.setItem('dharun_howitworks_seen', '1'); } catch (e) {}
+        const hint = document.getElementById('auth-register-hint');
+        if (hint) hint.style.display = 'none';
+      };
+
+      function maybeGreetFirstTimeVisitor() {
+        const authOverlay = document.getElementById('auth-screen-overlay');
+        if (!authOverlay || authOverlay.classList.contains('hidden')) return; // already logged in
+        let seen = false;
+        try { seen = !!localStorage.getItem('dharun_howitworks_seen'); } catch (e) {}
+        const hint = document.getElementById('auth-register-hint');
+        if (!seen) {
+          if (hint) hint.style.display = 'flex';
+          setTimeout(window.openHowItWorksModal, 900);
+        }
+      }
+      // Hide the pointer hint the moment a first-time visitor interacts with the tabs/forms.
+      ['tab-btn-login', 'tab-btn-register'].forEach(function (id) {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener('click', function () {
+          const hint = document.getElementById('auth-register-hint');
+          if (hint) hint.style.display = 'none';
+          try { localStorage.setItem('dharun_howitworks_seen', '1'); } catch (e) {}
+        });
+      });
+      setTimeout(maybeGreetFirstTimeVisitor, 400);
+
+      // ---------- 2) Interactive Guided Tour of the dashboard ----------
+      // Ordered list of coach-mark steps. Each references an element id that
+      // already exists in the sidebar/header so it stays in sync automatically
+      // if those buttons move — only the id needs to keep existing.
+      const TOUR_STEPS = [
+        {
+          id: null,
+          title: '🎉 Welcome to your Dashboard!',
+          text: "This quick tour points out where everything lives. Tap Next to begin, or Skip Tour any time — you can replay it later from the sidebar."
+        },
+        { id: 'tour-nav-active-works', title: '⚡ Active Works', text: 'Your main screen — every ongoing patient/client with billed, received & balance amounts. Edit balances directly here.' },
+        { id: 'tour-nav-registration', title: '📝 Manual Registration', text: 'Click here to add a new patient or client — name, service, daily charge and schedule.' },
+        { id: 'tour-nav-calendar', title: '🗓️ Master Calendar', text: 'A day-by-day view of visits and revenue across every client for any month.' },
+        { id: 'tour-nav-requests', title: '📥 Online Requests', text: 'When patients book through your public link, their requests land here for you to accept with one tap.' },
+        { id: 'tour-share-link-btn', title: '🔗 Share Reg Link', text: 'Click here to copy or send your personal booking link on WhatsApp — this is how new patients find and book you online. Great for marketing!' },
+        { id: 'tour-nav-revenue', title: '📊 1-Click Revenue Hub', text: 'A snapshot of total earnings, billed amount and outstanding dues at a glance.' },
+        { id: 'tour-nav-reminders', title: '📲 Morning Reminders', text: "Send one-tap WhatsApp reminders to today's patients about their visit or pending dues." },
+        { id: 'tour-nav-completed', title: '📁 Completed Works', text: 'Finished or discharged records are archived here for reference — nothing is ever lost.' },
+        { id: 'tour-nav-directory', title: '👥 Overall Directory', text: 'Every client you have ever added — active or completed — in one searchable list.' },
+        { id: 'tour-subscription-btn', title: '⚡ Subscription', text: 'Check your plan status and renew here to keep your portal active without interruption.' },
+        { id: 'tour-refer-btn', title: '🎁 Refer & Earn', text: 'Invite another clinic and earn free subscription days when they join. Tap here any time.' },
+        { id: null, title: "🚀 You're all set!", text: 'That covers every screen. Explore freely — you can reopen this tour any time from "🧭 Take a Guided Tour" at the bottom of the sidebar.' }
+      ];
+
+      let tourIndex = 0;
+      let tourResizeHandlerAttached = false;
+
+      function getTourStepEl(step) {
+        return step.id ? document.getElementById(step.id) : null;
+      }
+
+      function positionTourForStep() {
+        const step = TOUR_STEPS[tourIndex];
+        const ring = document.getElementById('tourHighlightRing');
+        const hand = document.getElementById('tourHand');
+        const tip = document.getElementById('tourTooltip');
+        const el = getTourStepEl(step);
+
+        document.getElementById('tourStepCount').innerText = `Step ${tourIndex + 1} of ${TOUR_STEPS.length}`;
+        document.getElementById('tourStepTitle').innerText = step.title;
+        document.getElementById('tourStepText').innerText = step.text;
+        document.getElementById('tourBackBtn').style.visibility = tourIndex === 0 ? 'hidden' : 'visible';
+        document.getElementById('tourNextBtn').innerText = tourIndex === TOUR_STEPS.length - 1 ? 'Finish 🎉' : 'Next →';
+
+        if (!el) {
+          // Centered welcome/closing card — no spotlight target.
+          ring.style.opacity = '0';
+          hand.style.opacity = '0';
+          const vw = window.innerWidth, vh = window.innerHeight;
+          tip.style.left = Math.max(16, vw / 2 - 150) + 'px';
+          tip.style.top = Math.max(16, vh / 2 - 90) + 'px';
+          return;
+        }
+
+        el.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'smooth' });
+
+        // Give scrollIntoView a tick before measuring position.
+        setTimeout(function () {
+          const r = el.getBoundingClientRect();
+          const pad = 8;
+          ring.style.opacity = '1';
+          ring.style.top = (r.top - pad) + 'px';
+          ring.style.left = (r.left - pad) + 'px';
+          ring.style.width = (r.width + pad * 2) + 'px';
+          ring.style.height = (r.height + pad * 2) + 'px';
+
+          hand.style.opacity = '1';
+          hand.style.top = (r.top - 30) + 'px';
+          hand.style.left = (r.left + r.width / 2 - 14) + 'px';
+
+          const vw = window.innerWidth, vh = window.innerHeight;
+          let tipTop = r.bottom + 18;
+          let tipLeft = Math.min(Math.max(16, r.left), vw - 316);
+          if (tipTop + 160 > vh) tipTop = Math.max(16, r.top - 175);
+          tip.style.top = tipTop + 'px';
+          tip.style.left = tipLeft + 'px';
+        }, 220);
+      }
+
+      window.startGuidedTour = function () {
+        // Make sure the sidebar (and its nav items) are visible, even on mobile.
+        if (typeof window.toggleSidebarMenu === 'function') {
+          try { window.toggleSidebarMenu(true); } catch (e) {}
+        }
+        tourIndex = 0;
+        document.getElementById('tourOverlay').classList.add('active');
+        positionTourForStep();
+        if (!tourResizeHandlerAttached) {
+          window.addEventListener('resize', function () {
+            if (document.getElementById('tourOverlay').classList.contains('active')) positionTourForStep();
+          });
+          tourResizeHandlerAttached = true;
+        }
+      };
+
+      window.tourGoNext = function () {
+        if (tourIndex >= TOUR_STEPS.length - 1) { window.skipGuidedTour(); return; }
+        tourIndex++;
+        positionTourForStep();
+      };
+      window.tourGoBack = function () {
+        if (tourIndex === 0) return;
+        tourIndex--;
+        positionTourForStep();
+      };
+      window.skipGuidedTour = function () {
+        document.getElementById('tourOverlay').classList.remove('active');
+        if (typeof window.toggleSidebarMenu === 'function' && window.innerWidth <= 640) {
+          try { window.toggleSidebarMenu(false); } catch (e) {}
+        }
+      };
+    })();
   </script>
 </body>
 </html>
