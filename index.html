@@ -644,6 +644,7 @@
     .nav-badge.alert-badge { background: #ef4444; color: #ffffff; animation: pulse 1.5s infinite; }
 
     @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
+    @keyframes presence-pulse { 0% { opacity: 1; } 50% { opacity: 0.35; } 100% { opacity: 1; } }
 
     .sidebar-footer { padding-top: 14px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 8px; }
 
@@ -2972,6 +2973,70 @@
     let isImpersonating = false;
     let impersonatedMemberId = null;
     let incomingRequests = [];
+    let memberHeartbeatInterval = null;
+    let adminPresenceRefreshInterval = null;
+
+    // --- Instagram-style "Active now / Last seen" presence system -------------
+    // While a rental member is signed in, we ping their registered_members doc
+    // with a lastSeen timestamp every 30s (and whenever the tab regains focus).
+    // The Admin and Manager directories then read that timestamp to show a
+    // live green "Active now" dot, or a "Last seen Xm/Xh/Xd ago" fallback.
+    window.startMemberPresenceHeartbeat = function(uid) {
+      if (!uid) return;
+      window.stopMemberPresenceHeartbeat();
+      const pingPresence = () => {
+        updateDoc(doc(db, "registered_members", uid), { lastSeen: Date.now() }).catch(() => {});
+      };
+      pingPresence();
+      memberHeartbeatInterval = setInterval(pingPresence, 30000);
+      document.addEventListener('visibilitychange', window.__presenceVisibilityHandler = () => {
+        if (document.visibilityState === 'visible' && activeFirebaseUser) pingPresence();
+      });
+    };
+
+    window.stopMemberPresenceHeartbeat = function() {
+      if (memberHeartbeatInterval) {
+        clearInterval(memberHeartbeatInterval);
+        memberHeartbeatInterval = null;
+      }
+      if (window.__presenceVisibilityHandler) {
+        document.removeEventListener('visibilitychange', window.__presenceVisibilityHandler);
+        window.__presenceVisibilityHandler = null;
+      }
+    };
+
+    // Turns a raw lastSeen millisecond timestamp into Instagram-style text.
+    // "Active now" covers the most recent 2 minutes (our heartbeat is 30s,
+    // so this comfortably covers normal gaps between pings).
+    window.formatLastSeen = function(ts) {
+      if (!ts) return { isOnline: false, text: 'Never logged in' };
+      const diffMs = Date.now() - ts;
+      if (diffMs < 2 * 60 * 1000) return { isOnline: true, text: 'Active now' };
+      const mins = Math.floor(diffMs / 60000);
+      if (mins < 60) return { isOnline: false, text: `Active ${mins}m ago` };
+      const hrs = Math.floor(mins / 60);
+      if (hrs < 24) return { isOnline: false, text: `Active ${hrs}h ago` };
+      const days = Math.floor(hrs / 24);
+      if (days < 7) return { isOnline: false, text: `Active ${days}d ago` };
+      const weeks = Math.floor(days / 7);
+      if (weeks < 5) return { isOnline: false, text: `Active ${weeks}w ago` };
+      return { isOnline: false, text: `Active ${new Date(ts).toLocaleDateString('en-GB')}` };
+    };
+
+    // Renders the "Login ID" + green/grey presence dot block used inside both
+    // the Admin (Rented Portals Directory) and Manager directory tables.
+    window.renderPresenceBadge = function(usr) {
+      const p = window.formatLastSeen(usr.lastSeen);
+      const dotColor = p.isOnline ? '#10b981' : '#94a3b8';
+      const textColor = p.isOnline ? '#10b981' : '#94a3b8';
+      return `
+        <div class="member-bright-email" style="font-size:0.82rem; margin-top:4px;">🆔 Login ID: <strong>${usr.identity || usr.id || 'N/A'}</strong></div>
+        <div style="font-size:0.78rem; margin-top:3px; display:flex; align-items:center; gap:5px; font-weight:800; color:${textColor};">
+          <span style="width:8px; height:8px; border-radius:50%; background:${dotColor}; display:inline-block; box-shadow:0 0 6px ${dotColor};${p.isOnline ? ' animation:presence-pulse 1.5s infinite;' : ''}"></span>
+          ${p.text}
+        </div>
+      `;
+    };
 
     const urlParams = new URLSearchParams(window.location.search);
     const publicClinicUid = urlParams.get('book') || urlParams.get('reg');
@@ -4770,6 +4835,7 @@
             <td>
               <div class="member-bright-title">${user.doctorName || 'Specialist'}</div>
               <div class="member-bright-clinic" style="margin-top:3px;"><span style="color:#fbbf24; font-weight:800;">${category}</span> • <strong>${user.clinicName || 'Business Identity'}</strong></div>
+              ${window.renderPresenceBadge(user)}
             </td>
             <td class="member-bright-phone">${user.mobile || 'No Mobile'}</td>
             <td><strong style="color:var(--accent);">${expiryText}</strong></td>
@@ -4892,8 +4958,8 @@
           <td>
             <div class="member-bright-title">${usr.doctorName || 'Specialist'} <span class="uid-badge" style="font-size:0.75rem; margin-left:4px;">UID: ${shortMemberUid} (${daysLeftText})</span></div>
             <div class="member-bright-clinic" style="margin-top:3px;"><span style="color:#fbbf24; font-weight:800;">${categoryTag}</span> • <strong>${usr.clinicName || 'Center'}</strong></div>
-            <div class="member-bright-email" style="font-size:0.84rem; margin-top:2px;">📧 ${usr.identity || usr.id}</div>
             <div class="member-bright-role" style="font-size:0.84rem;">🎓 ${usr.doctorRole || 'Specialist'}</div>
+            ${window.renderPresenceBadge(usr)}
             ${replyAlert}
           </td>
           <td>
@@ -5222,6 +5288,8 @@
 
           switchPage('page-admin-portal', adminNavItem);
           window.loadAllRegisteredUsers();
+          if (adminPresenceRefreshInterval) clearInterval(adminPresenceRefreshInterval);
+          adminPresenceRefreshInterval = setInterval(() => window.loadAllRegisteredUsers(), 30000);
         } else if (userRole === "manager") {
           if (adminNavItem) adminNavItem.style.display = 'none';
           if (managerNavItem) managerNavItem.style.display = 'flex';
@@ -5242,6 +5310,8 @@
           }
           switchPage('page-manager-portal', managerNavItem);
           await window.loadAllRegisteredUsers();
+          if (adminPresenceRefreshInterval) clearInterval(adminPresenceRefreshInterval);
+          adminPresenceRefreshInterval = setInterval(() => window.loadAllRegisteredUsers(), 30000);
         } else {
           const isParlor = memberData?.businessCategory === 'parlor';
           const doctorName = memberData?.doctorName || (isParlor ? "Ramya Devi" : "Dharun");
@@ -5276,10 +5346,16 @@
 
           switchPage('page-active-works', memberNavItems[0]);
           await loadFromCloud(user.uid);
+          window.startMemberPresenceHeartbeat(user.uid);
         }
       } else {
         patients = [];
         activeMemberProfile = null;
+        window.stopMemberPresenceHeartbeat();
+        if (adminPresenceRefreshInterval) {
+          clearInterval(adminPresenceRefreshInterval);
+          adminPresenceRefreshInterval = null;
+        }
         if (!publicClinicUid) {
           document.getElementById('subscription-lock-overlay').classList.remove('active');
           document.getElementById('auth-screen-overlay').classList.remove('hidden');
