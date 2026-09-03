@@ -1856,6 +1856,36 @@
         </section>
 
         <section id="page-reminders" class="page-view">
+          <div class="card" style="margin-bottom: 16px;">
+            <h2>📊 Day-End &amp; Monthly WhatsApp Summary</h2>
+            <p style="font-size:0.82rem; color:var(--text-muted); margin-top:-8px; margin-bottom:14px;">
+              When you finish your day, the portal totals up today's visits, amount received and amount still due,
+              then prepares a WhatsApp message to <strong>your own registered number</strong> (the WhatsApp/mobile
+              number you signed up with). A same-day toast will pop up after your chosen day-end time with a
+              <strong>ready-to-send</strong> WhatsApp message — one tap sends it, since WhatsApp itself requires a
+              person to press Send and doesn't allow silent background sending. A monthly totals message works the
+              same way at the start of each new month. You can also send either one manually any time below.
+            </p>
+
+            <div style="display:flex; align-items:center; gap:10px; background:#11192e; border:1px solid var(--border); border-radius:10px; padding:12px 14px; margin-bottom:12px;">
+              <input type="checkbox" id="dayend-summary-enabled" onchange="window.onDaySummarySettingsChanged()" style="width:18px; height:18px; accent-color:#25d366;">
+              <label for="dayend-summary-enabled" style="margin:0; font-size:0.88rem; font-weight:700; color:var(--text-main); cursor:pointer;">Enable automatic day-end &amp; monthly summary</label>
+            </div>
+
+            <div class="form-group" style="margin-bottom:14px;">
+              <label>Day-End Time (summary toast appears at/after this time)</label>
+              <input type="time" id="dayend-summary-time" value="20:00" onchange="window.onDaySummarySettingsChanged()">
+            </div>
+
+            <div id="dayend-summary-target-mobile" style="font-size:0.8rem; color:var(--text-muted); margin-bottom:14px;"></div>
+
+            <div style="display:flex; gap:10px; flex-wrap:wrap;">
+              <button type="button" class="btn btn-whatsapp" style="flex:1; min-width:200px;" onclick="window.sendDaySummaryWhatsApp(false)">📲 Send Today's Summary Now</button>
+              <button type="button" class="btn btn-whatsapp" style="flex:1; min-width:200px;" onclick="window.sendMonthSummaryWhatsApp(false)">📲 Send This Month's Summary Now</button>
+            </div>
+            <div id="dayend-summary-last-sent" style="font-size:0.76rem; color:var(--text-muted); margin-top:10px;"></div>
+          </div>
+
           <div class="card">
             <h2>📲 Morning WhatsApp Session Reminders</h2>
             <div id="dedicated-reminder-list" style="display: flex; flex-direction: column; gap: 12px;"></div>
@@ -3725,6 +3755,317 @@
       setTimeout(() => el.remove(), 300);
     };
 
+    // ==========================================================================
+    // ---- Day-End & Monthly WhatsApp Summary (auto-computed, one-tap send) ----
+    // Note on "automatic": WhatsApp itself never allows a website to press
+    // Send on a person's behalf — every wa.me link still requires one human
+    // tap inside WhatsApp. So "automatic" here means the portal automatically
+    // calculates the totals AND automatically prepares/opens the message the
+    // moment it's due (once per day after the chosen day-end time, and once
+    // per month at the start of the new month) — the member only taps Send.
+    // ==========================================================================
+
+    // Warm, dismissible motivational notice shown the moment a visit is
+    // successfully logged — a quick confidence boost for the physio/doctor
+    // themself (not the client), celebrating another session done today.
+    window.showVisitAppreciationToast = function() {
+      try {
+        const layer = document.getElementById('renewal-daily-toast-layer');
+        if (!layer) return;
+        const isParlor = activeMemberProfile?.businessCategory === 'parlor';
+        const rawDoctorName = activeMemberProfile?.doctorName || (isParlor ? 'there' : 'Doctor');
+        const doctorTitle = isParlor || /^dr\.?\s/i.test(rawDoctorName) ? rawDoctorName : `Dr. ${rawDoctorName}`;
+        const todaySessions = typeof window.computeDaySummary === 'function' ? window.computeDaySummary().visits : null;
+
+        const boostLines = [
+          `You're on fire today — keep that momentum going! 🔥`,
+          `Every session you complete is a life you're helping. Proud of you! 💪`,
+          `That's another one done — you're making a real difference today. 🌟`,
+          `Great hands, great care — today is going strong! 🙌`,
+          `Consistency like this is what builds a great practice. Keep going! 🚀`
+        ];
+        const boostLine = boostLines[Math.floor(Math.random() * boostLines.length)];
+        const sessionLine = (todaySessions && todaySessions > 0)
+          ? ` That's <strong>${todaySessions} session${todaySessions > 1 ? 's' : ''}</strong> completed today.`
+          : '';
+
+        const toastId = `visit-boost-toast-${Date.now()}`;
+        const toastEl = document.createElement('div');
+        toastEl.className = 'renewal-daily-toast';
+        toastEl.id = toastId;
+        toastEl.style.setProperty('--rt-accent', '#10b981');
+        toastEl.style.setProperty('--rt-accent-bg', 'rgba(16, 185, 129, 0.15)');
+        toastEl.style.setProperty('--rt-accent-2', '#059669');
+        toastEl.innerHTML = `
+          <div class="renewal-toast-row">
+            <div class="renewal-toast-icon">💪</div>
+            <div class="renewal-toast-body">
+              <div class="renewal-toast-title">Well Done, ${doctorTitle}!</div>
+              <div class="renewal-toast-msg">${boostLine}${sessionLine}</div>
+            </div>
+            <button class="renewal-toast-close" aria-label="Dismiss" onclick="window.dismissRenewalDailyToast('${toastId}')">&times;</button>
+          </div>
+        `;
+        layer.appendChild(toastEl);
+        setTimeout(() => window.dismissRenewalDailyToast(toastId), 6000);
+      } catch (e) { console.warn('Visit boost toast failed:', e); }
+    };
+
+    window.getSummaryStorageKey = function(suffix) {
+      const uidKey = (activeFirebaseUser && activeFirebaseUser.uid) || activeMemberProfile?.uid || activeMemberProfile?.mobile || 'member';
+      return `dharun_summary_${suffix}_${uidKey}`;
+    };
+
+    window.getDaySummarySettings = function() {
+      const enabledRaw = localStorage.getItem(window.getSummaryStorageKey('dayend_enabled'));
+      const timeRaw = localStorage.getItem(window.getSummaryStorageKey('dayend_time'));
+      return {
+        enabled: enabledRaw === null ? true : enabledRaw === '1', // ON by default
+        time: timeRaw || '20:00'
+      };
+    };
+
+    window.onDaySummarySettingsChanged = function() {
+      const enabledEl = document.getElementById('dayend-summary-enabled');
+      const timeEl = document.getElementById('dayend-summary-time');
+      if (enabledEl) localStorage.setItem(window.getSummaryStorageKey('dayend_enabled'), enabledEl.checked ? '1' : '0');
+      if (timeEl && timeEl.value) localStorage.setItem(window.getSummaryStorageKey('dayend_time'), timeEl.value);
+    };
+
+    // Populates the settings card on the Reminders page with this member's
+    // saved preferences + their registered WhatsApp number + last-sent status.
+    window.renderDaySummarySettingsUI = function() {
+      const settings = window.getDaySummarySettings();
+      const enabledEl = document.getElementById('dayend-summary-enabled');
+      const timeEl = document.getElementById('dayend-summary-time');
+      const mobileEl = document.getElementById('dayend-summary-target-mobile');
+      const lastSentEl = document.getElementById('dayend-summary-last-sent');
+      if (enabledEl) enabledEl.checked = settings.enabled;
+      if (timeEl) timeEl.value = settings.time;
+      if (mobileEl) {
+        const mob = activeMemberProfile?.mobile || '';
+        mobileEl.innerHTML = mob
+          ? `📱 Summaries are sent to your registered number: <strong style="color:var(--text-main);">${mob}</strong>`
+          : `⚠️ No WhatsApp number found on your account — update your mobile number in your profile first.`;
+      }
+      if (lastSentEl) {
+        const lastDay = localStorage.getItem(window.getSummaryStorageKey('dayend_last_sent')) || '—';
+        const lastMonth = localStorage.getItem(window.getSummaryStorageKey('monthly_last_shown')) || '—';
+        lastSentEl.innerText = `Last day summary shown: ${lastDay} · Last month summary shown: ${lastMonth}`;
+      }
+    };
+
+    // Every date-tagged entry (visit / extra charge / payment) for a patient,
+    // falling back to recordDate for legacy patients with no visitHistory yet
+    // — mirrors the same fallback renderStats()/openKpiDetailModal() use.
+    window.getPatientVisitDates = function(p) {
+      if (p.visitHistory && p.visitHistory.length > 0) return p.visitHistory.map(v => v.date);
+      return p.recordDate ? [p.recordDate] : [];
+    };
+
+    window.computeOverallOutstanding = function() {
+      let billed = 0, received = 0;
+      patients.forEach(p => { billed += getBilledTotal(p); received += getPaidTotal(p); });
+      return Math.max(0, billed - received);
+    };
+
+    window.computeDaySummary = function(dateStr) {
+      const targetDate = dateStr || window.getLocalDateStr();
+      let visits = 0, billed = 0, received = 0;
+      patients.forEach(p => {
+        if (window.getPatientVisitDates(p).includes(targetDate)) {
+          visits++;
+          billed += parseFloat(p.dailyCharge || 0);
+        }
+        if (p.extraCharges && Array.isArray(p.extraCharges)) {
+          p.extraCharges.forEach(ex => { if (ex.date === targetDate) billed += parseFloat(ex.amount || 0); });
+        }
+        if (p.paymentHistory && Array.isArray(p.paymentHistory)) {
+          p.paymentHistory.forEach(pm => { if (pm.date === targetDate) received += parseFloat(pm.amount || 0); });
+        }
+      });
+      return { date: targetDate, visits, billed, received, due: Math.max(0, billed - received) };
+    };
+
+    // month is 0-indexed (JS Date convention)
+    window.computeMonthSummary = function(year, month) {
+      const prefix = `${year}-${String(month + 1).padStart(2, '0')}`;
+      let visits = 0, billed = 0, received = 0;
+      patients.forEach(p => {
+        window.getPatientVisitDates(p).forEach(d => {
+          if (d && d.startsWith(prefix)) { visits++; billed += parseFloat(p.dailyCharge || 0); }
+        });
+        if (p.extraCharges && Array.isArray(p.extraCharges)) {
+          p.extraCharges.forEach(ex => { if (ex.date && ex.date.startsWith(prefix)) billed += parseFloat(ex.amount || 0); });
+        }
+        if (p.paymentHistory && Array.isArray(p.paymentHistory)) {
+          p.paymentHistory.forEach(pm => { if (pm.date && pm.date.startsWith(prefix)) received += parseFloat(pm.amount || 0); });
+        }
+      });
+      const label = new Date(year, month, 1).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
+      return { year, month, label, visits, billed, received, due: Math.max(0, billed - received) };
+    };
+
+    window.buildDaySummaryText = function(s) {
+      const clinicName = activeMemberProfile?.clinicName || 'Your Clinic';
+      const prettyDate = new Date(s.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+      const overallDue = window.computeOverallOutstanding();
+      return `📊 *Day-End Summary — ${clinicName}*\n🗓️ ${prettyDate}\n\n` +
+        `🧍 Visits Today: *${s.visits}*\n` +
+        `💰 Billed Today: *₹${s.billed.toLocaleString('en-IN')}*\n` +
+        `✅ Received Today: *₹${s.received.toLocaleString('en-IN')}*\n` +
+        `🔴 Due (Today's Shortfall): *₹${s.due.toLocaleString('en-IN')}*\n\n` +
+        `📌 Total Outstanding (All Clients): *₹${overallDue.toLocaleString('en-IN')}*\n\n` +
+        `— Auto-generated by Dharun Portal Manager`;
+    };
+
+    window.buildMonthSummaryText = function(s) {
+      const clinicName = activeMemberProfile?.clinicName || 'Your Clinic';
+      const overallDue = window.computeOverallOutstanding();
+      return `🗓️ *Monthly Summary — ${clinicName}*\n📅 ${s.label}\n\n` +
+        `🧍 Total Visits: *${s.visits}*\n` +
+        `💰 Total Billed: *₹${s.billed.toLocaleString('en-IN')}*\n` +
+        `✅ Total Received: *₹${s.received.toLocaleString('en-IN')}*\n` +
+        `🔴 Due Generated This Month: *₹${s.due.toLocaleString('en-IN')}*\n\n` +
+        `📌 Total Outstanding (All Clients): *₹${overallDue.toLocaleString('en-IN')}*\n\n` +
+        `— Auto-generated by Dharun Portal Manager`;
+    };
+
+    // auto=true means this came from the unattended once-a-day/month check
+    // (kept silent, no alert popups) rather than a manual button tap.
+    window.sendDaySummaryWhatsApp = function(auto, dateStr) {
+      const s = window.computeDaySummary(dateStr);
+      const msg = window.buildDaySummaryText(s);
+      const ownerMobile = (activeMemberProfile?.mobile || '').replace(/\D/g, '');
+      if (!ownerMobile) {
+        if (!auto) alert('No WhatsApp number found on your account. Please update your mobile number in your profile first.');
+        return;
+      }
+      const waUrl = `https://wa.me/${ownerMobile.length === 10 ? '91' + ownerMobile : ownerMobile}?text=${encodeURIComponent(msg)}`;
+      window.open(waUrl, '_blank');
+      localStorage.setItem(window.getSummaryStorageKey('dayend_last_sent'), s.date);
+      if (typeof window.renderDaySummarySettingsUI === 'function') window.renderDaySummarySettingsUI();
+    };
+
+    window.sendMonthSummaryWhatsApp = function(auto, year, month) {
+      const now = new Date();
+      const y = year !== undefined && year !== null ? year : now.getFullYear();
+      const m = month !== undefined && month !== null ? month : now.getMonth();
+      const s = window.computeMonthSummary(y, m);
+      const msg = window.buildMonthSummaryText(s);
+      const ownerMobile = (activeMemberProfile?.mobile || '').replace(/\D/g, '');
+      if (!ownerMobile) {
+        if (!auto) alert('No WhatsApp number found on your account. Please update your mobile number in your profile first.');
+        return;
+      }
+      const waUrl = `https://wa.me/${ownerMobile.length === 10 ? '91' + ownerMobile : ownerMobile}?text=${encodeURIComponent(msg)}`;
+      window.open(waUrl, '_blank');
+      localStorage.setItem(window.getSummaryStorageKey('monthly_last_shown'), `${y}-${String(m + 1).padStart(2, '0')}`);
+      if (typeof window.renderDaySummarySettingsUI === 'function') window.renderDaySummarySettingsUI();
+    };
+
+    // Shows a dismissible, ready-to-send toast (reusing the renewal toast's
+    // CSS) so the CTA tap counts as a genuine user gesture — browsers block
+    // window.open() calls fired unattended from a timer, so a silent,
+    // no-click auto-send is not something a browser will allow.
+    window.showDaySummaryToast = function(s) {
+      const layer = document.getElementById('renewal-daily-toast-layer');
+      if (!layer) return;
+      const toastId = `daysum-toast-${Date.now()}`;
+      const toastEl = document.createElement('div');
+      toastEl.className = 'renewal-daily-toast';
+      toastEl.id = toastId;
+      toastEl.style.setProperty('--rt-accent', '#25d366');
+      toastEl.style.setProperty('--rt-accent-bg', 'rgba(37, 211, 102, 0.15)');
+      toastEl.style.setProperty('--rt-accent-2', '#128c7e');
+      toastEl.innerHTML = `
+        <div class="renewal-toast-row">
+          <div class="renewal-toast-icon">📊</div>
+          <div class="renewal-toast-body">
+            <div class="renewal-toast-title">Day Closed — Send Summary</div>
+            <div class="renewal-toast-msg">${s.visits} visit${s.visits === 1 ? '' : 's'} today · ₹${s.received.toLocaleString('en-IN')} received · ₹${s.due.toLocaleString('en-IN')} due.</div>
+          </div>
+          <button class="renewal-toast-close" aria-label="Dismiss" onclick="window.dismissRenewalDailyToast('${toastId}')">&times;</button>
+        </div>
+        <button class="renewal-toast-cta" onclick="window.dismissRenewalDailyToast('${toastId}'); window.sendDaySummaryWhatsApp(false, '${s.date}');">
+          📲 Send Day Summary via WhatsApp
+        </button>
+      `;
+      layer.appendChild(toastEl);
+      // Mark as handled for today the moment it's shown (matches the
+      // renewal toast's own once-per-day convention) — the manual "Send
+      // Today's Summary Now" button on the Reminders page always still works.
+      localStorage.setItem(window.getSummaryStorageKey('dayend_last_sent'), s.date);
+      setTimeout(() => window.dismissRenewalDailyToast(toastId), 20000);
+    };
+
+    window.showMonthSummaryToast = function(s) {
+      const layer = document.getElementById('renewal-daily-toast-layer');
+      if (!layer) return;
+      const toastId = `monthsum-toast-${Date.now()}`;
+      const toastEl = document.createElement('div');
+      toastEl.className = 'renewal-daily-toast';
+      toastEl.id = toastId;
+      toastEl.style.setProperty('--rt-accent', '#8b5cf6');
+      toastEl.style.setProperty('--rt-accent-bg', 'rgba(139, 92, 246, 0.15)');
+      toastEl.style.setProperty('--rt-accent-2', '#6d28d9');
+      toastEl.innerHTML = `
+        <div class="renewal-toast-row">
+          <div class="renewal-toast-icon">🗓️</div>
+          <div class="renewal-toast-body">
+            <div class="renewal-toast-title">${s.label} — Monthly Summary Ready</div>
+            <div class="renewal-toast-msg">${s.visits} visits · ₹${s.received.toLocaleString('en-IN')} received · ₹${s.due.toLocaleString('en-IN')} due generated.</div>
+          </div>
+          <button class="renewal-toast-close" aria-label="Dismiss" onclick="window.dismissRenewalDailyToast('${toastId}')">&times;</button>
+        </div>
+        <button class="renewal-toast-cta" onclick="window.dismissRenewalDailyToast('${toastId}'); window.sendMonthSummaryWhatsApp(false, ${s.year}, ${s.month});">
+          📲 Send Monthly Summary via WhatsApp
+        </button>
+      `;
+      layer.appendChild(toastEl);
+      setTimeout(() => window.dismissRenewalDailyToast(toastId), 20000);
+    };
+
+    // Called on login and every minute thereafter. Fires the day-end toast
+    // at most once per calendar day, only once it's actually at/after the
+    // member's chosen day-end time.
+    window.checkAutoDaySummary = function() {
+      try {
+        if (activeUserRole !== 'member' || !activeMemberProfile) return;
+        const settings = window.getDaySummarySettings();
+        if (!settings.enabled) return;
+        const todayStr = window.getLocalDateStr();
+        if (localStorage.getItem(window.getSummaryStorageKey('dayend_last_sent')) === todayStr) return;
+        const [hh, mm] = settings.time.split(':').map(Number);
+        const now = new Date();
+        if ((now.getHours() * 60 + now.getMinutes()) < (hh * 60 + mm)) return;
+        window.showDaySummaryToast(window.computeDaySummary(todayStr));
+      } catch (e) { console.warn('Day summary auto-check failed:', e); }
+    };
+
+    // Called on login and every minute thereafter. Fires the monthly toast
+    // at most once per calendar month, covering the month that just ended,
+    // once it's the 1st of the new month at/after the same day-end time
+    // (or any later day that month, in case the app wasn't opened on the 1st).
+    window.checkAutoMonthSummary = function() {
+      try {
+        if (activeUserRole !== 'member' || !activeMemberProfile) return;
+        const settings = window.getDaySummarySettings();
+        if (!settings.enabled) return;
+        const now = new Date();
+        const prevMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0);
+        const y = prevMonthEnd.getFullYear();
+        const m = prevMonthEnd.getMonth();
+        const monthKey = `${y}-${String(m + 1).padStart(2, '0')}`;
+        const lastShownKey = window.getSummaryStorageKey('monthly_last_shown');
+        if (localStorage.getItem(lastShownKey) === monthKey) return;
+        const [hh, mm] = settings.time.split(':').map(Number);
+        if (now.getDate() === 1 && (now.getHours() * 60 + now.getMinutes()) < (hh * 60 + mm)) return;
+        window.showMonthSummaryToast(window.computeMonthSummary(y, m));
+        localStorage.setItem(lastShownKey, monthKey);
+      } catch (e) { console.warn('Month summary auto-check failed:', e); }
+    };
+
     window.checkAdminMessages = function(memberData) {
       const badge = document.getElementById('badge-admin-msg');
       const content = document.getElementById('page-admin-msg-content');
@@ -5347,6 +5688,8 @@
           switchPage('page-active-works', memberNavItems[0]);
           await loadFromCloud(user.uid);
           window.startMemberPresenceHeartbeat(user.uid);
+          window.checkAutoDaySummary();
+          window.checkAutoMonthSummary();
         }
       } else {
         patients = [];
@@ -5414,7 +5757,7 @@
       if (pageId === 'page-patient-requests' && typeof window.renderRequestsPage === "function") window.renderRequestsPage();
       if (pageId === 'page-overall-directory') renderDirectoryTable();
       if (pageId === 'page-completed-works') renderArchiveTable();
-      if (pageId === 'page-reminders') renderRemindersPage();
+      if (pageId === 'page-reminders') { renderRemindersPage(); if (typeof window.renderDaySummarySettingsUI === 'function') window.renderDaySummarySettingsUI(); }
       if (pageId === 'page-manager-portal' && typeof window.filterManagerUsers === "function") window.filterManagerUsers();
 
       renderStats();
@@ -6031,6 +6374,7 @@
         }
       }
       saveAndRender();
+      window.showVisitAppreciationToast();
       return true;
     };
 
@@ -6094,6 +6438,7 @@
       const patientId = p.id;
       window.closeInsufficientAdvanceModal();
       saveAndRender();
+      window.showVisitAppreciationToast();
       if (document.getElementById('patientLedgerModal').classList.contains('active') && plCalendarPatientId === patientId) {
         openPatientLedgerModal(patientId, true);
       }
@@ -6795,6 +7140,7 @@
       if (!p.paymentHistory) p.paymentHistory = [];
 
       const existingVisit = p.visitHistory.find(v => v.date === dateStr);
+      let isNewVisitLogged = false;
 
       if (action === 'mark-planned' || action === 'mark-due') {
         if (!p.dateMarkers) p.dateMarkers = {};
@@ -6823,6 +7169,7 @@
         if (p.dateMarkers) delete p.dateMarkers[dateStr];
         p.daysVisited = (p.daysVisited || 0) + 1;
         p.visitHistory.push({ date: dateStr, visitNum: p.daysVisited, status: action });
+        isNewVisitLogged = true;
         // Advance-first rule: any existing advance (Paid Total already
         // ahead of Billed Total — e.g. from a "Planned (Advance Paid)"
         // marker, or any other overpayment) is used to cover this visit's
@@ -6839,6 +7186,7 @@
       const patientId = p.id;
       closeVisitActionModal();
       saveAndRender();
+      if (isNewVisitLogged) window.showVisitAppreciationToast();
       openPatientLedgerModal(patientId, true);
     };
 
@@ -7433,6 +7781,8 @@
         renderStats();
         renderGeneralCalendar();
       }
+      if (typeof window.checkAutoDaySummary === 'function') window.checkAutoDaySummary();
+      if (typeof window.checkAutoMonthSummary === 'function') window.checkAutoMonthSummary();
     }, 60000);
   </script>
 </body>
