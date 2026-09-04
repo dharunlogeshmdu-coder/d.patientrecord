@@ -139,22 +139,29 @@
       }
     };
 
+    // Three portal skins: 'default' (dark), 'luxury' (light gold), 'professional' (crisp corporate SaaS).
+    window.PORTAL_THEME_ORDER = ['default', 'luxury', 'professional'];
+    window.PORTAL_THEME_META = {
+      default:      { next: 'luxury',       icon: '✨', label: 'Luxury Theme' },
+      luxury:       { next: 'professional', icon: '💼', label: 'Professional Theme' },
+      professional: { next: 'default',      icon: '🌙', label: 'Default Theme' }
+    };
+
     window.applyPortalTheme = function(theme) {
-      const selectedTheme = theme === 'luxury' ? 'luxury' : 'default';
+      const selectedTheme = window.PORTAL_THEME_ORDER.includes(theme) ? theme : 'default';
       document.body.dataset.theme = selectedTheme;
       localStorage.setItem('dharun_portal_theme', selectedTheme);
       const toggle = document.getElementById('global-theme-toggle');
       if (toggle) {
-        toggle.innerHTML = selectedTheme === 'luxury'
-          ? '🌙 <span>Default Theme</span>'
-          : '✨ <span>Luxury Theme</span>';
-        toggle.setAttribute('aria-label', selectedTheme === 'luxury' ? 'Switch to default theme' : 'Switch to luxury theme');
+        const meta = window.PORTAL_THEME_META[selectedTheme];
+        toggle.innerHTML = `${meta.icon} <span>${meta.label}</span>`;
+        toggle.setAttribute('aria-label', `Switch to ${meta.next} theme`);
       }
     };
 
     window.togglePortalTheme = function() {
-      const nextTheme = document.body.dataset.theme === 'luxury' ? 'default' : 'luxury';
-      window.applyPortalTheme(nextTheme);
+      const current = window.PORTAL_THEME_ORDER.includes(document.body.dataset.theme) ? document.body.dataset.theme : 'default';
+      window.applyPortalTheme(window.PORTAL_THEME_META[current].next);
     };
 
     window.downloadReceiptPDF = function() {
@@ -320,6 +327,10 @@
     .auth-feature-list li { display: flex; gap: 10px; align-items: flex-start; font-size: 0.83rem; color: var(--text-muted); background: #11192e; border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; }
     .auth-feature-list li .fi-icon { font-size: 1.05rem; line-height: 1.3; }
     .auth-feature-list li strong { color: var(--text-main); display: block; margin-bottom: 1px; }
+    @media (max-width: 480px) {
+      .login-contact-footer .lcf-links { flex-direction: column; align-items: stretch; }
+      .login-contact-footer a { justify-content: center; word-break: break-word; }
+    }
     @media (max-width: 900px) {
       .auth-feature-panel { display: none; }
       .auth-corner-ad-badge { display: none; }
@@ -438,6 +449,50 @@
     .auth-card button[type="submit"]:hover {
       transform: translateY(-2px);
     }
+
+    .login-contact-footer {
+      margin-top: 22px;
+      padding-top: 16px;
+      border-top: 1px dashed var(--border);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      text-align: center;
+    }
+    .login-contact-footer .lcf-title {
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+    .login-contact-footer .lcf-links {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 8px;
+    }
+    .login-contact-footer a {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--text-main);
+      background: var(--folder-bg, #11192e);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 7px 14px;
+      text-decoration: none;
+      transition: transform 0.15s ease, border-color 0.15s ease;
+    }
+    .login-contact-footer a:hover {
+      transform: translateY(-1px);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+    .login-contact-footer .lcf-icon { font-size: 0.9rem; }
 
     .auth-brand { display: flex; flex-direction: column; align-items: center; margin-bottom: 20px; text-align: center; }
     .auth-brand-icon {
@@ -1238,6 +1293,165 @@
     .manager-summary strong { color: #fbbf24; }
     body[data-theme="luxury"] .manager-summary strong { color: #9a6b08; }
 
+    /* =====================================================================
+       PROFESSIONAL THEME — crisp, corporate SaaS look (Linear/Stripe style):
+       flat white surfaces, slate-blue accent, thin 1px borders, near-zero
+       shadow, tight radii, no gradients. Third skin alongside default/luxury.
+    ===================================================================== */
+    body[data-theme="professional"] {
+      --bg-main: #f4f6f9;
+      --bg-sidebar: #ffffff;
+      --bg-card: #ffffff;
+      --bg-input: #ffffff;
+      --primary: #3452eb;
+      --primary-hover: #2740c9;
+      --primary-glow: rgba(52, 82, 235, 0.14);
+      --accent: #0f766e;
+      --accent-glow: rgba(15, 118, 110, 0.14);
+      --text-main: #101828;
+      --text-muted: #667085;
+      --border: #e3e7ee;
+      --border-focus: #3452eb;
+      --danger: #dc2626;
+      --success: #0f9d58;
+      --warning: #b45309;
+      --folder-bg: #f8f9fb;
+      --sidebar-hover: rgba(52, 82, 235, 0.06);
+      --sidebar-active: rgba(52, 82, 235, 0.10);
+      color-scheme: light;
+    }
+    body[data-theme="professional"] * { box-shadow: none !important; text-shadow: none !important; }
+    body[data-theme="professional"] .theme-toggle {
+      background: #101828;
+      color: #eef1ff;
+      border-color: #101828;
+      border-radius: 8px;
+    }
+    body[data-theme="professional"] .sidebar,
+    body[data-theme="professional"] .top-action-bar,
+    body[data-theme="professional"] .card,
+    body[data-theme="professional"] .modal-content,
+    body[data-theme="professional"] .auth-card {
+      background: #ffffff;
+      color: var(--text-main);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+    }
+    body[data-theme="professional"] .sidebar { border-right: 1px solid var(--border); border-radius: 0; }
+    body[data-theme="professional"] .auth-card::before { background: var(--primary); height: 3px; }
+    body[data-theme="professional"] .sidebar-brand h2,
+    body[data-theme="professional"] h1,
+    body[data-theme="professional"] h2,
+    body[data-theme="professional"] h3,
+    body[data-theme="professional"] h4,
+    body[data-theme="professional"] label,
+    body[data-theme="professional"] th {
+      color: #101828;
+      font-family: var(--font-body);
+      letter-spacing: 0;
+    }
+    body[data-theme="professional"] .sidebar-brand p,
+    body[data-theme="professional"] .page-title-group p,
+    body[data-theme="professional"] p,
+    body[data-theme="professional"] small {
+      color: var(--text-muted);
+    }
+    body[data-theme="professional"] .nav-item { color: #475467; border-radius: 8px; }
+    body[data-theme="professional"] .nav-item:hover,
+    body[data-theme="professional"] .nav-item.active {
+      color: var(--primary);
+      background: var(--sidebar-active);
+    }
+    body[data-theme="professional"] .control-field,
+    body[data-theme="professional"] .table-container,
+    body[data-theme="professional"] .renewal-plan-card,
+    body[data-theme="professional"] .pay-history-summary-box,
+    body[data-theme="professional"] .password-badge-pill,
+    body[data-theme="professional"] .doctor-professional-card,
+    body[data-theme="professional"] .doctor-booking-banner {
+      background: #f8f9fb;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text-main);
+    }
+    body[data-theme="professional"] input,
+    body[data-theme="professional"] select,
+    body[data-theme="professional"] textarea {
+      background: #ffffff !important;
+      color: #101828 !important;
+      border: 1px solid var(--border) !important;
+      border-radius: 6px !important;
+    }
+    body[data-theme="professional"] input:focus,
+    body[data-theme="professional"] select:focus,
+    body[data-theme="professional"] textarea:focus {
+      border-color: var(--primary) !important;
+      outline: 2px solid var(--primary-glow) !important;
+    }
+    body[data-theme="professional"] table tr { border-color: var(--border); }
+    body[data-theme="professional"] table tbody tr:hover { background: #f8f9fb; }
+    body[data-theme="professional"] .btn,
+    body[data-theme="professional"] button[type="submit"] {
+      border-radius: 6px !important;
+    }
+    body[data-theme="professional"] .btn-primary,
+    body[data-theme="professional"] .btn-notify,
+    body[data-theme="professional"] .btn-admin {
+      background: var(--primary);
+      color: #ffffff !important;
+      border: 1px solid var(--primary);
+    }
+    body[data-theme="professional"] .btn-primary:hover,
+    body[data-theme="professional"] .btn-notify:hover,
+    body[data-theme="professional"] .btn-admin:hover {
+      background: var(--primary-hover);
+      transform: none;
+    }
+    body[data-theme="professional"] .btn-secondary {
+      background: #ffffff;
+      color: #344054;
+      border: 1px solid var(--border);
+    }
+    body[data-theme="professional"] .theme-toggle span { color: #eef1ff; }
+    body[data-theme="professional"] .auth-tabs {
+      background: #f4f6f9;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+    }
+    body[data-theme="professional"] .auth-tab-btn.active {
+      background: #ffffff;
+      color: var(--primary);
+      border-radius: 6px;
+    }
+    body[data-theme="professional"] .auth-msg.error {
+      background: rgba(220, 38, 38, 0.06);
+      border-color: #dc2626;
+      color: #b42318;
+    }
+    body[data-theme="professional"] .auth-msg.success {
+      background: rgba(15, 157, 88, 0.08);
+      border-color: #0f9d58;
+      color: #0c7a44;
+    }
+    body[data-theme="professional"] select option {
+      background-color: #ffffff;
+      color: #101828;
+    }
+    body[data-theme="professional"] .manager-summary {
+      background: #f8f9fb;
+      border: 1px solid var(--border);
+    }
+    body[data-theme="professional"] .manager-summary strong { color: var(--primary); }
+    body[data-theme="professional"] .auth-feature-list li,
+    body[data-theme="professional"] .auth-corner-ad-badge {
+      background: #ffffff;
+      border: 1px solid var(--border);
+    }
+    body[data-theme="professional"] .login-contact-footer {
+      background: #f8f9fb;
+      border: 1px solid var(--border);
+    }
+
     .modal-actions { display: flex; gap: 10px; flex-wrap: wrap; }
 
     @media (max-width: 900px) {
@@ -1657,6 +1871,15 @@
           <button type="submit" class="btn btn-notify" style="width: 100%;">📩 Send Password Reset Link</button>
           <button type="button" class="btn btn-secondary" style="width: 100%;" onclick="closeForgotPasswordModal()">← Back to Sign In</button>
         </form>
+      </div>
+
+      <div class="login-contact-footer">
+        <div class="lcf-title">Need help signing in?</div>
+        <div class="lcf-links">
+          <a href="tel:+918248090433"><span class="lcf-icon">📞</span> 8248090433</a>
+          <a href="https://wa.me/918248090433" target="_blank" rel="noopener"><span class="lcf-icon">💬</span> WhatsApp</a>
+          <a href="mailto:dharunlogeshmdu@gmail.com"><span class="lcf-icon">✉️</span> dharunlogeshmdu@gmail.com</a>
+        </div>
       </div>
     </div>
   </div>
