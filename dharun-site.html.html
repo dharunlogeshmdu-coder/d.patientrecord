@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dharun Web Studio — Custom Website Designing</title>
+<!-- Dharun Web Studio — contact details and name are set. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #0f1b2d;
+    --bg-soft: #14263e;
+    --panel: #182a45;
+    --ink: #f4f1ea;
+    --ink-dim: #b9c4d6;
+    --muted: #7e8fa8;
+    --accent: #ffb238;
+    --accent-ink: #241605;
+    --teal: #5eead4;
+    --line: rgba(244,241,234,0.12);
+    --danger: #ff8a8a;
+    --radius: 14px;
+    --maxw: 1120px;
+  }
+
+  *{ box-sizing: border-box; }
+  html{ scroll-behavior: smooth; }
+  body{
+    margin:0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Manrope', system-ui, sans-serif;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+  h1,h2,h3{
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    line-height: 1.12;
+    margin: 0 0 0.4em;
+    letter-spacing: -0.01em;
+  }
+  p{ margin: 0 0 1em; color: var(--ink-dim); max-width: 62ch; }
+  a{ color: inherit; }
+  .wrap{ max-width: var(--maxw); margin: 0 auto; padding: 0 24px; }
+  section{ padding: 88px 0; border-bottom: 1px solid var(--line); }
+  section:last-of-type{ border-bottom: none; }
+  .eyebrow{ color: var(--teal); font-size: 0.92rem; font-weight: 600; margin-bottom: 10px; }
+  .btn{
+    display:inline-flex; align-items:center; gap:8px;
+    padding: 13px 24px; border-radius: 999px; font-weight: 700;
+    text-decoration:none; border: 1px solid transparent; cursor:pointer;
+    font-family:inherit; font-size:1rem; transition: transform .15s ease, background .15s ease;
+  }
+  .btn:active{ transform: scale(0.97); }
+  .btn-solid{ background: var(--accent); color: var(--accent-ink); }
+  .btn-solid:hover{ background:#ffc463; }
+  .btn-ghost{ background: transparent; color: var(--ink); border-color: var(--line); }
+  .btn-ghost:hover{ border-color: var(--teal); color: var(--teal); }
+
+  /* ---------- header ---------- */
+  header{
+    position: sticky; top:0; z-index: 50;
+    background: rgba(15,27,45,0.82);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--line);
+  }
+  .nav{
+    display:flex; align-items:center; justify-content:space-between;
+    padding: 16px 24px; max-width: var(--maxw); margin:0 auto;
+  }
+  .brand{ display:flex; align-items:center; gap:12px; text-decoration:none; }
+  .brand-name{ font-family:'Fraunces',serif; font-size:1.2rem; font-weight:700; color:var(--ink); }
+  .brand-tag{ font-size:0.72rem; color: var(--muted); margin-top:-2px; }
+  .nav-links{ display:flex; align-items:center; gap:28px; }
+  .nav-links a{ text-decoration:none; color: var(--ink-dim); font-weight:600; font-size:0.95rem; }
+  .nav-links a:hover{ color: var(--accent); }
+  .nav-cta{ display:flex; gap:10px; }
+  @media (max-width: 780px){
+    .nav-links{ display:none; }
+  }
+
+  /* ---------- logo mark ---------- */
+  .logo-mark{ width:44px; height:44px; flex-shrink:0; }
+  .cursor-blink{ animation: blink 1.2s steps(1) infinite; }
+  @keyframes blink{ 50%{ opacity:0; } }
+
+  /* ---------- hero ---------- */
+  .hero{ padding-top: 76px; }
+  .hero-grid{
+    display:grid; grid-template-columns: 1.1fr 0.9fr; gap: 56px; align-items:center;
+  }
+  @media (max-width: 900px){ .hero-grid{ grid-template-columns: 1fr; } }
+  .hero h1{ font-size: clamp(2.3rem, 4.4vw, 3.4rem); }
+  .hero p.lead{ font-size: 1.12rem; max-width: 46ch; }
+  .hero-actions{ display:flex; gap:14px; margin-top: 28px; flex-wrap:wrap; }
+  .hero-meta{
+    display:flex; gap:26px; margin-top: 40px; flex-wrap:wrap;
+  }
+  .hero-meta div{ }
+  .hero-meta strong{ display:block; font-family:'Fraunces',serif; font-size:1.5rem; color:var(--ink); }
+  .hero-meta span{ font-size:0.82rem; color: var(--muted); }
+
+  /* browser mockup */
+  .mock{
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    overflow:hidden;
+    box-shadow: 0 30px 60px -30px rgba(0,0,0,0.6);
+  }
+  .mock-bar{
+    display:flex; align-items:center; gap:6px;
+    padding: 12px 14px; background: rgba(0,0,0,0.18); border-bottom:1px solid var(--line);
+  }
+  .mock-bar span{ width:9px; height:9px; border-radius:50%; background: var(--muted); opacity:0.5; }
+  .mock-body{ padding: 22px; font-family: 'Manrope', monospace; }
+  .code-line{ display:flex; gap:10px; margin-bottom: 10px; font-size: 0.86rem; }
+  .code-line .n{ color: var(--muted); width: 16px; text-align:right; user-select:none; }
+  .code-line .c1{ color: #8fd3ff; }
+  .code-line .c2{ color: var(--teal); }
+  .code-line .c3{ color: var(--accent); }
+  .code-line .c4{ color: var(--ink-dim); }
+  .mock-cloud{
+    display:flex; align-items:center; gap:10px; margin-top:16px; padding:12px 14px;
+    background: rgba(94,234,212,0.08); border:1px dashed rgba(94,234,212,0.4); border-radius:10px;
+    font-size:0.82rem; color: var(--teal);
+  }
+
+  /* ---------- services ---------- */
+  .service-row{
+    display:grid; grid-template-columns: 40px 1fr; gap: 18px;
+    padding: 26px 0; border-top: 1px solid var(--line);
+  }
+  .service-row:last-child{ border-bottom: 1px solid var(--line); }
+  .service-row .icon{ color: var(--accent); }
+  .service-row h3{ font-size: 1.2rem; margin-bottom: 6px; }
+  .service-row .tag{
+    display:inline-block; font-size:0.72rem; font-weight:700; color: var(--bg);
+    background: var(--teal); padding: 3px 9px; border-radius:999px; margin-left:10px; vertical-align:middle;
+  }
+  .services-head{ display:flex; justify-content:space-between; align-items:flex-end; gap:20px; flex-wrap:wrap; }
+
+  /* ---------- process ---------- */
+  .steps{ display:grid; grid-template-columns: repeat(4,1fr); gap: 28px; margin-top: 44px; position:relative; }
+  @media (max-width: 900px){ .steps{ grid-template-columns: repeat(2,1fr);} }
+  @media (max-width: 560px){ .steps{ grid-template-columns: 1fr;} }
+  .step{ position:relative; padding-top: 8px; }
+  .step .num{
+    font-family:'Fraunces',serif; font-size:2.1rem; color: var(--accent); margin-bottom:10px; display:block;
+  }
+  .step h3{ font-size:1.05rem; margin-bottom:6px; }
+  .step p{ font-size:0.92rem; }
+
+  /* ---------- form ---------- */
+  .form-grid{ display:grid; grid-template-columns: 0.9fr 1.1fr; gap: 48px; align-items:flex-start; }
+  @media (max-width: 900px){ .form-grid{ grid-template-columns: 1fr; } }
+  .contact-card{
+    border:1px solid var(--line); border-radius: var(--radius); padding: 22px;
+    background: var(--panel); margin-top: 22px;
+  }
+  .contact-card a{ display:flex; align-items:center; gap:12px; text-decoration:none; color:var(--ink); font-weight:600; padding: 10px 0; }
+  .contact-card a:hover{ color: var(--accent); }
+  .contact-card .divider{ border-top:1px solid var(--line); }
+
+  form{ background: var(--panel); border:1px solid var(--line); border-radius: var(--radius); padding: 28px; }
+  .field{ margin-bottom: 18px; }
+  .field label{ display:block; font-size:0.86rem; font-weight:700; margin-bottom:7px; color: var(--ink); }
+  .field .hint{ font-size:0.78rem; color: var(--muted); margin-top:5px; }
+  .field input[type=text], .field input[type=tel], .field input[type=email], .field select, .field textarea{
+    width:100%; padding: 12px 13px; border-radius:9px; border:1px solid var(--line);
+    background: rgba(255,255,255,0.03); color: var(--ink); font-family:inherit; font-size:0.95rem;
+  }
+  .field input:focus, .field select:focus, .field textarea:focus{
+    outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(255,178,56,0.18);
+  }
+  .field textarea{ resize: vertical; min-height: 90px; }
+  .row2{ display:grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 560px){ .row2{ grid-template-columns: 1fr; } }
+  .choice-grid{ display:grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  @media (max-width: 560px){ .choice-grid{ grid-template-columns: 1fr; } }
+  .choice{
+    display:flex; align-items:center; gap:9px; border:1px solid var(--line); border-radius:9px;
+    padding: 10px 12px; font-size:0.9rem; cursor:pointer;
+  }
+  .choice input{ accent-color: var(--accent); }
+  .choice:has(input:checked){ border-color: var(--accent); background: rgba(255,178,56,0.07); }
+  .form-actions{ display:flex; gap:12px; flex-wrap:wrap; margin-top:6px; }
+  .form-note{ font-size: 0.82rem; color: var(--muted); margin-top: 14px; }
+  #form-status{ font-size:0.88rem; margin-top:12px; display:none; padding:10px 12px; border-radius:8px; }
+  #form-status.ok{ display:block; background: rgba(94,234,212,0.1); color: var(--teal); }
+  #form-status.err{ display:block; background: rgba(255,138,138,0.1); color: var(--danger); }
+
+  /* ---------- footer ---------- */
+  footer{ padding: 48px 0 32px; }
+  .foot-grid{ display:flex; justify-content:space-between; gap: 24px; flex-wrap:wrap; align-items:flex-start; }
+  .foot-links{ display:flex; gap: 22px; flex-wrap:wrap; }
+  .foot-links a{ text-decoration:none; color: var(--ink-dim); font-size:0.9rem; }
+  .foot-links a:hover{ color: var(--accent); }
+  .fine{ color: var(--muted); font-size: 0.8rem; margin-top: 28px; }
+
+  /* floating whatsapp */
+  .float-wa{
+    position: fixed; right: 22px; bottom: 22px; z-index: 60;
+    width: 56px; height: 56px; border-radius: 50%;
+    background: #25D366; display:flex; align-items:center; justify-content:center;
+    box-shadow: 0 10px 24px rgba(0,0,0,0.4); text-decoration:none;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <nav class="nav">
+    <a class="brand" href="#top">
+      <svg class="logo-mark" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Dharun logo">
+        <rect x="1" y="1" width="46" height="46" rx="13" fill="#14263e" stroke="#ffb238" stroke-width="1.5"/>
+        <path d="M15 13v22c6.5 0 11-4.9 11-11s-4.5-11-11-11z" stroke="#f4f1ea" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M31 17l5 7-5 7" stroke="#5eead4" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <rect class="cursor-blink" x="30" y="30" width="4" height="4" rx="1" fill="#ffb238"/>
+      </svg>
+      <span>
+        <span class="brand-name">Dharun Web Studio</span><br>
+        <span class="brand-tag">Custom Site Designing</span>
+      </span>
+    </a>
+    <div class="nav-links">
+      <a href="#services">Services</a>
+      <a href="#process">How it works</a>
+      <a href="#contact">Contact</a>
+    </div>
+    <div class="nav-cta">
+      <a class="btn btn-ghost" href="tel:+918248090433">Call</a>
+      <a class="btn btn-solid" href="#start">Start a project</a>
+    </div>
+  </nav>
+</header>
+
+<main id="top">
+
+  <!-- ================= HERO ================= -->
+  <section class="hero">
+    <div class="wrap hero-grid">
+      <div>
+        <div class="eyebrow">Websites built around your business, not a template</div>
+        <h1>A custom website, designed and coded around how you actually work.</h1>
+        <p class="lead">I design and build websites from scratch — no drag-and-drop kits, no recycled themes. If you need somewhere to store client files, photos, or documents alongside your site, I set up cloud storage that connects to it too.</p>
+        <div class="hero-actions">
+          <a class="btn btn-solid" href="#start">Tell me about your project</a>
+          <a class="btn btn-ghost" href="#services">See what's included</a>
+        </div>
+        <div class="hero-meta">
+          <div><strong>100%</strong><span>Built from scratch, not templated</span></div>
+          <div><strong>Cloud-ready</strong><span>Storage set up if you need it</span></div>
+          <div><strong>Direct</strong><span>You talk to the person building it</span></div>
+        </div>
+      </div>
+
+      <div class="mock" aria-hidden="true">
+        <div class="mock-bar"><span></span><span></span><span></span></div>
+        <div class="mock-body">
+          <div class="code-line"><span class="n">1</span><span class="c1">site</span><span class="c4">.</span><span class="c2">build</span><span class="c4">({</span></div>
+          <div class="code-line"><span class="n">2</span><span class="c4">&nbsp;&nbsp;business:</span><span class="c3">"yours"</span><span class="c4">,</span></div>
+          <div class="code-line"><span class="n">3</span><span class="c4">&nbsp;&nbsp;design:</span><span class="c3">"custom"</span><span class="c4">,</span></div>
+          <div class="code-line"><span class="n">4</span><span class="c4">&nbsp;&nbsp;mobileFriendly:</span><span class="c2">true</span><span class="c4">,</span></div>
+          <div class="code-line"><span class="n">5</span><span class="c4">&nbsp;&nbsp;storage:</span><span class="c2">"cloud"</span></div>
+          <div class="code-line"><span class="n">6</span><span class="c4">})</span></div>
+          <div class="mock-cloud">☁ Cloud storage connected — files, photos and documents synced to your site</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= SERVICES ================= -->
+  <section id="services">
+    <div class="wrap">
+      <div class="services-head">
+        <div>
+          <div class="eyebrow">What I build</div>
+          <h2>Everything a small business or personal brand needs online.</h2>
+        </div>
+        <p>Pick just a website, or a website with cloud storage built in — either way, it's built around what you actually need, not a fixed package.</p>
+      </div>
+
+      <div class="service-row">
+        <div class="icon">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="M3 12h18M12 3c2.8 2.7 4.2 6 4.2 9s-1.4 6.3-4.2 9c-2.8-2.7-4.2-6-4.2-9S9.2 5.7 12 3Z" stroke="currentColor" stroke-width="1.6"/></svg>
+        </div>
+        <div>
+          <h3>Custom website design</h3>
+          <p>A site designed from a blank page around your business, your content, and how customers should move through it — home, services, gallery, booking, whatever you need. Works properly on phones, not just desktops.</p>
+        </div>
+      </div>
+
+      <div class="service-row">
+        <div class="icon">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="M7 18a4.5 4.5 0 0 1-.5-8.98A5.5 5.5 0 0 1 17.4 8.1 4 4 0 0 1 17 16H7Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
+        </div>
+        <div>
+          <h3>Cloud storage, connected to your site<span class="tag">Popular add-on</span></h3>
+          <p>If you need somewhere for customers to upload files, or for you to store photos, invoices, or documents behind the scenes, I set up cloud storage and wire it into your site — so everything lives in one place instead of scattered folders.</p>
+        </div>
+      </div>
+
+      <div class="service-row">
+        <div class="icon">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="16" rx="2" stroke="currentColor" stroke-width="1.6"/><path d="M3 9h18M8 4v5" stroke="currentColor" stroke-width="1.6"/></svg>
+        </div>
+        <div>
+          <h3>Online forms &amp; booking</h3>
+          <p>Contact forms, appointment requests, or order enquiries that land straight in your email or WhatsApp — no separate app to check.</p>
+        </div>
+      </div>
+
+      <div class="service-row">
+        <div class="icon">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="M12 3v4M12 17v4M4.2 4.2l2.9 2.9M16.9 16.9l2.9 2.9M3 12h4M17 12h4M4.2 19.8l2.9-2.9M16.9 7.1l2.9-2.9" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+        </div>
+        <div>
+          <h3>Ongoing support</h3>
+          <p>Once the site is live, I stay reachable for edits, updates, and questions — you're not left figuring it out alone.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= PROCESS ================= -->
+  <section id="process">
+    <div class="wrap">
+      <div class="eyebrow">How a project runs</div>
+      <h2>From first message to a live site, in four steps.</h2>
+      <div class="steps">
+        <div class="step">
+          <span class="num">01</span>
+          <h3>You send your details</h3>
+          <p>Fill in the short form below — what you need, roughly, and how to reach you.</p>
+        </div>
+        <div class="step">
+          <span class="num">02</span>
+          <h3>A quick call or chat</h3>
+          <p>I go through your answers and ask anything that needs more detail, over call or WhatsApp.</p>
+        </div>
+        <div class="step">
+          <span class="num">03</span>
+          <h3>Design &amp; build</h3>
+          <p>I design the site, share a preview for your feedback, and build in cloud storage if you need it.</p>
+        </div>
+        <div class="step">
+          <span class="num">04</span>
+          <h3>Launch</h3>
+          <p>Your site goes live, and I stay on for support and any changes after launch.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= FORM / CONTACT ================= -->
+  <section id="start">
+    <div class="wrap form-grid">
+      <div id="contact">
+        <div class="eyebrow">Get in touch</div>
+        <h2>Tell me what you need — I'll take it from there.</h2>
+        <p>Fill in the form and send it by email or WhatsApp, whichever's easier. If you'd rather just call, my number's below.</p>
+
+        <div class="contact-card">
+          <a href="tel:+918248090433">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M4 4h4l2 5-2.5 2A11 11 0 0 0 14 18l2-2.5 5 2v4a2 2 0 0 1-2 2C10 23.5.5 14 0.5 5.5A2 2 0 0 1 4 4Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+            +91 82480 90433
+          </a>
+          <div class="divider"></div>
+          <a href="mailto:dharunlogeshmdu@gmail.com">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="18" height="14" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="m3.5 6 8.5 7 8.5-7" stroke="currentColor" stroke-width="1.5"/></svg>
+            dharunlogeshmdu@gmail.com
+          </a>
+          <div class="divider"></div>
+          <a href="https://wa.me/918248090433" target="_blank" rel="noopener">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 3a9 9 0 0 0-7.8 13.5L3 21l4.6-1.2A9 9 0 1 0 12 3Z" stroke="currentColor" stroke-width="1.5"/></svg>
+            Chat on WhatsApp
+          </a>
+          <div class="divider"></div>
+          <a href="#" style="cursor:default;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 21s-7-6.1-7-11.5A7 7 0 0 1 19 9.5C19 14.9 12 21 12 21Z" stroke="currentColor" stroke-width="1.5"/><circle cx="12" cy="9.5" r="2.3" stroke="currentColor" stroke-width="1.5"/></svg>
+            Madurai, Tamil Nadu
+          </a>
+        </div>
+      </div>
+
+      <form id="project-form" novalidate>
+        <div class="row2">
+          <div class="field">
+            <label for="name">Your name</label>
+            <input type="text" id="name" name="name" required>
+          </div>
+          <div class="field">
+            <label for="mobile">Mobile number</label>
+            <input type="tel" id="mobile" name="mobile" required>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="email">Email address</label>
+          <input type="email" id="email" name="email" required>
+        </div>
+
+        <div class="row2">
+          <div class="field">
+            <label for="siteType">What kind of site do you need?</label>
+            <select id="siteType" name="siteType">
+              <option>Business / company site</option>
+              <option>Portfolio / personal site</option>
+              <option>Online store</option>
+              <option>Blog</option>
+              <option>Not sure yet</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="purpose">What's it for?</label>
+            <input type="text" id="purpose" name="purpose" placeholder="e.g. my physiotherapy clinic">
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Do you need cloud storage for files or photos?</label>
+          <div class="choice-grid">
+            <label class="choice"><input type="radio" name="cloud" value="Yes"> Yes</label>
+            <label class="choice"><input type="radio" name="cloud" value="No"> No</label>
+            <label class="choice"><input type="radio" name="cloud" value="Not sure"> Not sure — advise me</label>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Any features you already know you want</label>
+          <div class="choice-grid">
+            <label class="choice"><input type="checkbox" name="features" value="Booking / appointments"> Booking / appointments</label>
+            <label class="choice"><input type="checkbox" name="features" value="Payment / online orders"> Payment / online orders</label>
+            <label class="choice"><input type="checkbox" name="features" value="Photo or video gallery"> Photo or video gallery</label>
+            <label class="choice"><input type="checkbox" name="features" value="Admin login for you"> Admin login for you</label>
+          </div>
+        </div>
+
+        <div class="row2">
+          <div class="field">
+            <label for="budget">Rough budget</label>
+            <select id="budget" name="budget">
+              <option>Not sure yet</option>
+              <option>Under ₹10,000</option>
+              <option>₹10,000 – ₹25,000</option>
+              <option>₹25,000 – ₹50,000</option>
+              <option>Above ₹50,000</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="timeline">When do you need it by?</label>
+            <select id="timeline" name="timeline">
+              <option>No fixed date</option>
+              <option>Within 2 weeks</option>
+              <option>Within a month</option>
+              <option>1–3 months</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="details">Anything else worth knowing</label>
+          <textarea id="details" name="details" placeholder="Links to sites you like, existing content, anything specific"></textarea>
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" class="btn btn-solid" data-via="email">Send by email</button>
+          <button type="submit" class="btn btn-ghost" data-via="whatsapp">Send by WhatsApp</button>
+        </div>
+        <div id="form-status" role="status"></div>
+        <p class="form-note">Sending opens your email or WhatsApp app with these details filled in — nothing is stored or sent from this page directly.</p>
+      </form>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="foot-grid">
+      <div>
+        <div class="brand-name" style="font-size:1.1rem;">Dharun Web Studio</div>
+        <p style="margin-top:6px; max-width:40ch;">Custom-built websites, with cloud storage set up when you need it.</p>
+      </div>
+      <div class="foot-links">
+        <a href="tel:+918248090433">+91 82480 90433</a>
+        <a href="mailto:dharunlogeshmdu@gmail.com">dharunlogeshmdu@gmail.com</a>
+        <a href="https://wa.me/918248090433" target="_blank" rel="noopener">WhatsApp</a>
+      </div>
+    </div>
+    <div class="fine">© <span id="year"></span> Dharun Web Studio. Built one site at a time.</div>
+  </div>
+</footer>
+
+<a class="float-wa" href="https://wa.me/918248090433" target="_blank" rel="noopener" aria-label="Chat on WhatsApp">
+  <svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="M12 3a9 9 0 0 0-7.8 13.5L3 21l4.6-1.2A9 9 0 1 0 12 3Z" stroke="white" stroke-width="1.6"/></svg>
+</a>
+
+<script>
+  document.getElementById('year').textContent = new Date().getFullYear();
+
+  const PHONE_INTL = "918248090433"; // digits only, country code first — matches +91 82480 90433
+  const EMAIL_TO = "dharunlogeshmdu@gmail.com";
+
+  const form = document.getElementById('project-form');
+  const status = document.getElementById('form-status');
+
+  function buildMessage(data){
+    const features = data.getAll('features').join(', ') || 'None specified';
+    const cloud = data.get('cloud') || 'Not answered';
+    return [
+      `New project enquiry`,
+      `Name: ${data.get('name')}`,
+      `Mobile: ${data.get('mobile')}`,
+      `Email: ${data.get('email')}`,
+      `Site type: ${data.get('siteType')}`,
+      `Purpose: ${data.get('purpose') || '-'}`,
+      `Needs cloud storage: ${cloud}`,
+      `Features wanted: ${features}`,
+      `Budget: ${data.get('budget')}`,
+      `Timeline: ${data.get('timeline')}`,
+      `Details: ${data.get('details') || '-'}`
+    ].join('\n');
+  }
+
+  form.addEventListener('submit', function(e){
+    e.preventDefault();
+    const via = e.submitter ? e.submitter.dataset.via : 'email';
+
+    if (!form.name.value.trim() || !form.mobile.value.trim() || !form.email.value.trim()){
+      status.textContent = "Please fill in your name, mobile number and email before sending.";
+      status.className = 'err';
+      return;
+    }
+
+    const data = new FormData(form);
+    const message = buildMessage(data);
+
+    if (via === 'whatsapp'){
+      const url = `https://wa.me/${PHONE_INTL}?text=${encodeURIComponent(message)}`;
+      window.open(url, '_blank');
+    } else {
+      const subject = encodeURIComponent(`Website project enquiry — ${data.get('name')}`);
+      const body = encodeURIComponent(message);
+      window.location.href = `mailto:${EMAIL_TO}?subject=${subject}&body=${body}`;
+    }
+
+    status.textContent = "Thanks — your " + (via === 'whatsapp' ? "WhatsApp" : "email") + " app should now open with your details filled in. If nothing opens, use the contact details on the left instead.";
+    status.className = 'ok';
+  });
+</script>
+
+</body>
+</html>
