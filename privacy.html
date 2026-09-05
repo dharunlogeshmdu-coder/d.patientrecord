@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Privacy Policy — Physio Accounting Assistant</title>
+<style>
+  :root {
+    --bg: #0a0f1d;
+    --card: #111a2e;
+    --border: #1f2a44;
+    --text-main: #e2e8f0;
+    --text-muted: #94a3b8;
+    --accent: #38bdf8;
+    --accent2: #a78bfa;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text-main);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    line-height: 1.65;
+  }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 40px 20px 80px; }
+  header { text-align: center; margin-bottom: 36px; }
+  header h1 { font-size: 1.7rem; margin-bottom: 6px; color: #fff; }
+  header p { color: var(--text-muted); font-size: 0.9rem; margin: 4px 0; }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 24px 26px;
+    margin-bottom: 20px;
+  }
+  h2 {
+    font-size: 1.05rem;
+    color: var(--accent);
+    margin-top: 0;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  p, li { color: #cbd5e1; font-size: 0.92rem; }
+  ul { padding-left: 20px; margin: 10px 0; }
+  li { margin-bottom: 6px; }
+  strong { color: #f1f5f9; }
+  a { color: var(--accent2); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .contact-box {
+    background: linear-gradient(135deg, rgba(56,189,248,0.10) 0%, rgba(167,139,250,0.08) 100%);
+    border: 1px solid rgba(56,189,248,0.3);
+    border-radius: 12px;
+    padding: 16px 18px;
+    font-size: 0.9rem;
+  }
+  .contact-box a { display: block; margin: 4px 0; }
+  footer { text-align: center; color: var(--text-muted); font-size: 0.78rem; margin-top: 30px; }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>🔒 Privacy Policy</h1>
+      <p><strong>Physio Accounting Assistant</strong></p>
+      <p>Last updated: 5 September 2026</p>
+    </header>
+
+    <div class="card">
+      <h2>📋 Overview</h2>
+      <p>
+        Physio Accounting Assistant ("the App", "we", "us") is a billing, scheduling and patient-record
+        management tool built for physiotherapy clinics, rehab centers, and similar practices. This policy
+        explains what information the App collects, how it is used, and how it is protected. By using the
+        App, you agree to the terms of this policy.
+      </p>
+    </div>
+
+    <div class="card">
+      <h2>📥 Information We Collect</h2>
+      <p><strong>Account information (clinic owner / practitioner):</strong></p>
+      <ul>
+        <li>Name, clinic/business name, designation, and registration details entered at sign-up</li>
+        <li>Email address and mobile number, used for login and account communication</li>
+      </ul>
+      <p><strong>Patient/client records entered by the clinic:</strong></p>
+      <ul>
+        <li>Patient name, mobile number, diagnosis/service type, and appointment schedule</li>
+        <li>Billing amounts, payment history, and outstanding balances the clinic records for its patients</li>
+      </ul>
+      <p><strong>Payment information:</strong></p>
+      <ul>
+        <li>Subscription payments for using the App are processed by <strong>Razorpay</strong>, a third-party
+        payment gateway. We do not collect or store your card, UPI, or bank account details — Razorpay
+        handles this directly and shares only the transaction status and ID with us.</li>
+      </ul>
+      <p><strong>Automatically collected data:</strong></p>
+      <ul>
+        <li>Device push-notification token (used only to deliver visit/payment reminders)</li>
+        <li>Basic usage/log data (e.g. login timestamps) for troubleshooting and security</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h2>🎯 How We Use Information</h2>
+      <ul>
+        <li>To operate core features: patient records, billing ledgers, calendars, and invoices</li>
+        <li>To send appointment and payment-due reminders via push notification or WhatsApp (opened as a
+        pre-filled message that the clinic staff sends manually — we do not send WhatsApp messages
+        automatically on your behalf without your action)</li>
+        <li>To process and confirm subscription payments</li>
+        <li>To operate the optional Refer & Earn program (tracking referral codes and rewards)</li>
+        <li>To maintain and improve the reliability and security of the App</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h2>🗄️ Where Your Data Is Stored</h2>
+      <p>
+        App data (accounts, patient records, billing history) is stored using <strong>Google Firebase</strong>
+        (Cloud Firestore and Firebase Authentication), hosted on Google Cloud infrastructure. Data is
+        transmitted using encrypted (HTTPS) connections. Access to clinic data is restricted to the
+        signed-in clinic account; a system administrator may access data only for support or billing
+        purposes.
+      </p>
+    </div>
+
+    <div class="card">
+      <h2>🤝 Third-Party Services</h2>
+      <ul>
+        <li><strong>Google Firebase</strong> — authentication, database, and push notifications
+          (<a href="https://firebase.google.com/support/privacy" target="_blank" rel="noopener">Firebase Privacy Policy</a>)</li>
+        <li><strong>Razorpay</strong> — payment processing for subscription renewals
+          (<a href="https://razorpay.com/privacy/" target="_blank" rel="noopener">Razorpay Privacy Policy</a>)</li>
+        <li><strong>WhatsApp (wa.me links)</strong> — used only to open a pre-filled message in WhatsApp at
+        the clinic staff's own action; we do not have access to WhatsApp message content</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h2>🔐 Data Retention & Deletion</h2>
+      <p>
+        Clinic and patient records are retained for as long as the account remains active, so that billing
+        history and patient ledgers stay accessible. A clinic owner may request deletion of their account
+        and associated data at any time by contacting us (see below). Some records may be retained briefly
+        after deletion where required for fraud prevention, dispute resolution, or legal obligations.
+      </p>
+    </div>
+
+    <div class="card">
+      <h2>🧒 Children's Privacy</h2>
+      <p>
+        This App is intended for use by clinic staff and business owners, not by children. We do not
+        knowingly collect personal information directly from children under 13. Patient records for minors
+        may be entered by a clinic on behalf of their guardians as part of normal medical/billing
+        record-keeping.
+      </p>
+    </div>
+
+    <div class="card">
+      <h2>🛡️ Your Rights</h2>
+      <ul>
+        <li>Request a copy of the data associated with your clinic account</li>
+        <li>Request correction of inaccurate account information</li>
+        <li>Request deletion of your account and associated data</li>
+      </ul>
+      <p>To exercise any of these rights, contact us using the details below.</p>
+    </div>
+
+    <div class="card">
+      <h2>♻️ Changes to This Policy</h2>
+      <p>
+        We may update this Privacy Policy from time to time. Changes will be posted on this page with an
+        updated "Last updated" date. Continued use of the App after changes are posted constitutes
+        acceptance of the revised policy.
+      </p>
+    </div>
+
+    <div class="card">
+      <h2>✉️ Contact Us</h2>
+      <p>If you have questions about this Privacy Policy or your data, contact:</p>
+      <div class="contact-box">
+        <strong>Dharun</strong> — Physio Accounting Assistant
+        <a href="mailto:dharunlogeshmdu@gmail.com">✉️ dharunlogeshmdu@gmail.com</a>
+        <a href="https://wa.me/918248090433" target="_blank" rel="noopener">📞 +91 82480 90433</a>
+      </div>
+    </div>
+
+    <footer>
+      © 2026 Physio Accounting Assistant. All rights reserved.
+    </footer>
+  </div>
+</body>
+</html>
