@@ -9,7 +9,7 @@
 //     is done by the standalone reminder-scan backend (physio-reminder-backend/).
 // ============================================================================
 
-const CACHE_NAME = 'physio-accounting-v1';
+const CACHE_NAME = 'physio-accounting-v2';
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();
