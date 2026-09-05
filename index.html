@@ -341,6 +341,11 @@
       .login-contact-footer .lcf-links { flex-direction: column; align-items: stretch; }
       .login-contact-footer a { justify-content: center; word-break: break-word; }
     }
+    /* Very small / older phones: a 2-column KPI grid gets too tight for
+       longer amounts like ₹25,400.00, so drop to one comfortable column. */
+    @media (max-width: 380px) {
+      .top-pro-stats { grid-template-columns: 1fr; }
+    }
     @media (max-width: 900px) {
       .auth-feature-panel { display: none; }
       .auth-corner-ad-badge { display: none; }
@@ -1624,8 +1629,15 @@
       .card { padding: 18px 16px; border-radius: 14px; }
       .card h2 { font-size: 1.1rem; }
 
-      .top-pro-stats, .quick-launch-grid, .form-grid { grid-template-columns: 1fr; }
-      .pro-kpi-card .amount { font-size: 1.65rem; }
+      .quick-launch-grid, .form-grid { grid-template-columns: 1fr; }
+
+      /* Dashboard summary cards: a 2-per-row grid reads much better on a
+         phone than 6 full-width cards stacked in a long column — less
+         scrolling, and each card is still big enough to read comfortably. */
+      .top-pro-stats { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+      .pro-kpi-card { padding: 14px 12px; border-radius: 12px; }
+      .pro-kpi-card h3 { font-size: 0.66rem; letter-spacing: 0.6px; margin-bottom: 5px; line-height: 1.25; }
+      .pro-kpi-card .amount { font-size: 1.35rem; }
 
       #top-member-buttons { width: 100%; }
       #top-member-buttons .btn { flex: 1 1 auto; font-size: 0.78rem; padding: 9px 10px; }
