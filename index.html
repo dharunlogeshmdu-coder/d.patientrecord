@@ -3089,7 +3089,7 @@
         <label>Login Email ID *</label>
         <input type="email" id="edit-member-email" required>
       </div>
-      <div class="form-group" style="margin-bottom: 12px;">
+      <div class="form-group" style="margin-bottom: 12px;" id="edit-member-password-group">
         <label>Member Password *</label>
         <input type="text" id="edit-member-password" required>
       </div>
@@ -5392,6 +5392,13 @@
       document.getElementById('edit-member-email').value = user.identity || '';
       document.getElementById('edit-member-password').value = user.plainPassword || '';
       document.getElementById('edit-member-mobile').value = user.mobile || '';
+
+      // Managers can edit member details but should never see a member's
+      // plain-text login password — that stays visible to the Super Admin
+      // only. Hiding (not removing) the field means saveMemberDetailsAdmin()
+      // below can still leave the stored password untouched for managers.
+      const pwdGroup = document.getElementById('edit-member-password-group');
+      if (pwdGroup) pwdGroup.style.display = (activeUserRole === 'manager') ? 'none' : '';
 
       document.getElementById('adminEditMemberModal').classList.add('active');
     };
