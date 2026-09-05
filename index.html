@@ -6460,6 +6460,7 @@
 
       let activeReceived = 0;
       let activeBilled = 0;
+      let activeDueSum = 0;
 
       patients.forEach(p => {
         const b = getBilledTotal(p);
@@ -6481,6 +6482,7 @@
         const received = getPaidTotal(p);
         activeBilled += billed;
         activeReceived += received;
+        activeDueSum += Math.max(0, billed - received);
 
         const hasVisitedToday = (p.visitHistory && p.visitHistory.some(v => v.date === todayStr)) || (p.recordDate === todayStr);
         if (hasVisitedToday) {
@@ -6497,7 +6499,7 @@
         }
       });
 
-      const activeDue = Math.max(0, activeBilled - activeReceived);
+      const activeDue = activeDueSum;
       const allTimeDue = Math.max(0, allTimeBilled - allTimeReceived);
       const totalAdvanceInHand = activeList.reduce((acc, p) => acc + getAdvanceInHand(p), 0);
 
