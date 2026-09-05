@@ -3368,8 +3368,15 @@
       getDocs,
       query,
       where,
-      limit
+      limit,
+      arrayUnion
     } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import {
+      getMessaging,
+      getToken,
+      onMessage,
+      isSupported as isMessagingSupported
+    } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-messaging.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyC8O_OWGcHHYK4Q8-cZNhqseSFeIy9-ixo",
@@ -3383,6 +3390,19 @@
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
+
+    // ---- Push notifications (FCM) ----
+    // Lets visit reminders reach the clinic owner's phone/laptop even when
+    // this tab/app is fully closed, via the service worker's
+    // onBackgroundMessage handler in sw.js + the standalone reminder-scan
+    // backend. isMessagingSupported() resolves false (and we quietly no-op)
+    // on browsers without Push API support, e.g. iOS Safari below 16.4 or
+    // when the page isn't served over HTTPS.
+    const FCM_VAPID_KEY = "BAExdEmx3QwcfdaoyLyI8PXgz6sf01iXO_tVbuEdMjk2ozWbdOigpE7ETYC2wuiNbdAbZMBJnFAnHdpV33L1QYs";
+    let messaging = null;
+    isMessagingSupported().then((supported) => {
+      if (supported) messaging = getMessaging(app);
+    }).catch(() => {});
 
     const SUPER_ADMIN_EMAIL = "dharunlogeshmdu@gmail.com";
 
@@ -6075,6 +6095,85 @@
       }
     }
 
+    // ---- Push notifications: register this device's FCM token ----
+    // Requests notification permission (only actually prompts the first
+    // time — subsequent calls just read the existing permission) and, once
+    // granted, saves the resulting FCM token onto
+    // registered_members/{uid}.fcmTokens. The standalone reminder-scan
+    // backend reads that array to know which device(s) to push each
+    // clinic's visit reminders to. arrayUnion() means calling this again
+    // from the same browser/device never creates duplicate token entries.
+    window.registerPushNotifications = async function(uid) {
+      try {
+        if (!messaging || !('Notification' in window) || !('serviceWorker' in navigator)) return;
+        let permission = Notification.permission;
+        if (permission === 'default') permission = await Notification.requestPermission();
+        if (permission !== 'granted') return;
+
+        const swRegistration = await navigator.serviceWorker.ready;
+        const token = await getToken(messaging, {
+          vapidKey: FCM_VAPID_KEY,
+          serviceWorkerRegistration: swRegistration
+        });
+        if (!token) return;
+
+        await updateDoc(doc(db, "registered_members", uid), {
+          fcmTokens: arrayUnion(token)
+        }).catch(async () => {
+          // Very old accounts may not have this field yet — merge-write instead.
+          await setDoc(doc(db, "registered_members", uid), { fcmTokens: [token] }, { merge: true });
+        });
+      } catch (e) {
+        console.warn('Push notification registration skipped:', e.message || e);
+      }
+    };
+
+    // ---- Foreground push handler ----
+    // FCM only lets the service worker auto-show a system notification for
+    // background/closed-tab messages. If this tab is open and focused when
+    // a reminder push arrives, we get it here instead — so show the same
+    // in-app toast used by the local per-minute reminder check.
+    window.addEventListener('load', () => {
+      isMessagingSupported().then((supported) => {
+        if (!supported || !messaging) return;
+        onMessage(messaging, (payload) => {
+          const d = payload.data || {};
+          if (d.type === 'visit-reminder' && d.patientId != null) {
+            const p = (typeof patients !== 'undefined' ? patients : []).find(x => String(x.id) === String(d.patientId));
+            if (p && typeof window.showVisitReminderToast === 'function') {
+              window.showVisitReminderToast(p);
+            }
+          }
+        });
+      }).catch(() => {});
+    });
+
+    // ---- Handle a notification action tapped while the app was closed ----
+    // sw.js's notificationclick handler opens/focuses this page with
+    // ?pushAction=confirm|whatsapp&patientId=..&date=.. — we pick that up
+    // here once patients[] has loaded from Firestore for the logged-in
+    // owner, then strip it from the URL so it can't re-fire on refresh.
+    window.handlePendingPushAction = function() {
+      try {
+        const params = new URLSearchParams(window.location.search);
+        const action = params.get('pushAction');
+        const patientIdParam = params.get('patientId');
+        if (!action || patientIdParam == null) return;
+        const id = isNaN(Number(patientIdParam)) ? patientIdParam : Number(patientIdParam);
+        const dateStr = params.get('date') || window.getLocalDateStr();
+
+        if (action === 'confirm' && typeof openVisitActionModal === 'function') {
+          openVisitActionModal(id, dateStr);
+        } else if (action === 'whatsapp' && typeof window.sendVisitReminderWhatsApp === 'function') {
+          window.sendVisitReminderWhatsApp(id);
+        }
+
+        params.delete('pushAction'); params.delete('patientId'); params.delete('date');
+        const cleanUrl = window.location.pathname + (params.toString() ? '?' + params.toString() : '');
+        window.history.replaceState({}, '', cleanUrl);
+      } catch (e) { console.warn('Pending push action handling failed:', e); }
+    };
+
     onAuthStateChanged(auth, async (user) => {
       activeFirebaseUser = user;
       const adminNavItem = document.getElementById('admin-nav-item');
@@ -6177,6 +6276,8 @@
           window.checkAutoDaySummary();
           window.checkAutoMonthSummary();
           window.checkVisitReminders();
+          window.registerPushNotifications(user.uid);
+          window.handlePendingPushAction();
         }
       } else {
         patients = [];
