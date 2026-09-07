@@ -1029,6 +1029,29 @@
     }
     .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: var(--border-focus); box-shadow: 0 0 0 3px var(--primary-glow); }
 
+    /* Native date-picker calendar icon was rendering dark-on-dark (invisible)
+       in the default dark theme. color-scheme tells the browser to draw its
+       built-in icon/controls in a light tint to begin with, and the extra
+       accent chip behind it (background + padding) guarantees it stands out
+       against the input's own background on every browser/theme. */
+    input[type="date"] { color-scheme: dark; }
+    input[type="date"]::-webkit-calendar-picker-indicator {
+      cursor: pointer;
+      padding: 5px;
+      margin-right: -2px;
+      border-radius: 6px;
+      background-color: var(--accent, #38bdf8);
+      filter: invert(1) brightness(1.15);
+      opacity: 1;
+    }
+    body[data-theme="luxury"] input[type="date"],
+    body[data-theme="professional"] input[type="date"] { color-scheme: light; }
+    body[data-theme="luxury"] input[type="date"]::-webkit-calendar-picker-indicator,
+    body[data-theme="professional"] input[type="date"]::-webkit-calendar-picker-indicator {
+      filter: none;
+      background-color: rgba(56, 189, 248, 0.18);
+    }
+
     .editable-inline-input {
       background: #0d1426;
       border: 1px solid var(--border);
@@ -2208,19 +2231,19 @@
 
         <section id="page-dashboard" class="page-view">
           <div class="top-pro-stats">
-            <div class="pro-kpi-card kpi-received">
+            <div class="pro-kpi-card kpi-received" style="cursor:pointer;" onclick="openKpiDetailModal('overallEarned')" title="Tap to see every client's payments">
               <h3>OVERALL TOTAL PAYMENT EARNED</h3>
               <div class="amount text-success" id="overall-total-earned">₹0.00</div>
             </div>
-            <div class="pro-kpi-card kpi-count">
+            <div class="pro-kpi-card kpi-count" style="cursor:pointer;" onclick="openKpiDetailModal('overallBilled')" title="Tap to see every client's billed total">
               <h3>OVERALL TOTAL BILLED</h3>
               <div class="amount text-info" id="overall-total-billed">₹0.00</div>
             </div>
-            <div class="pro-kpi-card kpi-outstanding">
+            <div class="pro-kpi-card kpi-outstanding" style="cursor:pointer;" onclick="openKpiDetailModal('overallDue')" title="Tap to see who still owes a balance">
               <h3>OVERALL TOTAL OUTSTANDING</h3>
               <div class="amount text-danger" id="overall-total-outstanding">₹0.00</div>
             </div>
-            <div class="pro-kpi-card kpi-today">
+            <div class="pro-kpi-card kpi-today" style="cursor:pointer;" onclick="openKpiDetailModal('todayBilled')" title="Tap to see who was billed today">
               <h3>TODAY'S WORKED AMOUNT</h3>
               <div class="amount text-accent" id="today-worked-amount">₹0.00</div>
             </div>
@@ -2426,7 +2449,7 @@
               <h3>TOTAL ACTIVE BILLED</h3>
               <div class="amount text-success" id="active-summary-total-earn">₹0.00</div>
             </div>
-            <div class="pro-kpi-card kpi-today" title="Charges billed today only (visit charges + extra charges added today)">
+            <div class="pro-kpi-card kpi-today" style="cursor:pointer;" onclick="openKpiDetailModal('todayBilled')" title="Charges billed today only (visit charges + extra charges added today) — tap to see who">
               <h3>TODAY'S BILLED</h3>
               <div class="amount text-accent" id="active-summary-today-billed">₹0.00</div>
             </div>
@@ -6466,6 +6489,7 @@
 
       let allTimeReceived = 0;
       let allTimeBilled = 0;
+      let allTimeDueSum = 0;
       let todayWorkedAmt = 0;
       let todayVisitedCount = 0;
       let todayReceivedAmt = 0;
@@ -6479,7 +6503,14 @@
         const r = getPaidTotal(p);
         allTimeBilled += b;
         allTimeReceived += r;
-        
+        // IMPORTANT: outstanding must be summed PER PATIENT (each clamped to a
+        // minimum of 0) and then totalled — never as a single subtraction of
+        // grand totals. A single subtraction lets one client's advance/overpayment
+        // silently cancel out another client's real due, understating what is
+        // actually still owed (this was the cause of "Overall Total Outstanding"
+        // showing a smaller, wrong number than "Active Due").
+        allTimeDueSum += Math.max(0, b - r);
+
         if (p.paymentHistory && Array.isArray(p.paymentHistory)) {
           p.paymentHistory.forEach(pm => {
             if (pm.date === todayStr) {
@@ -6512,7 +6543,7 @@
       });
 
       const activeDue = activeDueSum;
-      const allTimeDue = Math.max(0, allTimeBilled - allTimeReceived);
+      const allTimeDue = allTimeDueSum;
       const totalAdvanceInHand = activeList.reduce((acc, p) => acc + getAdvanceInHand(p), 0);
 
       const elActiveVisited = document.getElementById('active-summary-visited-count');
@@ -6653,6 +6684,60 @@
         rowsHtml = rows.length
           ? rows.map(r => buildKpiDetailRow(r.p, 'Advance Available', `₹${r.advance.toLocaleString('en-IN')}`, '#38bdf8')).join('')
           : '<p style="color:var(--text-muted); text-align:center; padding:20px 0;">No client currently has advance in hand.</p>';
+
+      } else if (type === 'todayBilled') {
+        // Active clients billed something today: their daily visit charge (if
+        // visited today) plus any extra charges added today.
+        const rows = [];
+        activeList.forEach(p => {
+          let amt = 0;
+          const hasVisitedToday = (p.visitHistory && p.visitHistory.some(v => v.date === todayStr)) || (p.recordDate === todayStr);
+          if (hasVisitedToday) amt += parseFloat(p.dailyCharge || 0);
+          if (p.extraCharges && Array.isArray(p.extraCharges)) {
+            p.extraCharges.forEach(ex => { if (ex.date === todayStr) amt += parseFloat(ex.amount || 0); });
+          }
+          if (amt > 0) rows.push({ p, amt });
+        });
+        rows.sort((a, b) => b.amt - a.amt);
+        title = "🧾 Today's Billed Charges";
+        subtitle = `${rows.length} client${rows.length === 1 ? '' : 's'} billed today`;
+        rowsHtml = rows.length
+          ? rows.map(r => buildKpiDetailRow(r.p, 'Billed Today', `₹${r.amt.toLocaleString('en-IN')}`, 'var(--accent)')).join('')
+          : '<p style="color:var(--text-muted); text-align:center; padding:20px 0;">Nothing billed yet today.</p>';
+
+      // ---- Revenue Hub (all-time, across BOTH active & completed clients) ----
+      } else if (type === 'overallEarned') {
+        const rows = patients
+          .map(p => ({ p, paid: getPaidTotal(p) }))
+          .filter(r => r.paid > 0)
+          .sort((a, b) => b.paid - a.paid);
+        title = "💰 Overall Total Payment Earned";
+        subtitle = `${rows.length} client${rows.length === 1 ? '' : 's'} have made a payment, across active & completed`;
+        rowsHtml = rows.length
+          ? rows.map(r => buildKpiDetailRow(r.p, 'Total Paid', `₹${r.paid.toLocaleString('en-IN')}`, 'var(--success)')).join('')
+          : '<p style="color:var(--text-muted); text-align:center; padding:20px 0;">No payments recorded yet.</p>';
+
+      } else if (type === 'overallBilled') {
+        const rows = patients
+          .map(p => ({ p, billed: getBilledTotal(p) }))
+          .filter(r => r.billed > 0)
+          .sort((a, b) => b.billed - a.billed);
+        title = "📄 Overall Total Billed";
+        subtitle = `${rows.length} client${rows.length === 1 ? '' : 's'} billed, across active & completed`;
+        rowsHtml = rows.length
+          ? rows.map(r => buildKpiDetailRow(r.p, 'Total Billed', `₹${r.billed.toLocaleString('en-IN')}`, '#38bdf8')).join('')
+          : '<p style="color:var(--text-muted); text-align:center; padding:20px 0;">No active clients yet.</p>';
+
+      } else if (type === 'overallDue') {
+        const rows = patients
+          .map(p => ({ p, due: Math.max(0, getBilledTotal(p) - getPaidTotal(p)) }))
+          .filter(r => r.due > 0)
+          .sort((a, b) => b.due - a.due);
+        title = "🔴 Overall Total Outstanding";
+        subtitle = `${rows.length} client${rows.length === 1 ? '' : 's'} with a real balance still due, across active & completed`;
+        rowsHtml = rows.length
+          ? rows.map(r => buildKpiDetailRow(r.p, 'Balance Due', `₹${r.due.toLocaleString('en-IN')}`, 'var(--danger)')).join('')
+          : '<p style="color:var(--text-muted); text-align:center; padding:20px 0;">No outstanding balances. 🎉</p>';
       }
 
       document.getElementById('kpiDetailModalTitle').innerText = title;
@@ -8195,6 +8280,9 @@
 
         const cell = document.createElement('div');
         cell.className = `gen-cal-card ${dateStr === todayStr ? 'is-today' : ''}`;
+        cell.style.cursor = 'pointer';
+        cell.title = 'Tap to see which clients & what happened on this date';
+        cell.onclick = () => window.openCalendarDayDetail(dateStr);
         cell.innerHTML = `
           <div class="gen-cal-card-head">
             <span style="color:${dateStr === todayStr ? 'var(--accent)' : 'var(--text-main)'}; font-weight:800;">${day}</span>
@@ -8217,6 +8305,63 @@
       if (elRec) elRec.innerText = `₹${monthTotalReceived.toLocaleString('en-IN')}`;
       if (elOut) elOut.innerText = `₹${monthTotalOutstanding.toLocaleString('en-IN')}`;
     }
+
+    // Tapping any day cell on the Master Calendar opens the same detail
+    // modal used by the KPI cards, listing exactly who visited (with visit
+    // paid/unpaid status + charge) and who paid something on that date.
+    // Tapping a name inside still drills into that client's full ledger.
+    window.openCalendarDayDetail = function(dateStr) {
+      const visitedRows = [];
+      const paymentRows = [];
+
+      patients.forEach(p => {
+        const v = (p.visitHistory && Array.isArray(p.visitHistory))
+          ? p.visitHistory.find(vh => vh.date === dateStr)
+          : null;
+        let extraOnDay = 0;
+        if (p.extraCharges && Array.isArray(p.extraCharges)) {
+          p.extraCharges.forEach(ex => { if (ex.date === dateStr) extraOnDay += parseFloat(ex.amount || 0); });
+        }
+        if (v || extraOnDay > 0) {
+          const visitCharge = v ? parseFloat(p.dailyCharge || 0) : 0;
+          const amt = visitCharge + extraOnDay;
+          const isUnpaid = v && v.status === 'unpaid';
+          const label = v
+            ? (isUnpaid ? 'Visit · UNPAID' : (extraOnDay > 0 ? 'Visit + Extra · Paid' : 'Visit · Paid'))
+            : 'Extra Charge';
+          visitedRows.push({ p, amt, label, isUnpaid });
+        }
+
+        if (p.paymentHistory && Array.isArray(p.paymentHistory)) {
+          const amt = p.paymentHistory
+            .filter(pm => pm.date === dateStr)
+            .reduce((acc, pm) => acc + (parseFloat(pm.amount) || 0), 0);
+          if (amt > 0) paymentRows.push({ p, amt });
+        }
+      });
+
+      visitedRows.sort((a, b) => b.amt - a.amt);
+      paymentRows.sort((a, b) => b.amt - a.amt);
+
+      const prettyDate = new Date(dateStr + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+
+      document.getElementById('kpiDetailModalTitle').innerText = `🗓️ ${prettyDate}`;
+      document.getElementById('kpiDetailModalSubtitle').innerText =
+        `${visitedRows.length} client${visitedRows.length === 1 ? '' : 's'} billed · ${paymentRows.length} payment${paymentRows.length === 1 ? '' : 's'} received`;
+
+      let rowsHtml = `<div style="font-size:0.8rem; font-weight:800; color:#38bdf8; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:2px;">📋 Visited / Billed (${visitedRows.length})</div>`;
+      rowsHtml += visitedRows.length
+        ? visitedRows.map(r => buildKpiDetailRow(r.p, r.label, `₹${r.amt.toLocaleString('en-IN')}`, r.isUnpaid ? 'var(--danger)' : '#38bdf8', r.isUnpaid)).join('')
+        : '<p style="color:var(--text-muted); text-align:center; padding:10px 0;">No visits or charges recorded on this date.</p>';
+
+      rowsHtml += `<div style="font-size:0.8rem; font-weight:800; color:var(--success); text-transform:uppercase; letter-spacing:0.5px; margin-top:14px; margin-bottom:2px;">💵 Payments Received (${paymentRows.length})</div>`;
+      rowsHtml += paymentRows.length
+        ? paymentRows.map(r => buildKpiDetailRow(r.p, 'Paid', `₹${r.amt.toLocaleString('en-IN')}`, 'var(--success)')).join('')
+        : '<p style="color:var(--text-muted); text-align:center; padding:10px 0;">No payments received on this date.</p>';
+
+      document.getElementById('kpi-detail-list').innerHTML = rowsHtml;
+      document.getElementById('kpiDetailModal').classList.add('active');
+    };
 
     function sendWhatsApp(id) {
       const prof = typeof window.getActiveMemberProfile === 'function' ? window.getActiveMemberProfile() : null;
