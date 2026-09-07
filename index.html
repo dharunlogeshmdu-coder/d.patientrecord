@@ -1168,9 +1168,12 @@
     .gen-cal-header-bar { display: flex; justify-content: space-between; align-items: center; background: #0d1426; padding: 12px 20px; border-radius: 12px; border: 1px solid var(--border); }
     .gen-cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; margin-top: 8px; }
     .gen-cal-day-name { text-align: center; padding: 10px; font-weight: 800; color: var(--text-muted); font-size: 0.8rem; background: #0d1426; border-radius: 8px; }
-    .gen-cal-card { background: #11192e; border: 1px solid var(--border); border-radius: 12px; min-height: 110px; padding: 8px; display: flex; flex-direction: column; gap: 4px; }
+    .gen-cal-card { background: #11192e; border: 1px solid var(--border); border-radius: 12px; min-height: 110px; padding: 8px; display: flex; flex-direction: column; gap: 4px; overflow: hidden; }
     .gen-cal-card.is-today { border: 1.5px solid var(--accent); box-shadow: 0 0 12px var(--accent-glow); }
-    .gen-cal-card-head { display: flex; justify-content: space-between; border-bottom: 1px solid rgba(30, 42, 74, 0.5); padding-bottom: 4px; font-size: 0.85rem; font-weight: 800; }
+    .gen-cal-card-head { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(30, 42, 74, 0.5); padding-bottom: 4px; font-size: 0.85rem; font-weight: 800; }
+    .gen-cal-card-line { font-size: 0.72rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .gen-cal-today-tag { font-size: 0.65rem; color: var(--accent); font-weight: 800; }
+    .gen-cal-line-short { display: none; }
 
     .patient-cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; margin: 10px 0; }
     .patient-cal-day-header { text-align: center; font-size: 0.7rem; font-weight: 700; color: var(--text-muted); padding: 4px; background: #090e1c; border-radius: 4px; }
@@ -1665,10 +1668,19 @@
       #top-member-buttons { width: 100%; }
       #top-member-buttons .btn { flex: 1 1 auto; font-size: 0.78rem; padding: 9px 10px; }
 
-      .gen-cal-grid { gap: 4px; }
-      .gen-cal-card { min-height: 72px; padding: 6px; font-size: 0.72rem; }
-      .gen-cal-card-head { font-size: 0.76rem; }
-      .gen-cal-day-name { padding: 6px 2px; font-size: 0.68rem; }
+      .gen-cal-header-bar { flex-wrap: wrap; justify-content: center; text-align: center; gap: 8px; padding: 10px 12px; }
+      .gen-cal-header-bar h2 { font-size: 1rem !important; order: -1; width: 100%; }
+      .gen-cal-header-bar .btn { padding: 8px 12px; font-size: 0.78rem; min-height: 0; }
+
+      .gen-cal-grid { gap: 3px; }
+      .gen-cal-card { min-height: 58px; padding: 4px 3px; gap: 1px; border-radius: 8px; }
+      .gen-cal-card-head { font-size: 0.68rem; padding-bottom: 2px; }
+      .gen-cal-today-tag { font-size: 0.5rem; }
+      .gen-cal-card-line { font-size: 0.58rem; }
+      .gen-cal-day-name { padding: 5px 1px; font-size: 0.6rem; border-radius: 6px; }
+
+      .gen-cal-line-full { display: none; }
+      .gen-cal-line-short { display: inline; }
 
       .patient-cal-day-box { min-height: 40px; font-size: 0.65rem; }
       .patient-cal-day-header { font-size: 0.62rem; padding: 3px; }
@@ -8286,10 +8298,10 @@
         cell.innerHTML = `
           <div class="gen-cal-card-head">
             <span style="color:${dateStr === todayStr ? 'var(--accent)' : 'var(--text-main)'}; font-weight:800;">${day}</span>
-            ${dateStr === todayStr ? '<span style="font-size:0.65rem; color:var(--accent); font-weight:800;">TODAY</span>' : ''}
+            ${dateStr === todayStr ? '<span class="gen-cal-today-tag">TODAY</span>' : ''}
           </div>
-          <div style="font-size:0.72rem; color:#38bdf8; margin-top:2px;">Visited: <strong>${membersVisitedOnDay} member${membersVisitedOnDay !== 1 ? 's' : ''}</strong></div>
-          <div style="font-size:0.72rem; color:#34d399;">Collection: <strong>₹${dayCollection}</strong></div>
+          <div class="gen-cal-card-line" style="color:#38bdf8;"><span class="gen-cal-line-full">Visited: </span><span class="gen-cal-line-short">👥 </span><strong>${membersVisitedOnDay}</strong><span class="gen-cal-line-full"> member${membersVisitedOnDay !== 1 ? 's' : ''}</span></div>
+          <div class="gen-cal-card-line" style="color:#34d399;"><span class="gen-cal-line-full">Collection: </span><span class="gen-cal-line-short">💰 </span><strong>₹${dayCollection}</strong></div>
         `;
         container.appendChild(cell);
       }
