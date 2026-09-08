@@ -809,6 +809,11 @@
     @keyframes presence-pulse { 0% { opacity: 1; } 50% { opacity: 0.35; } 100% { opacity: 1; } }
 
     .sidebar-footer { padding-top: 14px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 8px; }
+    @media (max-width: 640px) {
+      .sidebar-footer { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+      .sidebar-footer .member-footer-btn { width: 100%; font-size: 0.78rem; padding: 12px 6px; white-space: normal; line-height: 1.2; text-align: center; }
+      .sidebar-footer .member-footer-btn.footer-btn-span2 { grid-column: 1 / -1; }
+    }
 
     .main-viewport { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 28px 36px; background-color: var(--bg-main); display: flex; flex-direction: column; }
     .page-content-wrapper { max-width: 1650px; width: 100%; margin: 0 auto; }
@@ -2222,10 +2227,11 @@
       <div class="sidebar-footer" id="sidebar-footer-controls">
         <button class="btn btn-notify member-footer-btn" style="width: 100%; font-size: 0.85rem;" onclick="openShareLinkModal()">🔗 Share Reg Link</button>
         <button class="btn btn-notify member-footer-btn" style="width: 100%; font-size: 0.85rem; background: linear-gradient(135deg, #059669 0%, #0284c7 100%);" onclick="openRenewalPlanModal()">⚡ Subscription</button>
+        <button id="tour-share-sub-btn" class="btn btn-notify member-footer-btn" style="width: 100%; font-size: 0.85rem; background: linear-gradient(135deg, #7c3aed 0%, #2563eb 100%);" onclick="shareSubscriptionStatus()">📤 Share Subscription</button>
         <button class="btn btn-leave member-footer-btn" style="width: 100%; font-size: 0.85rem;" onclick="openLeaveModal()">🏖️ Send Leave Update</button>
         <button class="btn btn-export member-footer-btn" style="width: 100%; font-size: 0.85rem;" onclick="exportCSV()">💾 Export Database (CSV)</button>
         <button id="tour-refer-btn" class="btn btn-whatsapp member-footer-btn" style="width: 100%; font-size: 0.85rem;" onclick="openReferAndEarnModal()">🎁 Refer & Earn</button>
-        <button type="button" class="btn btn-secondary member-footer-btn" style="width: 100%; font-size: 0.85rem;" onclick="window.startGuidedTour && window.startGuidedTour()">🧭 Take a Guided Tour</button>
+        <button type="button" class="btn btn-secondary member-footer-btn footer-btn-span2" style="width: 100%; font-size: 0.85rem;" onclick="window.startGuidedTour && window.startGuidedTour()">🧭 Take a Guided Tour</button>
       </div>
     </aside>
 
@@ -4883,6 +4889,28 @@
       window.open(`https://wa.me/?text=${msg}`, '_blank');
     };
 
+    // Shares the member's current subscription/renewal status over WhatsApp —
+    // e.g. to loop in a partner/staff member on when the portal is due for renewal.
+    window.shareSubscriptionStatus = function() {
+      const prof = typeof window.getActiveMemberProfile === 'function' ? window.getActiveMemberProfile() : activeMemberProfile;
+      const clinicName = prof?.clinicName || "Our Center";
+      const docName = prof?.doctorName || "Specialist";
+      const expiryDate = prof?.subscriptionExpiry ? new Date(prof.subscriptionExpiry) : null;
+      const isOnTrial = prof?.paymentStatus === 'trial' && expiryDate && expiryDate > new Date();
+
+      let statusLine;
+      if (expiryDate && expiryDate > new Date()) {
+        const daysLeft = Math.ceil((expiryDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+        const formatted = expiryDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+        statusLine = `${isOnTrial ? "🎁 Free trial" : "✅ Active subscription"} — valid until ${formatted} (${daysLeft} day${daysLeft === 1 ? '' : 's'} left).`;
+      } else {
+        statusLine = "⚠️ Subscription is currently expired / not active.";
+      }
+
+      const msg = encodeURIComponent(`*Subscription Status — ${clinicName} (${docName})*\n\n${statusLine}`);
+      window.open(`https://wa.me/?text=${msg}`, '_blank');
+    };
+
     window.openLeaveModal = function() {
       if (!window.checkSubscriptionStatus(activeMemberProfile)) return;
       document.getElementById('leave-template-select').value = "leave";
@@ -6493,7 +6521,7 @@
 
     function getBilledTotal(p) {
       const perVisit = parseFloat(p.dailyCharge) || 0;
-      const visits = parseInt(p.daysVisited) || 1;
+      const visits = Number.isFinite(parseInt(p.daysVisited)) ? parseInt(p.daysVisited) : 1;
       return (perVisit * visits) + getExtraTotal(p);
     }
 
@@ -7077,7 +7105,7 @@
            </td>
           <td>
             <div style="display:flex; align-items:center; gap:6px;">
-              <strong style="color:#38bdf8; font-size:1.05rem;">${p.daysVisited || 1}</strong>
+              <strong style="color:#38bdf8; font-size:1.05rem;">${p.daysVisited ?? 0}</strong>
               <button class="action-btn btn-undo" style="padding:2px 6px; font-size:0.7rem;" onclick="undoLastVisit(${p.id})" title="Undo last visit">↩️ Undo</button>
             </div>
           </td>
@@ -7313,7 +7341,7 @@
           <td><span class="uid-badge">${p.uid}</span></td>
           <td><strong style="color:var(--text-main);">${p.name}</strong><br><small style="color:#38bdf8; font-weight:700;">${p.mobile}</small></td>
           <td>${p.diagnosis}</td>
-          <td><strong style="color:#38bdf8;">${p.daysVisited || 1} Days</strong></td>
+          <td><strong style="color:#38bdf8;">${p.daysVisited ?? 0} Days</strong></td>
           <td style="color:var(--success); font-weight:bold;">₹${getBilledTotal(p)}</td>
           <td><span class="badge badge-cured">${p.finishStatus || 'Completed'}</span></td>
           <td>${p.finishDate || 'N/A'}</td>
@@ -8442,7 +8470,7 @@
                   `Specialist: *${docName}* (${docRole})\n` +
                   `Client: *${p.name}*\n` +
                   `Work / Service: ${p.diagnosis}\n` +
-                  `Total Days Visited: *${p.daysVisited || 1} Day(s) (${p.daysVisited || 1} Sessions)*\n\n` +
+                  `Total Days Visited: *${p.daysVisited ?? 0} Day(s) (${p.daysVisited ?? 0} Sessions)*\n\n` +
                   `*Total Billed:* ₹${billed}\n` +
                   `*Amount Paid:* ₹${paid}\n` +
                   `*Outstanding Due:* ₹${due}\n\n` +
@@ -8517,7 +8545,7 @@
       document.getElementById('rcpt-treatment').innerText = `${isParlor ? 'Services:' : 'Plan:'} ${p.treatment}`;
       document.getElementById('rcpt-date').innerText = `Invoice Date: ${new Date().toLocaleDateString('en-GB')}`;
 
-      const totalDaysCount = parseInt(p.daysVisited) || (p.visitHistory ? p.visitHistory.length : 1);
+      const totalDaysCount = Number.isFinite(parseInt(p.daysVisited)) ? parseInt(p.daysVisited) : (p.visitHistory ? p.visitHistory.length : 1);
 
       let sessionDates = 'N/A';
       if (p.visitHistory && p.visitHistory.length > 0) {
@@ -8615,7 +8643,7 @@
       if (!window.checkSubscriptionStatus(prof)) return;
       let csv = 'UID,Name,Mobile,Work_Service,Treatment_Plan,Days_Count,Sessions_Count,Total_Billed,Total_Received,Balance\n';
       patients.forEach(p => {
-        const count = p.daysVisited || 1;
+        const count = p.daysVisited ?? 0;
         csv += `"${p.uid}","${p.name}","${p.mobile}","${p.diagnosis}","${p.treatment}",${count},${count},${getBilledTotal(p)},${getPaidTotal(p)},${getBilledTotal(p) - getPaidTotal(p)}\n`;
       });
       const a = document.createElement('a');
