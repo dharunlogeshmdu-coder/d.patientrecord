@@ -809,8 +809,9 @@
     @keyframes presence-pulse { 0% { opacity: 1; } 50% { opacity: 0.35; } 100% { opacity: 1; } }
 
     .sidebar-footer { padding-top: 14px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 8px; }
+    .sidebar-footer.footer-hidden { display: none !important; }
     @media (max-width: 640px) {
-      .sidebar-footer { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+      .sidebar-footer:not(.footer-hidden) { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
       .sidebar-footer .member-footer-btn { width: 100%; font-size: 0.78rem; padding: 12px 6px; white-space: normal; line-height: 1.2; text-align: center; }
       .sidebar-footer .member-footer-btn.footer-btn-span2 { grid-column: 1 / -1; }
     }
@@ -1292,32 +1293,6 @@
     }
     .theme-toggle:hover { transform: translateY(-1px); }
 
-    /* Mobile-only "Compact View" toggle: shrinks the login/register card so
-       more of it fits on screen at once on small phones, without the user
-       having to pinch-zoom out. Hidden on tablets/desktop where it isn't needed. */
-    #compact-view-toggle { display: none; }
-    @media (max-width: 900px) {
-      #compact-view-toggle {
-        display: inline-flex;
-        right: auto;
-        left: 18px;
-        bottom: 66px;
-        border-color: rgba(56, 189, 248, 0.55);
-        color: #38bdf8;
-      }
-    }
-    body.size-compact #auth-screen-overlay .auth-card {
-      transform: scale(0.86);
-      transform-origin: top center;
-      margin-bottom: -40px;
-    }
-    body.size-compact #auth-screen-overlay { padding-top: 10px; }
-    @media (max-width: 600px) {
-      #compact-view-toggle { bottom: 60px; left: 12px; padding: 7px 11px; font-size: 0.7rem; }
-      #compact-view-toggle span { display: none; }
-      body.size-compact #auth-screen-overlay .auth-card { transform: scale(0.82); }
-    }
-
     /* Optional light luxury skin: the original dark skin remains the default. */
     body[data-theme="luxury"] {
       --bg-main: #f7f4ee;
@@ -1743,31 +1718,8 @@
     ⬇️ <span>Download App</span>
   </button>
 
-  <!-- Mobile-only: lets the person shrink the login/register card for a
-       more comfortable, zoomed-out view on small phone screens. -->
-  <button id="compact-view-toggle" class="theme-toggle" type="button" onclick="toggleCompactView()" aria-label="Toggle compact view">
-    🔎 <span>Compact View</span>
-  </button>
-
   <script>
     applyPortalTheme(localStorage.getItem('dharun_portal_theme') || 'default');
-
-    window.applyCompactView = function(on) {
-      document.body.classList.toggle('size-compact', !!on);
-      const btn = document.getElementById('compact-view-toggle');
-      if (btn) {
-        btn.innerHTML = on ? '🔍 <span>Normal Size</span>' : '🔎 <span>Compact View</span>';
-        btn.setAttribute('aria-label', on ? 'Switch to normal size' : 'Switch to compact size');
-      }
-    };
-
-    window.toggleCompactView = function() {
-      const isOn = !document.body.classList.contains('size-compact');
-      window.applyCompactView(isOn);
-      localStorage.setItem('dharun_compact_view', isOn ? '1' : '0');
-    };
-
-    window.applyCompactView(localStorage.getItem('dharun_compact_view') === '1');
   </script>
 
   <script>
@@ -2227,7 +2179,6 @@
       <div class="sidebar-footer" id="sidebar-footer-controls">
         <button class="btn btn-notify member-footer-btn" style="width: 100%; font-size: 0.85rem;" onclick="openShareLinkModal()">🔗 Share Reg Link</button>
         <button class="btn btn-notify member-footer-btn" style="width: 100%; font-size: 0.85rem; background: linear-gradient(135deg, #059669 0%, #0284c7 100%);" onclick="openRenewalPlanModal()">⚡ Subscription</button>
-        <button id="tour-share-sub-btn" class="btn btn-notify member-footer-btn" style="width: 100%; font-size: 0.85rem; background: linear-gradient(135deg, #7c3aed 0%, #2563eb 100%);" onclick="shareSubscriptionStatus()">📤 Share Subscription</button>
         <button class="btn btn-leave member-footer-btn" style="width: 100%; font-size: 0.85rem;" onclick="openLeaveModal()">🏖️ Send Leave Update</button>
         <button class="btn btn-export member-footer-btn" style="width: 100%; font-size: 0.85rem;" onclick="exportCSV()">💾 Export Database (CSV)</button>
         <button id="tour-refer-btn" class="btn btn-whatsapp member-footer-btn" style="width: 100%; font-size: 0.85rem;" onclick="openReferAndEarnModal()">🎁 Refer & Earn</button>
@@ -4304,6 +4255,75 @@
       setTimeout(() => el.remove(), 300);
     };
 
+    // ---- Once-per-day physio motivation toast ----
+    // A short, warm motivational line for the physio/doctor themself,
+    // shown at most once per calendar day right after they sync in.
+    // Reuses the same toast layer/markup as the renewal reminder so it
+    // matches the rest of the portal's look. Managers / super admin
+    // (who aren't the treating physio) never see this.
+    window.PHYSIO_MOTIVATION_LINES = [
+      "Every session you run today moves a patient one step closer to recovery.",
+      "Your hands and your patience are someone's best shot at getting back to normal life today.",
+      "Small, steady progress in the clinic today adds up to a big recovery story later.",
+      "The patient who struggled to move last week may take a full step today — because of you.",
+      "Consistency beats intensity. Show up for your patients today the way you did yesterday.",
+      "Healing is slow work — thank you for doing it patiently, one visit at a time.",
+      "You don't just treat injuries, you rebuild confidence. Keep going.",
+      "A good physio remembers the person, not just the diagnosis. That's you.",
+      "The best rehab plan in the world still needs someone who shows up — that's you, today.",
+      "Every rep you coach, every stretch you guide, is quietly changing someone's life.",
+      "Tired hands, steady heart — that's what real care looks like. Well done.",
+      "Your patients may forget the exercises, but they'll remember how you made them feel.",
+      "Progress isn't always visible on day one. Trust the process and keep showing up.",
+      "You turned pain into a plan today. That's the quiet power of good physiotherapy.",
+      "One more patient walked in worried and will walk out a little more hopeful — because of you."
+    ];
+
+    window.showDailyMotivationToast = function(memberData, memberUid) {
+      try {
+        const isManagerOrAdmin = (activeUserRole === 'super_admin' && !isImpersonating) || activeUserRole === 'manager';
+        if (isManagerOrAdmin) return;
+
+        const uidKey = memberUid || memberData?.uid || activeFirebaseUser?.uid || 'member';
+        const storageKey = `dharun_motivation_toast_lastshown_${uidKey}`;
+        const todayStr = new Date().toDateString();
+        if (localStorage.getItem(storageKey) === todayStr) return; // already shown today
+
+        const lines = window.PHYSIO_MOTIVATION_LINES;
+        const line = lines[Math.floor(Math.random() * lines.length)];
+        const doctorTitle = memberData?.doctorName || 'Doctor';
+
+        const layer = document.getElementById('renewal-daily-toast-layer');
+        if (!layer) return;
+
+        const toastId = `motivation-toast-${Date.now()}`;
+        const toastEl = document.createElement('div');
+        toastEl.className = 'renewal-daily-toast';
+        toastEl.id = toastId;
+        toastEl.style.setProperty('--rt-accent', '#a78bfa');
+        toastEl.style.setProperty('--rt-accent-bg', 'rgba(167, 139, 250, 0.15)');
+        toastEl.style.setProperty('--rt-accent-2', '#7c3aed');
+        toastEl.innerHTML = `
+          <div class="renewal-toast-row">
+            <div class="renewal-toast-icon">🌟</div>
+            <div class="renewal-toast-body">
+              <div class="renewal-toast-title">Good to see you, ${doctorTitle}</div>
+              <div class="renewal-toast-msg">${line}</div>
+            </div>
+            <button class="renewal-toast-close" aria-label="Dismiss" onclick="window.dismissRenewalDailyToast('${toastId}')">&times;</button>
+          </div>
+        `;
+        layer.appendChild(toastEl);
+
+        localStorage.setItem(storageKey, todayStr);
+
+        // Auto-dismiss after 8 seconds if the user doesn't interact with it.
+        setTimeout(() => window.dismissRenewalDailyToast(toastId), 8000);
+      } catch (e) {
+        console.warn('Daily motivation toast could not be shown:', e);
+      }
+    };
+
     // ==========================================================================
     // ---- Day-End & Monthly WhatsApp Summary (auto-computed, one-tap send) ----
     // Note on "automatic": WhatsApp itself never allows a website to press
@@ -5256,7 +5276,7 @@
 
         document.querySelectorAll('.member-item').forEach(i => i.style.display = 'flex');
         document.getElementById('top-member-buttons').style.display = 'flex';
-        document.getElementById('sidebar-footer-controls').style.display = 'flex';
+        document.getElementById('sidebar-footer-controls').classList.remove('footer-hidden');
         document.getElementById('btn-return-admin').style.display = 'inline-flex';
         document.getElementById('nav-section-title').innerText = "Navigation Hub";
 
@@ -5287,7 +5307,7 @@
       document.querySelectorAll('.member-item').forEach(item => item.style.display = 'none');
       if (adminNavItem) adminNavItem.style.display = 'flex';
       document.getElementById('top-member-buttons').style.display = 'none';
-      document.getElementById('sidebar-footer-controls').style.display = 'none';
+      document.getElementById('sidebar-footer-controls').classList.add('footer-hidden');
 
       switchPage('page-admin-portal', adminNavItem);
       window.loadAllRegisteredUsers();
@@ -6356,7 +6376,7 @@
           memberNavItems.forEach(item => item.style.display = 'none');
           if (adminNavItem) adminNavItem.style.display = 'flex';
           if (topMemberButtons) topMemberButtons.style.display = 'none';
-          if (sidebarFooterControls) sidebarFooterControls.style.display = 'none';
+          if (sidebarFooterControls) sidebarFooterControls.classList.add('footer-hidden');
           document.getElementById('renewal-days-container').style.display = 'none';
 
           switchPage('page-admin-portal', adminNavItem);
@@ -6377,7 +6397,7 @@
           if (navSectionTitle) navSectionTitle.innerText = "Manager Hub";
           memberNavItems.forEach(item => item.style.display = 'none');
           if (topMemberButtons) topMemberButtons.style.display = 'none';
-          if (sidebarFooterControls) sidebarFooterControls.style.display = 'none';
+          if (sidebarFooterControls) sidebarFooterControls.classList.add('footer-hidden');
           if (document.getElementById('renewal-days-container')) {
             document.getElementById('renewal-days-container').style.display = 'none';
           }
@@ -6407,6 +6427,7 @@
           window.updateRenewalBadge(memberData);
           window.checkAdminMessages(memberData);
           window.showDailyRenewalNotification(memberData, user.uid);
+          setTimeout(() => window.showDailyMotivationToast(memberData, user.uid), 3000);
 
           if (navSectionTitle) navSectionTitle.innerText = "Navigation Hub";
           memberNavItems.forEach(item => {
@@ -6415,7 +6436,7 @@
             }
           });
           if (topMemberButtons) topMemberButtons.style.display = 'flex';
-          if (sidebarFooterControls) sidebarFooterControls.style.display = 'flex';
+          if (sidebarFooterControls) sidebarFooterControls.classList.remove('footer-hidden');
 
           switchPage('page-active-works', memberNavItems[0]);
           await loadFromCloud(user.uid);
