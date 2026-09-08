@@ -321,6 +321,21 @@
 
     #auth-screen-overlay { gap: 44px; }
     .auth-feature-panel { max-width: 380px; color: var(--text-main); padding: 10px 0; }
+    .auth-growth-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(6, 214, 160, 0.12);
+      border: 1px solid rgba(6, 214, 160, 0.4);
+      color: var(--accent);
+      font-size: 0.74rem;
+      font-weight: 700;
+      padding: 5px 12px;
+      border-radius: 20px;
+      margin-bottom: 12px;
+    }
+    body[data-theme="luxury"] .auth-growth-tag { background: rgba(184, 134, 11, 0.12); border-color: rgba(184, 134, 11, 0.4); color: #9a6b08; }
+    body[data-theme="professional"] .auth-growth-tag { background: rgba(52, 82, 235, 0.08); border-color: rgba(52, 82, 235, 0.3); color: var(--primary); }
     .auth-feature-panel h1 { font-size: 1.5rem; font-weight: 800; margin-bottom: 8px; line-height: 1.25; }
     .auth-feature-panel .sub { font-size: 0.88rem; color: var(--text-muted); margin-bottom: 20px; }
     .auth-feature-list { list-style: none; display: flex; flex-direction: column; gap: 10px; padding: 0; margin: 0; }
@@ -1272,6 +1287,32 @@
     }
     .theme-toggle:hover { transform: translateY(-1px); }
 
+    /* Mobile-only "Compact View" toggle: shrinks the login/register card so
+       more of it fits on screen at once on small phones, without the user
+       having to pinch-zoom out. Hidden on tablets/desktop where it isn't needed. */
+    #compact-view-toggle { display: none; }
+    @media (max-width: 900px) {
+      #compact-view-toggle {
+        display: inline-flex;
+        right: auto;
+        left: 18px;
+        bottom: 66px;
+        border-color: rgba(56, 189, 248, 0.55);
+        color: #38bdf8;
+      }
+    }
+    body.size-compact #auth-screen-overlay .auth-card {
+      transform: scale(0.86);
+      transform-origin: top center;
+      margin-bottom: -40px;
+    }
+    body.size-compact #auth-screen-overlay { padding-top: 10px; }
+    @media (max-width: 600px) {
+      #compact-view-toggle { bottom: 60px; left: 12px; padding: 7px 11px; font-size: 0.7rem; }
+      #compact-view-toggle span { display: none; }
+      body.size-compact #auth-screen-overlay .auth-card { transform: scale(0.82); }
+    }
+
     /* Optional light luxury skin: the original dark skin remains the default. */
     body[data-theme="luxury"] {
       --bg-main: #f7f4ee;
@@ -1697,8 +1738,31 @@
     ⬇️ <span>Download App</span>
   </button>
 
+  <!-- Mobile-only: lets the person shrink the login/register card for a
+       more comfortable, zoomed-out view on small phone screens. -->
+  <button id="compact-view-toggle" class="theme-toggle" type="button" onclick="toggleCompactView()" aria-label="Toggle compact view">
+    🔎 <span>Compact View</span>
+  </button>
+
   <script>
     applyPortalTheme(localStorage.getItem('dharun_portal_theme') || 'default');
+
+    window.applyCompactView = function(on) {
+      document.body.classList.toggle('size-compact', !!on);
+      const btn = document.getElementById('compact-view-toggle');
+      if (btn) {
+        btn.innerHTML = on ? '🔍 <span>Normal Size</span>' : '🔎 <span>Compact View</span>';
+        btn.setAttribute('aria-label', on ? 'Switch to normal size' : 'Switch to compact size');
+      }
+    };
+
+    window.toggleCompactView = function() {
+      const isOn = !document.body.classList.contains('size-compact');
+      window.applyCompactView(isOn);
+      localStorage.setItem('dharun_compact_view', isOn ? '1' : '0');
+    };
+
+    window.applyCompactView(localStorage.getItem('dharun_compact_view') === '1');
   </script>
 
   <script>
@@ -1911,6 +1975,7 @@
     </div>
 
     <div class="auth-feature-panel">
+      <span class="auth-growth-tag">🌱 Start small, grow big — thousands of clinics began exactly where you are</span>
       <h1>Run your clinic's billing &amp; scheduling from one screen</h1>
       <p class="sub">Built for physiotherapy, rehab and wellness clinics — track every patient, payment and visit without spreadsheets.</p>
       <ul class="auth-feature-list">
@@ -4946,8 +5011,8 @@
         treatment: tx,
         address: req.address || '',
         location: req.location || '',
-        daysVisited: 1,
-        visitHistory: [{ date: req.preferredDate || window.getLocalDateStr(), visitNum: 1, status: 'paid' }],
+        daysVisited: 0,
+        visitHistory: [],
         paymentHistory: [],
         extraCharges: [],
         isFinished: false
@@ -7170,12 +7235,12 @@
       if (!window.checkSubscriptionStatus(prof)) return;
       const p = patients.find(p => p.id === id);
       if (!p) return;
-      if (!p.visitHistory || p.visitHistory.length <= 1) {
-        alert("Cannot undo initial registration visit.");
+      if (!p.visitHistory || p.visitHistory.length === 0) {
+        alert("No visits to undo.");
         return;
       }
       p.visitHistory.pop();
-      p.daysVisited = Math.max(1, (p.daysVisited || 1) - 1);
+      p.daysVisited = Math.max(0, (p.daysVisited || 0) - 1);
       saveAndRender();
     };
 
@@ -7360,8 +7425,8 @@
           treatment: document.getElementById('treatment').value.trim(),
           address: document.getElementById('address').value.trim(),
           location: manualLocation || '',
-          daysVisited: 1,
-          visitHistory: [{ date: recordDate, visitNum: 1, status: 'paid' }],
+          daysVisited: 0,
+          visitHistory: [],
           paymentHistory: [],
           extraCharges: [],
           isFinished: false
@@ -7793,9 +7858,9 @@
         title.innerText = 'Update Visit';
         subtitle.innerHTML = `Visit on <strong style="color:var(--text-main);">${niceDate}</strong> is currently marked <strong style="color:${isPaid ? '#10b981' : '#ef4444'};">${isPaid ? 'PAID' : 'NOT PAID'}</strong>.`;
         buttonsWrap.innerHTML = `
-          ${!isPaid && hasAdvanceInHand ? `<button type="button" class="btn btn-notify" style="width:100%; background:#38bdf8; color:#060913;" onclick="confirmVisitAction('paid')">📌 Confirm Visit Happened (Advance Used)</button>` : ''}
-          ${!isPaid && !hasAdvanceInHand ? `<button type="button" class="btn btn-notify" style="width:100%; background:#10b981;" onclick="confirmVisitAction('paid')">✔ Mark as Paid</button>` : ''}
-          ${isPaid ? `<button type="button" class="btn" style="width:100%; background:#ef4444;" onclick="confirmVisitAction('unpaid')">✖ Mark as Unpaid</button>` : ''}
+          ${!isPaid && hasAdvanceInHand ? `<button type="button" class="btn btn-notify" style="width:100%; background:#38bdf8; color:#060913;" onclick="confirmVisitAction('paid')">📌 Confirm</button>` : ''}
+          ${!isPaid && !hasAdvanceInHand ? `<button type="button" class="btn btn-notify" style="width:100%; background:#10b981;" onclick="confirmVisitAction('paid')">✔ Confirm</button>` : ''}
+          ${isPaid ? `<button type="button" class="btn" style="width:100%; background:#ef4444;" onclick="confirmVisitAction('unpaid')">✖ Confirm</button>` : ''}
           <button type="button" class="btn btn-secondary" style="width:100%;" onclick="confirmVisitAction('remove')">🗑️ Remove This Visit</button>
           <button type="button" class="btn btn-secondary" style="width:100%;" onclick="closeVisitActionModal()">Cancel</button>
         `;
@@ -7806,8 +7871,8 @@
           title.innerText = 'Planned Visit';
           subtitle.innerHTML = `<strong style="color:var(--text-main);">${niceDate}</strong> is currently marked <strong style="color:#38bdf8;">📌 PLANNED (Advance Paid)</strong>. This is only an identification marker — no separate "Paid" action is taken here; the visit will automatically draw from the existing advance.`;
           buttonsWrap.innerHTML = `
-            <button type="button" class="btn btn-notify" style="width:100%; background:#38bdf8; color:#060913;" onclick="confirmVisitAction('paid')">📌 Confirm Visit Happened (Advance Used)</button>
-            <button type="button" class="btn" style="width:100%; background:#ef4444;" onclick="confirmVisitAction('unpaid')">✖ Visit Happened — Advance Insufficient</button>
+            <button type="button" class="btn btn-notify" style="width:100%; background:#38bdf8; color:#060913;" onclick="confirmVisitAction('paid')">📌 Confirm</button>
+            <button type="button" class="btn" style="width:100%; background:#ef4444;" onclick="confirmVisitAction('unpaid')">✖ Confirm</button>
             <button type="button" class="btn btn-secondary" style="width:100%;" onclick="confirmVisitAction('remove-marker')">🗑️ Remove This Marker</button>
             <button type="button" class="btn btn-secondary" style="width:100%;" onclick="closeVisitActionModal()">Cancel</button>
           `;
@@ -7815,12 +7880,12 @@
           title.innerText = 'Payment Due';
           subtitle.innerHTML = `<strong style="color:var(--text-main);">${niceDate}</strong> is currently marked <strong style="color:#f59e0b;">💰 PAYMENT DUE</strong> — a reminder to collect money from the client.`;
           buttonsWrap.innerHTML = hasAdvanceInHand ? `
-            <button type="button" class="btn btn-notify" style="width:100%; background:#38bdf8; color:#060913;" onclick="confirmVisitAction('paid')">📌 Confirm Visit Happened (Advance Used)</button>
+            <button type="button" class="btn btn-notify" style="width:100%; background:#38bdf8; color:#060913;" onclick="confirmVisitAction('paid')">📌 Confirm</button>
             <button type="button" class="btn btn-secondary" style="width:100%;" onclick="confirmVisitAction('remove-marker')">🗑️ Remove This Marker</button>
             <button type="button" class="btn btn-secondary" style="width:100%;" onclick="closeVisitActionModal()">Cancel</button>
           ` : `
-            <button type="button" class="btn btn-notify" style="width:100%; background:#10b981;" onclick="confirmVisitAction('paid')">✔ Visit Happened — Paid</button>
-            <button type="button" class="btn" style="width:100%; background:#ef4444;" onclick="confirmVisitAction('unpaid')">✖ Visit Happened — Not Paid</button>
+            <button type="button" class="btn btn-notify" style="width:100%; background:#10b981;" onclick="confirmVisitAction('paid')">✔ Confirm</button>
+            <button type="button" class="btn" style="width:100%; background:#ef4444;" onclick="confirmVisitAction('unpaid')">✖ Confirm</button>
             <button type="button" class="btn btn-secondary" style="width:100%;" onclick="confirmVisitAction('remove-marker')">🗑️ Remove This Marker</button>
             <button type="button" class="btn btn-secondary" style="width:100%;" onclick="closeVisitActionModal()">Cancel</button>
           `;
@@ -7830,12 +7895,12 @@
             ? `No visit recorded yet for <strong style="color:var(--text-main);">${niceDate}</strong>. There's advance money already in hand for this patient, so this visit is simply covered by it.`
             : `No visit recorded yet for <strong style="color:var(--text-main);">${niceDate}</strong>. What would you like to log?`;
           buttonsWrap.innerHTML = hasAdvanceInHand ? `
-            <button type="button" class="btn btn-notify" style="width:100%; background:#38bdf8; color:#060913;" onclick="confirmVisitAction('paid')">📌 Confirm Visit Happened (Advance Used)</button>
+            <button type="button" class="btn btn-notify" style="width:100%; background:#38bdf8; color:#060913;" onclick="confirmVisitAction('paid')">📌 Confirm</button>
             <button type="button" class="btn" style="width:100%; background:#f59e0b; color:#060913;" onclick="confirmVisitAction('mark-due')">💰 Mark Payment Due</button>
             <button type="button" class="btn btn-secondary" style="width:100%;" onclick="closeVisitActionModal()">Cancel</button>
           ` : `
-            <button type="button" class="btn btn-notify" style="width:100%; background:#10b981;" onclick="confirmVisitAction('paid')">✔ Visited — Paid</button>
-            <button type="button" class="btn" style="width:100%; background:#ef4444;" onclick="confirmVisitAction('unpaid')">✖ Visited — Not Paid</button>
+            <button type="button" class="btn btn-notify" style="width:100%; background:#10b981;" onclick="confirmVisitAction('paid')">✔ Confirm</button>
+            <button type="button" class="btn" style="width:100%; background:#ef4444;" onclick="confirmVisitAction('unpaid')">✖ Confirm</button>
             <button type="button" class="btn" style="width:100%; background:#38bdf8; color:#060913;" onclick="confirmVisitAction('mark-planned')">📌 Plan Visit (Advance Paid)</button>
             <button type="button" class="btn" style="width:100%; background:#f59e0b; color:#060913;" onclick="confirmVisitAction('mark-due')">💰 Mark Payment Due</button>
             <button type="button" class="btn btn-secondary" style="width:100%;" onclick="closeVisitActionModal()">Cancel</button>
@@ -7869,11 +7934,6 @@
         if (p.dateMarkers) delete p.dateMarkers[dateStr];
       } else if (action === 'remove') {
         if (existingVisit) {
-          if (p.visitHistory.length <= 1) {
-            closeVisitActionModal();
-            alert('Cannot remove the initial registration visit.');
-            return;
-          }
           const idx = p.visitHistory.findIndex(v => v.date === dateStr);
           p.visitHistory.splice(idx, 1);
           p.daysVisited = Math.max(0, (p.daysVisited || 1) - 1);
