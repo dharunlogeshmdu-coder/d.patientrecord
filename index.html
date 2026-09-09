@@ -6725,7 +6725,9 @@
 
     // Builds one clickable row for the KPI detail modal. Clicking a row
     // opens that client's full ledger (visit/payment calendar).
-    function buildKpiDetailRow(p, rightLabel, rightValue, rightColor, isAlert) {
+    // statusBadge (optional): { text, color, bg } — shown as a small pill
+    // under the name/diagnosis line, used e.g. to flag Paid vs Unpaid.
+    function buildKpiDetailRow(p, rightLabel, rightValue, rightColor, isAlert, statusBadge) {
       const bg = isAlert ? 'rgba(239, 68, 68, 0.08)' : 'var(--folder-bg)';
       const border = isAlert ? '1px solid rgba(239, 68, 68, 0.45)' : '1px solid var(--border)';
       const nameColor = isAlert ? 'var(--danger)' : 'var(--text-main)';
@@ -6735,6 +6737,7 @@
           <div style="min-width:0;">
             <div style="font-weight:700; color:${nameColor}; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${p.name}</div>
             <div style="font-size:0.76rem; color:var(--text-muted); margin-top:2px;">${p.mobile || ''}${p.diagnosis ? ' · ' + p.diagnosis : ''}</div>
+            ${statusBadge ? `<span style="display:inline-block; margin-top:5px; font-size:0.68rem; font-weight:800; letter-spacing:0.4px; text-transform:uppercase; color:${statusBadge.color}; background:${statusBadge.bg}; border:1px solid ${statusBadge.color}; border-radius:5px; padding:2px 7px;">${statusBadge.text}</span>` : ''}
           </div>
           <div style="text-align:right; flex-shrink:0;">
             <div style="font-weight:800; color:${rightColor};">${rightValue}</div>
@@ -6763,7 +6766,14 @@
         subtitle = `${visitedList.length} visited · ${notVisitedList.length} not visited yet`;
 
         const visitedHtml = visitedList.length
-          ? visitedList.map(p => buildKpiDetailRow(p, "Today's Charge", `₹${parseFloat(p.dailyCharge || 0).toLocaleString('en-IN')}`, '#38bdf8')).join('')
+          ? visitedList.map(p => {
+              const todaysVisit = (p.visitHistory || []).find(v => v.date === todayStr);
+              const isPaid = todaysVisit ? todaysVisit.status !== 'unpaid' : true; // recordDate-only entries default to paid
+              const statusBadge = isPaid
+                ? { text: '✅ Paid', color: '#10b981', bg: 'rgba(16, 185, 129, 0.12)' }
+                : { text: '⚠️ Unpaid', color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.12)' };
+              return buildKpiDetailRow(p, "Today's Charge", `₹${parseFloat(p.dailyCharge || 0).toLocaleString('en-IN')}`, '#38bdf8', false, statusBadge);
+            }).join('')
           : '<p style="color:var(--text-muted); text-align:center; padding:10px 0;">No clients visited today yet.</p>';
 
         const notVisitedHtml = notVisitedList.length
