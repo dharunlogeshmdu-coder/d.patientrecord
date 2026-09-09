@@ -1073,6 +1073,29 @@
       background-color: rgba(56, 189, 248, 0.18);
     }
 
+    /* Same treatment for the native time-picker clock icon (start/finish
+       time fields, working-hours inputs, etc.) — it was inheriting the
+       browser's default dark icon, which is invisible on our dark theme's
+       dark input background, and needed the light-theme override below so
+       it doesn't disappear the other way round on Luxury/Professional. */
+    input[type="time"] { color-scheme: dark; }
+    input[type="time"]::-webkit-calendar-picker-indicator {
+      cursor: pointer;
+      padding: 5px;
+      margin-right: -2px;
+      border-radius: 6px;
+      background-color: var(--accent, #38bdf8);
+      filter: invert(1) brightness(1.15);
+      opacity: 1;
+    }
+    body[data-theme="luxury"] input[type="time"],
+    body[data-theme="professional"] input[type="time"] { color-scheme: light; }
+    body[data-theme="luxury"] input[type="time"]::-webkit-calendar-picker-indicator,
+    body[data-theme="professional"] input[type="time"]::-webkit-calendar-picker-indicator {
+      filter: none;
+      background-color: rgba(56, 189, 248, 0.18);
+    }
+
     .editable-inline-input {
       background: #0d1426;
       border: 1px solid var(--border);
@@ -2500,6 +2523,11 @@
               <h3>TOTAL ADVANCE</h3>
               <div class="amount" style="color:#38bdf8;" id="active-summary-advance">₹0.00</div>
             </div>
+            <div class="pro-kpi-card kpi-count" style="cursor:pointer;" onclick="openWorkingTimeModal()" title="Tap to see today's working-time schedule, and edit your clinic closing time">
+              <h3>FREE TIME TODAY</h3>
+              <div class="amount text-info" id="active-summary-free-hours">0h 0m</div>
+              <div style="font-size:0.72rem; color:var(--text-muted); margin-top:4px; font-weight:700;" id="active-summary-free-from">—</div>
+            </div>
           </div>
 
           <div class="card">
@@ -2975,6 +3003,109 @@
       <button class="btn btn-secondary" style="width: 100%; margin-top: 14px;" onclick="closeKpiDetailModal()">Close</button>
     </div>
   </div>
+
+  <div class="modal-overlay" id="workingTimeModal">
+    <div class="modal-content" style="max-width: 520px;">
+      <div class="modal-header">
+        <div>
+          <h3 style="color: #38bdf8;">🕐 Working Time Schedule</h3>
+          <p id="wt-modal-subtitle" style="font-size: 0.78rem; color: var(--text-muted);"></p>
+        </div>
+        <button class="close-modal" onclick="closeWorkingTimeModal()">&times;</button>
+      </div>
+
+      <div style="background: var(--folder-bg); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; margin-bottom: 14px;">
+        <div style="font-size:0.78rem; color:var(--text-muted); font-weight:700; text-transform:uppercase; letter-spacing:0.4px;">Working Hours</div>
+        <div style="font-size:0.7rem; color:var(--text-muted); margin-top:2px; margin-bottom:10px;">Works for a clinic or a home-visiting doctor's daily rounds — set when your day starts and ends to work out free time accurately.</div>
+        <div style="display:flex; align-items:flex-end; gap:10px; flex-wrap:wrap;">
+          <div>
+            <label style="font-size:0.7rem; color:var(--text-muted); display:block; margin-bottom:4px;">Start Time</label>
+            <input type="time" id="wt-start-time-input" style="background:var(--bg-input); border:1px solid var(--border); color:var(--text-main); padding:7px 10px; border-radius:8px; font-size:0.85rem;">
+          </div>
+          <div>
+            <label style="font-size:0.7rem; color:var(--text-muted); display:block; margin-bottom:4px;">Closing Time</label>
+            <input type="time" id="wt-closing-time-input" style="background:var(--bg-input); border:1px solid var(--border); color:var(--text-main); padding:7px 10px; border-radius:8px; font-size:0.85rem;">
+          </div>
+          <button class="btn btn-primary" style="padding:8px 14px; font-size:0.8rem;" onclick="saveWorkingTimeClosingHour()">Save</button>
+        </div>
+      </div>
+
+      <div id="wt-schedule-list" style="display: flex; flex-direction: column; gap: 10px; max-height: 44vh; overflow-y: auto;"></div>
+
+      <div id="wt-add-break-row" style="margin-top: 10px;">
+        <button type="button" class="btn btn-secondary" style="width: 100%; font-size:0.82rem;" onclick="toggleAddBreakForm()">☕ Add Lunch / Other Break</button>
+      </div>
+
+      <div id="wt-add-break-form" style="display:none; margin-top: 10px; background: var(--folder-bg); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px;">
+        <div style="display:flex; align-items:flex-end; gap:10px; flex-wrap:wrap;">
+          <div>
+            <label style="font-size:0.7rem; color:var(--text-muted); display:block; margin-bottom:4px;">Break Type</label>
+            <select id="wt-break-type-select" style="background:var(--bg-input); border:1px solid var(--border); color:var(--text-main); padding:7px 10px; border-radius:8px; font-size:0.85rem;" onchange="document.getElementById('wt-break-custom-label').style.display = this.value === 'custom' ? '' : 'none';">
+              <option value="Lunch Break">🍽️ Lunch Break</option>
+              <option value="Tea Break">☕ Tea Break</option>
+              <option value="Personal Time">🧘 Personal Time</option>
+              <option value="custom">✏️ Something Else...</option>
+            </select>
+          </div>
+          <div id="wt-break-custom-label" style="display:none;">
+            <label style="font-size:0.7rem; color:var(--text-muted); display:block; margin-bottom:4px;">Label</label>
+            <input type="text" id="wt-break-custom-label-input" placeholder="e.g. Bank Visit" style="background:var(--bg-input); border:1px solid var(--border); color:var(--text-main); padding:7px 10px; border-radius:8px; font-size:0.85rem;">
+          </div>
+          <div>
+            <label style="font-size:0.7rem; color:var(--text-muted); display:block; margin-bottom:4px;">From</label>
+            <input type="time" id="wt-break-start-input" style="background:var(--bg-input); border:1px solid var(--border); color:var(--text-main); padding:7px 10px; border-radius:8px; font-size:0.85rem;">
+          </div>
+          <div>
+            <label style="font-size:0.7rem; color:var(--text-muted); display:block; margin-bottom:4px;">To</label>
+            <input type="time" id="wt-break-end-input" style="background:var(--bg-input); border:1px solid var(--border); color:var(--text-main); padding:7px 10px; border-radius:8px; font-size:0.85rem;">
+          </div>
+        </div>
+        <div style="display:flex; gap:8px; margin-top:10px;">
+          <button class="btn btn-primary" style="flex:1; padding:8px 14px; font-size:0.8rem;" onclick="addWorkingTimeBreak()">Add Break</button>
+          <button class="btn btn-secondary" style="padding:8px 14px; font-size:0.8rem;" onclick="toggleAddBreakForm(false)">Cancel</button>
+        </div>
+      </div>
+
+      <div id="wt-free-summary" style="margin-top: 14px; background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 10px; padding: 12px 14px; text-align:center;"></div>
+
+      <button class="btn btn-secondary" style="width: 100%; margin-top: 14px;" onclick="closeWorkingTimeModal()">Close</button>
+    </div>
+  </div>
+
+  <!-- Lightweight time-only editor, launched from "Edit Time"/"Set Time" inside
+       the Working Time Schedule modal. Deliberately just start/finish time —
+       not the full registration form — since that's the only thing that
+       needs changing here. Saving writes straight to p.reminderTime /
+       p.reminderEndTime and runs the same saveAndRender() used everywhere
+       else, so the Active Works Ledger, visit reminders/notifications, and
+       this schedule all pick up the new times automatically without any
+       separate updates. -->
+  <div class="modal-overlay" id="quickEditTimeModal">
+    <div class="modal-content" style="max-width: 340px;">
+      <div class="modal-header">
+        <div>
+          <h3 style="color: #38bdf8;">⏰ Edit Visit Time</h3>
+          <p id="qet-patient-name" style="font-size: 0.82rem; color: var(--text-muted); font-weight:700;"></p>
+        </div>
+        <button class="close-modal" onclick="closeQuickEditTimeModal()">&times;</button>
+      </div>
+      <div style="display:flex; gap:10px;">
+        <div style="flex:1;">
+          <label style="font-size:0.7rem; color:var(--text-muted); display:block; margin-bottom:4px;">Start Time</label>
+          <input type="time" id="qet-start-input" style="width:100%; background:var(--bg-input); border:1px solid var(--border); color:var(--text-main); padding:9px 10px; border-radius:8px; font-size:0.95rem;" onchange="window.qetSyncEndFromStart()">
+        </div>
+        <div style="flex:1;">
+          <label style="font-size:0.7rem; color:var(--text-muted); display:block; margin-bottom:4px;">Finish Time</label>
+          <input type="time" id="qet-end-input" style="width:100%; background:var(--bg-input); border:1px solid var(--border); color:var(--text-main); padding:9px 10px; border-radius:8px; font-size:0.95rem;">
+        </div>
+      </div>
+      <div style="display:flex; gap:8px; margin-top:16px;">
+        <button class="btn btn-primary" style="flex:1;" onclick="saveQuickEditTime()">Save Time</button>
+        <button class="btn btn-secondary" onclick="closeQuickEditTimeModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
 
   <div class="modal-overlay" id="visitActionModal">
     <div class="modal-content" style="max-width: 380px;">
@@ -6622,7 +6753,377 @@
       if (els.unpaidBtn) els.unpaidBtn.style.display = state.showUnpaid ? '' : 'none';
     }
 
+    // ---- Working-time / free-time schedule ----
+    // Single source of truth for the "FREE TIME TODAY" KPI card AND the
+    // Working Time Schedule detail modal, so they never drift out of sync.
+    // Works equally for a fixed clinic OR a home-visiting doctor's daily
+    // rounds — it's just "start time -> close time", with each active
+    // patient occupying a FREE_TIME_HOURS_PER_PATIENT (1h 30m) slot
+    // starting at their own scheduled p.reminderTime. Finds when the LAST
+    // such slot finishes, and everything after that (up to closing time)
+    // counts as free.
+    const FREE_TIME_HOURS_PER_PATIENT = 1.5; // 1h 30m per patient visit
+
+    // Start/closing time are per-user settings editable from the Working
+    // Time Schedule modal — persisted in localStorage, keyed to the
+    // logged-in member so different clinics/doctors don't clash.
+    window.getWorkingTimeStartHour = function() {
+      const saved = localStorage.getItem(window.getSummaryStorageKey('working_time_start'));
+      return saved || '09:00'; // default 9:00 AM until the user sets their own
+    };
+    window.setWorkingTimeStartHour = function(hhmm) {
+      if (!hhmm) return;
+      localStorage.setItem(window.getSummaryStorageKey('working_time_start'), hhmm);
+    };
+    window.getWorkingTimeClosingHour = function() {
+      const saved = localStorage.getItem(window.getSummaryStorageKey('working_time_close'));
+      return saved || '20:00'; // default 8:00 PM until the user sets their own
+    };
+    window.setWorkingTimeClosingHour = function(hhmm) {
+      if (!hhmm) return;
+      localStorage.setItem(window.getSummaryStorageKey('working_time_close'), hhmm);
+    };
+
+    // Ad-hoc breaks (lunch, tea, personal time, or a custom label) that the
+    // user can carve out of today's free time directly from the Working
+    // Time Schedule modal. Stored per-day (keyed to today's date) so they
+    // don't carry over and silently block tomorrow's schedule too.
+    window.getWorkingTimeBreaksKey = function() {
+      return `${window.getSummaryStorageKey('working_time_breaks')}_${window.getLocalDateStr()}`;
+    };
+    window.getWorkingTimeBreaks = function() {
+      try {
+        const raw = localStorage.getItem(window.getWorkingTimeBreaksKey());
+        const parsed = raw ? JSON.parse(raw) : [];
+        return Array.isArray(parsed) ? parsed : [];
+      } catch (e) { return []; }
+    };
+    window.saveWorkingTimeBreaks = function(breaks) {
+      localStorage.setItem(window.getWorkingTimeBreaksKey(), JSON.stringify(breaks));
+    };
+    window.toggleAddBreakForm = function(show) {
+      const form = document.getElementById('wt-add-break-form');
+      if (!form) return;
+      const shouldShow = typeof show === 'boolean' ? show : form.style.display === 'none';
+      form.style.display = shouldShow ? '' : 'none';
+      if (shouldShow) {
+        const typeSel = document.getElementById('wt-break-type-select');
+        const customWrap = document.getElementById('wt-break-custom-label');
+        const customInput = document.getElementById('wt-break-custom-label-input');
+        const startInput = document.getElementById('wt-break-start-input');
+        const endInput = document.getElementById('wt-break-end-input');
+        if (typeSel) typeSel.value = 'Lunch Break';
+        if (customWrap) customWrap.style.display = 'none';
+        if (customInput) customInput.value = '';
+        if (startInput) startInput.value = '13:00';
+        if (endInput) endInput.value = '13:30';
+      }
+    };
+    window.addWorkingTimeBreak = function() {
+      const typeSel = document.getElementById('wt-break-type-select');
+      const customInput = document.getElementById('wt-break-custom-label-input');
+      const startInput = document.getElementById('wt-break-start-input');
+      const endInput = document.getElementById('wt-break-end-input');
+      let label = typeSel ? typeSel.value : 'Lunch Break';
+      if (label === 'custom') {
+        label = (customInput && customInput.value.trim()) || 'Break';
+      }
+      const startVal = startInput ? startInput.value : '';
+      const endVal = endInput ? endInput.value : '';
+      if (!startVal || !endVal) { alert('Please pick both a start and end time for the break.'); return; }
+      if (startVal >= endVal) { alert('Break start time must be earlier than its end time.'); return; }
+
+      const breaks = window.getWorkingTimeBreaks();
+      breaks.push({ label, start: startVal, end: endVal });
+      window.saveWorkingTimeBreaks(breaks);
+      window.toggleAddBreakForm(false);
+      window.renderWorkingTimeModal();
+      if (typeof renderStats === 'function') renderStats();
+    };
+    window.deleteWorkingTimeBreak = function(index) {
+      const breaks = window.getWorkingTimeBreaks();
+      breaks.splice(index, 1);
+      window.saveWorkingTimeBreaks(breaks);
+      window.renderWorkingTimeModal();
+      if (typeof renderStats === 'function') renderStats();
+    };
+
+    // Quick time-only editor for a patient's scheduled visit, launched from
+    // the Working Time Schedule modal's "Edit Time"/"Set Time" buttons.
+    // Keeps the working-time modal open underneath so editing a time feels
+    // like a quick in-place tweak rather than leaving the schedule view.
+    // Covers both start (p.reminderTime) and finish (p.reminderEndTime) so
+    // a patient's slot length can be adjusted, not just its start.
+    window.openQuickEditTimeModal = function(patientId) {
+      const p = patients.find(p => p.id === patientId);
+      if (!p) return;
+      const nameEl = document.getElementById('qet-patient-name');
+      const startInput = document.getElementById('qet-start-input');
+      const endInput = document.getElementById('qet-end-input');
+      const modal = document.getElementById('quickEditTimeModal');
+      const start = p.reminderTime || '09:00';
+      if (nameEl) nameEl.innerText = p.name;
+      if (startInput) startInput.value = start;
+      if (endInput) endInput.value = p.reminderEndTime || window.addMinutesToTime(start, FREE_TIME_HOURS_PER_PATIENT * 60);
+      if (modal) {
+        modal.dataset.patientId = patientId;
+        modal.classList.add('active');
+      }
+    };
+    window.closeQuickEditTimeModal = function() {
+      const modal = document.getElementById('quickEditTimeModal');
+      if (modal) modal.classList.remove('active');
+    };
+    // Keeps the default session length (1h 30m) when the user only moves
+    // the start time, instead of leaving a stale finish time behind. If
+    // they've already touched the finish field themselves this call is
+    // harmless to skip, but re-deriving it here is simplest and matches
+    // what most quick edits actually want.
+    window.qetSyncEndFromStart = function() {
+      const startInput = document.getElementById('qet-start-input');
+      const endInput = document.getElementById('qet-end-input');
+      if (!startInput || !endInput || !startInput.value) return;
+      endInput.value = window.addMinutesToTime(startInput.value, FREE_TIME_HOURS_PER_PATIENT * 60);
+    };
+    window.addMinutesToTime = function(hhmm, minutesToAdd) {
+      const [hh, mm] = (hhmm || '09:00').split(':').map(Number);
+      let total = (Number.isNaN(hh) ? 9 : hh) * 60 + (Number.isNaN(mm) ? 0 : mm) + minutesToAdd;
+      total = ((total % 1440) + 1440) % 1440; // wrap within a 24h day
+      const h = Math.floor(total / 60), m = Math.round(total % 60);
+      return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+    };
+    window.saveQuickEditTime = function() {
+      const modal = document.getElementById('quickEditTimeModal');
+      const startInput = document.getElementById('qet-start-input');
+      const endInput = document.getElementById('qet-end-input');
+      const patientId = modal ? Number(modal.dataset.patientId) : null;
+      if (!patientId || !startInput || !endInput || !startInput.value || !endInput.value) {
+        alert('Please pick both a start and finish time.'); return;
+      }
+      if (startInput.value >= endInput.value) {
+        alert('Finish time must be later than the start time.'); return;
+      }
+      const p = patients.find(p => p.id === patientId);
+      if (!p) return;
+      p.reminderTime = startInput.value;
+      p.reminderEndTime = endInput.value;
+      // Single source of truth: saveAndRender() refreshes the Active Works
+      // Ledger, calendar, and stats together, and visit reminders/WhatsApp
+      // notifications read p.reminderTime live at send-time — so this one
+      // write is all that's needed for the new times to show up everywhere.
+      saveAndRender();
+      window.closeQuickEditTimeModal();
+      if (typeof window.renderWorkingTimeModal === 'function') window.renderWorkingTimeModal();
+    };
+
+    window.computeWorkingTimeSchedule = function() {
+      const activeList = patients.filter(p => !p.isFinished);
+      const startHHMM = window.getWorkingTimeStartHour();
+      const [startHH, startMM] = startHHMM.split(':').map(Number);
+      const dayStartMinutes = (Number.isNaN(startHH) ? 9 : startHH) * 60 + (Number.isNaN(startMM) ? 0 : startMM);
+
+      const closingHHMM = window.getWorkingTimeClosingHour();
+      const [closeHH, closeMM] = closingHHMM.split(':').map(Number);
+      const closingMinutes = (Number.isNaN(closeHH) ? 20 : closeHH) * 60 + (Number.isNaN(closeMM) ? 0 : closeMM);
+
+      const entries = [];
+      const noTimeEntries = [];
+      activeList.forEach(p => {
+        if (!p.reminderTime) { noTimeEntries.push(p); return; }
+        const [hh, mm] = p.reminderTime.split(':').map(Number);
+        if (Number.isNaN(hh) || Number.isNaN(mm)) { noTimeEntries.push(p); return; }
+        const startMinutes = hh * 60 + mm;
+        // Prefer an explicit finish time (p.reminderEndTime, set via the
+        // quick time editor) so a patient's slot can run longer or shorter
+        // than the default; fall back to the standard 1h30m slot when no
+        // finish time has been set yet.
+        let endMinutes = startMinutes + FREE_TIME_HOURS_PER_PATIENT * 60;
+        if (p.reminderEndTime) {
+          const [ehh, emm] = p.reminderEndTime.split(':').map(Number);
+          if (!Number.isNaN(ehh) && !Number.isNaN(emm)) {
+            const explicitEnd = ehh * 60 + emm;
+            if (explicitEnd > startMinutes) endMinutes = explicitEnd;
+          }
+        }
+        entries.push({ kind: 'visit', p, startMinutes, endMinutes });
+      });
+
+      // Ad-hoc breaks (lunch, tea, custom) block out time the same way a
+      // patient visit does, so they eat into free time and show up in the
+      // timeline in their own slot.
+      const breaksList = window.getWorkingTimeBreaks();
+      breaksList.forEach((b, breakIndex) => {
+        const [bhh, bmm] = (b.start || '').split(':').map(Number);
+        const [ehh, emm] = (b.end || '').split(':').map(Number);
+        if ([bhh, bmm, ehh, emm].some(Number.isNaN)) return;
+        const startMinutes = bhh * 60 + bmm;
+        const endMinutes = ehh * 60 + emm;
+        if (endMinutes <= startMinutes) return;
+        entries.push({ kind: 'break', label: b.label || 'Break', breakIndex, startMinutes, endMinutes });
+      });
+
+      entries.sort((a, b) => a.startMinutes - b.startMinutes);
+
+      const minsToHHMM = (mins) => {
+        const h = Math.floor(mins / 60) % 24;
+        const m = Math.round(mins % 60);
+        return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+      };
+
+      // Walk the day chronologically and record every free GAP — between
+      // the working start time and the first visit, between two visits
+      // (e.g. an 8:30 finish and a 9:00 next appointment leaves a real
+      // 30-minute gap), and after the last visit up to closing time.
+      // Overlapping/back-to-back visits (two patients booked at the same
+      // time) correctly produce NO gap between them.
+      const timeline = [];
+      let cursor = entries.length ? Math.min(dayStartMinutes, entries[0].startMinutes) : dayStartMinutes;
+      const effectiveStart = cursor;
+
+      entries.forEach(e => {
+        if (e.startMinutes > cursor) {
+          timeline.push({ type: 'gap', startMinutes: cursor, endMinutes: e.startMinutes });
+        }
+        if (e.kind === 'break') {
+          timeline.push({ type: 'break', label: e.label, breakIndex: e.breakIndex, startMinutes: e.startMinutes, endMinutes: e.endMinutes });
+        } else {
+          timeline.push({ type: 'visit', p: e.p, startMinutes: e.startMinutes, endMinutes: e.endMinutes });
+        }
+        if (e.endMinutes > cursor) cursor = e.endMinutes;
+      });
+
+      if (closingMinutes > cursor) {
+        timeline.push({ type: 'gap', startMinutes: cursor, endMinutes: closingMinutes, trailing: true });
+      }
+
+      const gapItems = timeline.filter(t => t.type === 'gap');
+      const totalFreeMinutes = gapItems.reduce((sum, g) => sum + (g.endMinutes - g.startMinutes), 0);
+      const freeHrsWhole = Math.floor(totalFreeMinutes / 60);
+      const freeMinsWhole = Math.round(totalFreeMinutes % 60);
+      const freeHoursLabel = `${freeHrsWhole}h ${freeMinsWhole}m`;
+
+      // Headline subtext: what's the next (or current) free window from
+      // *right now*, rather than just a flat day total.
+      const now = new Date();
+      const nowMinutes = now.getHours() * 60 + now.getMinutes();
+      let freeFromLabel;
+      const upcoming = gapItems.find(g => g.endMinutes > nowMinutes);
+      if (entries.length === 0) {
+        freeFromLabel = totalFreeMinutes > 0
+          ? `Open all day from ${window.formatTimeLabel(minsToHHMM(effectiveStart))}`
+          : `⚠️ No working hours set today`;
+      } else if (!upcoming) {
+        freeFromLabel = `No more free time today`;
+      } else if (upcoming.startMinutes <= nowMinutes) {
+        freeFromLabel = `Free right now until ${window.formatTimeLabel(minsToHHMM(upcoming.endMinutes))}`;
+      } else {
+        freeFromLabel = `Next free: ${window.formatTimeLabel(minsToHHMM(upcoming.startMinutes))} – ${window.formatTimeLabel(minsToHHMM(upcoming.endMinutes))}`;
+      }
+
+      return { timeline, entries, noTimeEntries, effectiveStart, dayStartMinutes, closingMinutes, startHHMM, closingHHMM, freeMinutes: totalFreeMinutes, freeHoursLabel, freeFromLabel, minsToHHMM };
+    };
+
+    // Renders the Working Time Schedule modal's timeline (visits + the
+    // free gaps between/around them) + free-time summary, from the shared
+    // schedule computation above.
+    window.renderWorkingTimeModal = function() {
+      const schedule = window.computeWorkingTimeSchedule();
+      const listEl = document.getElementById('wt-schedule-list');
+      const summaryEl = document.getElementById('wt-free-summary');
+      const subtitleEl = document.getElementById('wt-modal-subtitle');
+      const startInput = document.getElementById('wt-start-time-input');
+      const closingInput = document.getElementById('wt-closing-time-input');
+      if (startInput) startInput.value = schedule.startHHMM;
+      if (closingInput) closingInput.value = schedule.closingHHMM;
+
+      const breakCount = schedule.entries.filter(e => e.kind === 'break').length;
+      const visitCount = schedule.entries.length - breakCount;
+      const breakSuffix = breakCount > 0 ? ` · ${breakCount} break${breakCount === 1 ? '' : 's'}` : '';
+      if (subtitleEl) subtitleEl.innerText = `${visitCount} scheduled session${visitCount === 1 ? '' : 's'} today · 1h 30m each${breakSuffix}`;
+
+      let html = '';
+      if (schedule.timeline.length === 0) {
+        html += `<p style="color:var(--text-muted); text-align:center; padding:14px 0;">No active patient has a scheduled time yet.</p>`;
+      } else {
+        schedule.timeline.forEach(item => {
+          const startLabel = window.formatTimeLabel(schedule.minsToHHMM(item.startMinutes));
+          const endLabel = window.formatTimeLabel(schedule.minsToHHMM(item.endMinutes));
+          if (item.type === 'gap') {
+            const mins = item.endMinutes - item.startMinutes;
+            const h = Math.floor(mins / 60), m = Math.round(mins % 60);
+            const durLabel = h > 0 ? `${h}h ${m}m` : `${m}m`;
+            html += `
+              <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; background:rgba(16, 185, 129, 0.08); border:1px dashed rgba(16, 185, 129, 0.45); border-radius:10px; padding:9px 14px;">
+                <div style="font-weight:700; color:#10b981; font-size:0.85rem;">🟢 Free · ${startLabel} – ${endLabel}</div>
+                <div style="font-weight:800; color:#10b981; font-size:0.8rem; flex-shrink:0;">${durLabel}</div>
+              </div>
+            `;
+          } else if (item.type === 'break') {
+            html += `
+              <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; background:rgba(245, 158, 11, 0.1); border:1px solid rgba(245, 158, 11, 0.4); border-radius:10px; padding:10px 14px;">
+                <div style="min-width:0;">
+                  <div style="font-weight:700; color:#f59e0b; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">☕ ${item.label}</div>
+                  <div style="font-size:0.76rem; color:var(--text-muted); margin-top:2px;">${startLabel} – ${endLabel}</div>
+                </div>
+                <button class="action-btn btn-del" style="flex-shrink:0;" onclick="deleteWorkingTimeBreak(${item.breakIndex})">Remove</button>
+              </div>
+            `;
+          } else {
+            html += `
+              <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; background:var(--folder-bg); border:1px solid var(--border); border-radius:10px; padding:10px 14px;">
+                <div style="min-width:0;">
+                  <div style="font-weight:700; color:var(--text-main); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${item.p.name}</div>
+                  <div style="font-size:0.76rem; color:var(--text-muted); margin-top:2px;">${startLabel} – ${endLabel}</div>
+                </div>
+                <button class="action-btn btn-edit" style="flex-shrink:0;" onclick="openQuickEditTimeModal(${item.p.id})">Edit Time</button>
+              </div>
+            `;
+          }
+        });
+      }
+
+      if (schedule.noTimeEntries.length > 0) {
+        html += `<div style="font-size:0.75rem; color:var(--text-muted); font-weight:800; text-transform:uppercase; margin-top:6px;">No Time Set (${schedule.noTimeEntries.length})</div>`;
+        schedule.noTimeEntries.forEach(p => {
+          html += `
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; background:var(--folder-bg); border:1px dashed var(--border); border-radius:10px; padding:10px 14px;">
+              <div style="font-weight:700; color:var(--text-main);">${p.name}</div>
+              <button class="action-btn btn-edit" onclick="openQuickEditTimeModal(${p.id})">Set Time</button>
+            </div>
+          `;
+        });
+      }
+
+      if (listEl) listEl.innerHTML = html;
+      if (summaryEl) {
+        summaryEl.innerHTML = `
+          <div style="font-size:0.78rem; color:var(--text-muted); font-weight:700; text-transform:uppercase; letter-spacing:0.4px;">Free Time Today (Total)</div>
+          <div style="font-size:1.4rem; font-weight:800; color:#38bdf8; margin-top:2px;">${schedule.freeHoursLabel}</div>
+          <div style="font-size:0.8rem; color:var(--text-muted); margin-top:2px;">${schedule.freeFromLabel} · Day: ${window.formatTimeLabel(schedule.startHHMM)} – ${window.formatTimeLabel(schedule.closingHHMM)}</div>
+        `;
+      }
+    };
+
+    window.openWorkingTimeModal = function() {
+      window.renderWorkingTimeModal();
+      document.getElementById('workingTimeModal').classList.add('active');
+    };
+    window.closeWorkingTimeModal = function() {
+      document.getElementById('workingTimeModal').classList.remove('active');
+    };
+    window.saveWorkingTimeClosingHour = function() {
+      const startVal = document.getElementById('wt-start-time-input').value;
+      const closeVal = document.getElementById('wt-closing-time-input').value;
+      if (!startVal || !closeVal) { alert('Please pick both a start time and a closing time.'); return; }
+      if (startVal >= closeVal) { alert('Start time must be earlier than closing time.'); return; }
+      window.setWorkingTimeStartHour(startVal);
+      window.setWorkingTimeClosingHour(closeVal);
+      window.renderWorkingTimeModal(); // reanalyze immediately with the new working hours
+      if (typeof renderStats === 'function') renderStats(); // keep the dashboard card in sync too
+    };
+
     function renderStats() {
+
       const activeList = patients.filter(p => !p.isFinished);
       const finishedList = patients.filter(p => p.isFinished);
       const todayStr = window.getLocalDateStr();
@@ -6698,6 +7199,18 @@
       if (elActiveDue) elActiveDue.innerText = `₹${activeDue.toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
       if (elActiveBilled) elActiveBilled.innerText = `₹${activeBilled.toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
       if (elActiveTodayBilled) elActiveTodayBilled.innerText = `₹${todayWorkedAmt.toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
+
+      // ---- Free-time estimate ----
+      // Shared with the "Working Time Schedule" detail modal (see
+      // window.computeWorkingTimeSchedule) so both stay in sync — one
+      // calculation, used everywhere, re-run automatically any time
+      // saveAndRender() fires (including right after registering a new
+      // patient with a scheduled time).
+      const wtSchedule = window.computeWorkingTimeSchedule();
+      const elFreeHours = document.getElementById('active-summary-free-hours');
+      const elFreeFrom = document.getElementById('active-summary-free-from');
+      if (elFreeHours) elFreeHours.innerText = wtSchedule.freeHoursLabel;
+      if (elFreeFrom) elFreeFrom.innerText = wtSchedule.freeFromLabel;
       if (elActiveAdvance) elActiveAdvance.innerText = `₹${totalAdvanceInHand.toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
 
       const elOverallEarned = document.getElementById('overall-total-earned');
@@ -7129,7 +7642,7 @@
           <td>${index + 1}</td>
            <td>
             <span class="uid-badge">${p.uid}</span>
-            ${visitedToday ? `<span class="uid-badge" style="background:rgba(6,214,160,0.2); color:#06d6a0; border-color:#06d6a0; margin-left:4px;" title="Visited today">✔ Visited Today</span>` : ''}<br>
+            ${visitedToday ? `<span class="uid-badge" style="background:rgba(6,214,160,0.2); color:#06d6a0; border-color:#06d6a0; margin-left:4px; padding:3px 7px;" title="Visited today">✔</span>` : ''}<br>
             <strong style="color:var(--text-main); font-size:0.95rem;">${p.name}</strong><br>
             <a href="tel:${cleanCallNum}" class="patient-call-link" title="Tap to call ${p.name}">📞 ${p.mobile}</a><br>
             <small style="color:#cbd5e1;">📍 ${p.address || 'In Store'}</small>
@@ -7139,7 +7652,7 @@
           <td>
             <div>${p.packageType === 'daily' ? 'Daily' : p.packageType} Package</div>
             <strong style="color:var(--text-main);">₹${p.dailyCharge}</strong>
-            <br><span class="uid-badge" style="background:#1e293b; color:#38bdf8; margin-top:4px; display:inline-block;">⏰ ${p.reminderTime || '09:00'}</span>
+            <br><span class="uid-badge" style="background:#1e293b; color:#38bdf8; margin-top:4px; display:inline-block;">⏰ ${window.formatTimeLabel(p.reminderTime || '09:00')}</span>
             <br><span style="font-size:0.78rem; font-weight:800; color:${outstanding > 0 ? 'var(--danger)' : '#10b981'}; margin-top:4px; display:inline-block;">${outstanding > 0 ? `⚠️ Due: ₹${outstanding.toLocaleString('en-IN')}` : (outstanding < 0 ? `✨ Advance: ₹${Math.abs(outstanding).toLocaleString('en-IN')}` : '✔ Balance Cleared')}</span>
           </td>
            <td>
@@ -7438,7 +7951,7 @@
 
       activeList.forEach((p) => {
         const cleanPhone = p.mobile.replace(/\D/g, '');
-        const msg = encodeURIComponent(`Good morning ${p.name}! This is a reminder from ${clinicName} (${docName}) for your scheduled session today at ${p.reminderTime || '09:00 AM'}.`);
+        const msg = encodeURIComponent(`Good morning ${p.name}! This is a reminder from ${clinicName} (${docName}) for your scheduled session today at ${window.formatTimeLabel(p.reminderTime || '09:00')}.`);
         const waUrl = `https://wa.me/${cleanPhone.length === 10 ? '91' + cleanPhone : cleanPhone}?text=${msg}`;
 
         const item = document.createElement('div');
@@ -7446,7 +7959,7 @@
         item.innerHTML = `
           <div>
             <strong style="color:var(--text-main); font-size:1rem;">${p.name}</strong> <span class="uid-badge">${p.uid}</span><br>
-            <span style="font-size:0.85rem; color:#38bdf8; font-weight:700;">⏰ Time: ${p.reminderTime || '09:00 AM'}</span> | <span style="font-size:0.85rem; color:#f8fafc;">${p.diagnosis}</span><br>
+            <span style="font-size:0.85rem; color:#38bdf8; font-weight:700;">⏰ Time: ${window.formatTimeLabel(p.reminderTime || '09:00')}</span> | <span style="font-size:0.85rem; color:#f8fafc;">${p.diagnosis}</span><br>
             <a href="tel:${cleanPhone}" class="patient-call-link" style="font-size:0.85rem; margin-top:2px; display:inline-flex;" title="Tap to call ${p.name}">📞 ${p.mobile}</a>
           </div>
           <div style="display:flex; gap:8px;">
