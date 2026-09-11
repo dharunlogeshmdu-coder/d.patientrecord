@@ -2434,6 +2434,30 @@
             <button type="button" class="btn btn-secondary" style="z-index:1; font-size:0.82rem; flex-shrink:0;" onclick="switchPageById('page-time-tracker')">🕐 Open Self Time Tracker</button>
           </div>
 
+          <div class="card" id="daily-summary-card" style="background:linear-gradient(135deg, rgba(6,214,160,0.10) 0%, rgba(37,99,235,0.06) 100%), var(--folder-bg);">
+            <h2 style="margin-bottom:14px;">📋 Today's Wrap-Up</h2>
+            <div style="display:flex; gap:14px; flex-wrap:wrap;">
+              <div style="flex:1; min-width:140px; text-align:center; padding:12px 8px; background:var(--bg-card); border:1px solid var(--border); border-radius:12px;">
+                <div style="font-size:1.6rem; font-weight:800; color:var(--text-info, #38bdf8);" id="daily-summary-visits">0</div>
+                <div style="font-size:0.72rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.4px; margin-top:2px;">Visits Today</div>
+              </div>
+              <div style="flex:1; min-width:140px; text-align:center; padding:12px 8px; background:var(--bg-card); border:1px solid var(--border); border-radius:12px;">
+                <div style="font-size:1.6rem; font-weight:800; color:#10b981;" id="daily-summary-collected">₹0</div>
+                <div style="font-size:0.72rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.4px; margin-top:2px;">Collected Today</div>
+              </div>
+              <div style="flex:1; min-width:140px; text-align:center; padding:12px 8px; background:var(--bg-card); border:1px solid var(--border); border-radius:12px;">
+                <div style="font-size:1.6rem; font-weight:800; color:var(--accent);" id="daily-summary-freetime">0h 0m</div>
+                <div style="font-size:0.72rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.4px; margin-top:2px;">Free Time Today</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card" id="overdue-nudge-card" style="display:none;">
+            <h2 style="margin-bottom:10px; color:#f87171;">⏰ Overdue Payments Needing Attention</h2>
+            <p style="font-size:0.8rem; color:var(--text-muted); margin-top:-6px; margin-bottom:12px;">Clients whose last visit was marked unpaid 3+ days ago.</p>
+            <div id="overdue-nudge-list" style="display:flex; flex-direction:column; gap:10px;"></div>
+          </div>
+
           <div class="top-pro-stats">
             <div class="pro-kpi-card kpi-received" style="cursor:pointer;" onclick="openKpiDetailModal('overallEarned')" title="Tap to see every client's payments">
               <h3>OVERALL TOTAL PAYMENT EARNED</h3>
@@ -7212,6 +7236,7 @@
       if (bDir) bDir.innerText = patients.length;
 
       renderRevenueTrendChart();
+      if (typeof window.renderDashboardExtras === 'function') window.renderDashboardExtras();
     }
 
     // Builds one clickable row for the KPI detail modal. Clicking a row
@@ -10025,6 +10050,121 @@
       }
       setInterval(tickLiveClock, 1000);
       tickLiveClock();
+    })();
+  </script>
+
+  <!-- =============================================================
+       DASHBOARD EXTRAS: Today's Wrap-Up card + Overdue Payment Nudges
+       Self-contained — reads existing `patients` data and the Self Time
+       Tracker's own localStorage log, writes nothing new, and does not
+       touch any existing app logic. Hooked in via a single call at the
+       end of renderStats().
+  ============================================================= -->
+  <script>
+    (function () {
+      function dayLogKeyForToday() {
+        const base = (typeof window.getSummaryStorageKey === 'function')
+          ? window.getSummaryStorageKey('self_time_day_log')
+          : 'dharun_self_time_day_log';
+        return `${base}_${window.getLocalDateStr()}`;
+      }
+      function activeSessionKeyLocal() {
+        return (typeof window.getSummaryStorageKey === 'function')
+          ? window.getSummaryStorageKey('self_time_active_session')
+          : 'dharun_self_time_active_session';
+      }
+      function minsBetween(startHHMM, endHHMM) {
+        const [sh, sm] = startHHMM.split(':').map(Number);
+        const [eh, em] = endHHMM.split(':').map(Number);
+        let mins = (eh * 60 + em) - (sh * 60 + sm);
+        if (mins < 0) mins += 24 * 60;
+        return mins;
+      }
+      function todaysFreeTimeMins() {
+        let total = 0;
+        try {
+          const raw = localStorage.getItem(dayLogKeyForToday());
+          const blocks = raw ? JSON.parse(raw) : [];
+          if (Array.isArray(blocks)) blocks.forEach(b => { total += minsBetween(b.start, b.end); });
+        } catch (e) {}
+        try {
+          const activeRaw = localStorage.getItem(activeSessionKeyLocal());
+          const session = activeRaw ? JSON.parse(activeRaw) : null;
+          if (session && session.startDate === window.getLocalDateStr()) {
+            total += minsBetween(session.startTime, window.getLocalTimeStr());
+          }
+        } catch (e) {}
+        return total;
+      }
+
+      // Days between two YYYY-MM-DD strings (b - a), local-date based.
+      function daysBetween(aStr, bStr) {
+        const a = new Date(aStr + 'T00:00:00');
+        const b = new Date(bStr + 'T00:00:00');
+        return Math.round((b - a) / 86400000);
+      }
+
+      window.renderDashboardExtras = function () {
+        if (typeof patients === 'undefined' || !Array.isArray(patients)) return;
+        const todayStr = window.getLocalDateStr();
+
+        // ---- Today's Wrap-Up ----
+        let visitsToday = 0;
+        let collectedToday = 0;
+        patients.forEach(p => {
+          if (p.visitHistory && p.visitHistory.some(v => v.date === todayStr)) visitsToday++;
+          if (p.paymentHistory && Array.isArray(p.paymentHistory)) {
+            p.paymentHistory.forEach(pm => { if (pm.date === todayStr) collectedToday += parseFloat(pm.amount || 0); });
+          }
+        });
+
+        const visitsEl = document.getElementById('daily-summary-visits');
+        const collectedEl = document.getElementById('daily-summary-collected');
+        const freeEl = document.getElementById('daily-summary-freetime');
+        if (visitsEl) visitsEl.innerText = visitsToday;
+        if (collectedEl) collectedEl.innerText = `₹${collectedToday.toLocaleString('en-IN')}`;
+        if (freeEl) {
+          const mins = todaysFreeTimeMins();
+          freeEl.innerText = `${Math.floor(mins / 60)}h ${Math.round(mins % 60)}m`;
+        }
+
+        // ---- Overdue Payment Nudges ----
+        // A client is "overdue" if their most recent visit is marked unpaid
+        // and that visit happened 3+ days ago, and they're still active.
+        const overdue = [];
+        patients.filter(p => !p.isFinished).forEach(p => {
+          if (!p.visitHistory || !p.visitHistory.length) return;
+          const lastVisit = p.visitHistory[p.visitHistory.length - 1];
+          if (lastVisit && lastVisit.status === 'unpaid' && daysBetween(lastVisit.date, todayStr) >= 3) {
+            const due = (typeof getBilledTotal === 'function' && typeof getPaidTotal === 'function')
+              ? Math.max(0, getBilledTotal(p) - getPaidTotal(p)) : null;
+            overdue.push({ p, lastVisit, due });
+          }
+        });
+
+        const card = document.getElementById('overdue-nudge-card');
+        const list = document.getElementById('overdue-nudge-list');
+        if (card && list) {
+          if (!overdue.length) {
+            card.style.display = 'none';
+          } else {
+            card.style.display = '';
+            overdue.sort((a, b) => daysBetween(b.lastVisit.date, todayStr) - daysBetween(a.lastVisit.date, todayStr));
+            list.innerHTML = overdue.map(({ p, lastVisit, due }) => `
+              <div onclick="window.openPatientLedgerModal(${p.id})" style="display:flex; justify-content:space-between; align-items:center; gap:10px; background:rgba(239,68,68,0.08); border:1px solid rgba(239,68,68,0.45); border-radius:10px; padding:12px 14px; cursor:pointer;">
+                <div style="min-width:0;">
+                  <div style="font-weight:700; color:var(--danger); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${p.name}</div>
+                  <div style="font-size:0.76rem; color:var(--text-muted); margin-top:2px;">${p.mobile || ''} · unpaid since ${lastVisit.date} (${daysBetween(lastVisit.date, todayStr)}d ago)</div>
+                </div>
+                <div style="text-align:right; flex-shrink:0;">
+                  <div style="font-weight:800; color:var(--danger);">${due !== null ? '₹' + due.toLocaleString('en-IN') : ''}</div>
+                  <div style="font-size:0.7rem; color:var(--text-muted); text-transform:uppercase;">Due</div>
+                </div>
+              </div>
+            `).join('');
+          }
+        }
+      };
     })();
   </script>
 </body>
