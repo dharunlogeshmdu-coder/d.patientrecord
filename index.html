@@ -1856,6 +1856,34 @@
       color: var(--text-muted);
       margin-top: 1px;
     }
+    .tt-timeline-info { min-width: 0; flex: 1; }
+
+    /* On narrow/mobile screens there isn't enough horizontal room for the
+       time column + name + Paid/Unpaid badge to all fit on one line, so the
+       name was getting clipped with "...". Below this width we stack the
+       card into two rows (time+badge on top, full name on its own line)
+       and let the name wrap instead of truncating, so it's always fully
+       visible. */
+    @media (max-width: 480px) {
+      .tt-timeline-card {
+        flex-wrap: wrap;
+        row-gap: 4px;
+        padding: 10px 12px;
+      }
+      .tt-timeline-time { order: 1; min-width: 0; }
+      .uid-badge { order: 2; margin-left: auto; }
+      .tt-timeline-info {
+        order: 3;
+        flex: 1 1 100%;
+      }
+      .tt-timeline-label {
+        white-space: normal;
+        overflow: visible;
+        text-overflow: unset;
+        word-break: break-word;
+        font-size: 0.82rem;
+      }
+    }
   </style>
 </head>
 <body>
@@ -9960,7 +9988,7 @@
               <span class="tt-timeline-dot ${b.running ? 'dot-running' : 'dot-free'}"></span>
               <div class="tt-timeline-card card-free">
                 <div class="tt-timeline-time">${startLabel}</div>
-                <div style="min-width:0; flex:1;">
+                <div class="tt-timeline-info">
                   <div class="tt-timeline-label" style="color:#10b981;">🕐 ${b.running ? 'Free Time (Running)' : 'Free Time'}</div>
                   <div class="tt-timeline-sub">${startLabel} – ${endLabel}</div>
                 </div>
@@ -9979,7 +10007,7 @@
               <span class="tt-timeline-dot ${isUnpaid ? 'dot-unpaid' : 'dot-paid'}"></span>
               <div class="tt-timeline-card card-visit">
                 <div class="tt-timeline-time">${timeLabel}</div>
-                <div style="min-width:0; flex:1;">
+                <div class="tt-timeline-info">
                   <div class="tt-timeline-label" style="color:var(--text-main);">📌 Visited: ${v.name}</div>
                   ${v.time ? '' : '<div class="tt-timeline-sub">Time not recorded</div>'}
                 </div>
