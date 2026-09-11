@@ -2682,6 +2682,7 @@
               </div>
             </div>
 
+            <p style="font-size:0.75rem; color:var(--text-muted); margin: -6px 0 10px 2px;">🔢 Sorted by registration date — #1 (earliest joined) at the top, most recently registered at the bottom.</p>
             <div class="table-container">
               <table>
                 <thead>
@@ -2697,6 +2698,66 @@
                 </thead>
                 <tbody id="admin-users-table-body">
                   <tr><td colspan="7" style="text-align:center; padding:20px;">Loading rented member accounts...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="card" style="border-color: rgba(6, 214, 160, 0.4); margin-top: 22px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:12px;">
+              <div>
+                <h2>💰 Referral Payouts Due</h2>
+                <p style="font-size:0.8rem; color:var(--text-muted);">Auto-calculated the moment a referred member's <strong>first payment</strong> is confirmed. Pay the referrer (Cash/UPI) today, then tap "Mark Paid".</p>
+              </div>
+              <div class="pro-kpi-card kpi-outstanding" style="padding:10px 16px; text-align:center; min-width:140px;">
+                <h3 style="margin-bottom:2px;">Total Owed Today</h3>
+                <div class="amount text-danger" id="admin-referral-pending-total" style="font-size:1.3rem;">₹0</div>
+              </div>
+            </div>
+            <div class="table-container">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Referrer (Who To Pay)</th>
+                    <th>Referred Member</th>
+                    <th>Amount</th>
+                    <th>Earned On</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="admin-referral-payouts-body">
+                  <tr><td colspan="5" style="text-align:center; padding:16px;">Loading referral payouts...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="card" style="border-color: rgba(167, 139, 250, 0.4); margin-top: 22px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:12px;">
+              <div>
+                <h2>📁 Member Folders</h2>
+                <p style="font-size:0.8rem; color:var(--text-muted);">Renewal-due, Trial, and Inactive members — grouped separately, each sorted oldest-registered first.</p>
+              </div>
+              <div class="modal-actions" id="admin-folder-tabs" style="gap:8px;">
+                <button type="button" class="btn btn-notify folder-tab-btn active" data-folder="renewal" onclick="switchAdminFolder('renewal', this)" style="padding:6px 12px; font-size:0.78rem;">🔄 Renewal Due</button>
+                <button type="button" class="btn btn-secondary folder-tab-btn" data-folder="trial" onclick="switchAdminFolder('trial', this)" style="padding:6px 12px; font-size:0.78rem;">🕒 Trial Members</button>
+                <button type="button" class="btn btn-secondary folder-tab-btn" data-folder="inactive" onclick="switchAdminFolder('inactive', this)" style="padding:6px 12px; font-size:0.78rem;">🔴 Inactive Members</button>
+              </div>
+            </div>
+            <div class="table-container">
+              <table>
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Specialist Name & Business Identity</th>
+                    <th>Contact</th>
+                    <th>Status / Days</th>
+                    <th>Renewal / Trial End Date</th>
+                    <th>Quick Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="admin-folder-table-body">
+                  <tr><td colspan="6" style="text-align:center; padding:16px;">Loading...</td></tr>
                 </tbody>
               </table>
             </div>
@@ -3408,6 +3469,17 @@
         <input type="number" id="global-referral-days" placeholder="3" min="0">
       </div>
 
+      <div style="border-top: 1px dashed var(--border); margin: 4px 0 16px 0;"></div>
+
+      <p style="font-size: 0.85rem; color: #06d6a0; font-weight: 800; margin-bottom: 4px;">💵 Refer & Earn — Cash Payout (New)</p>
+      <p style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 14px;">
+        Alternative to (or on top of) the bonus days above: pay the referrer real cash — e.g. referrer earns <strong>₹50</strong> out of a <strong>₹199</strong> plan. This amount is only marked as <strong>owed</strong> the moment the referred member's <strong>first payment</strong> is confirmed — it is never auto-transferred. It shows up in "💰 Referral Payouts Due" below the member directory so you can pay the referrer (Cash/UPI) and tick it off. Set to 0 to disable cash payouts.
+      </p>
+      <div class="form-group" style="margin-bottom: 18px;">
+        <label>Referral Cash Reward (₹ per successful referral) *</label>
+        <input type="number" id="global-referral-cash" placeholder="50" min="0">
+      </div>
+
       <div class="modal-actions">
         <button class="btn btn-notify" style="flex: 1;" onclick="saveGlobalSettings()">💾 Save Defaults</button>
         <button class="btn btn-secondary" style="flex: 1;" onclick="closeGlobalSettingsModal()">Cancel</button>
@@ -3442,14 +3514,24 @@
         Loading your referral rewards...
       </div>
 
-      <div style="display: flex; gap: 10px; margin-bottom: 16px;">
-        <div class="pro-kpi-card kpi-purple" style="flex: 1; padding: 12px; text-align: center;">
+      <div style="display: flex; gap: 10px; margin-bottom: 10px; flex-wrap: wrap;">
+        <div class="pro-kpi-card kpi-purple" style="flex: 1; min-width: 90px; padding: 12px; text-align: center;">
           <h3 style="margin-bottom: 4px;">Referrals</h3>
           <div class="amount text-purple" id="refer-earn-count" style="font-size: 1.6rem;">0</div>
         </div>
-        <div class="pro-kpi-card kpi-received" style="flex: 1; padding: 12px; text-align: center;">
+        <div class="pro-kpi-card kpi-received" style="flex: 1; min-width: 90px; padding: 12px; text-align: center;">
           <h3 style="margin-bottom: 4px;">Days Earned</h3>
           <div class="amount text-success" id="refer-earn-days" style="font-size: 1.6rem;">0</div>
+        </div>
+      </div>
+      <div style="display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap;">
+        <div class="pro-kpi-card kpi-gold" style="flex: 1; min-width: 90px; padding: 12px; text-align: center;">
+          <h3 style="margin-bottom: 4px;">₹ Pending Payout</h3>
+          <div class="amount text-gold" id="refer-earn-cash-pending" style="font-size: 1.6rem;">₹0</div>
+        </div>
+        <div class="pro-kpi-card kpi-outstanding" style="flex: 1; min-width: 90px; padding: 12px; text-align: center;">
+          <h3 style="margin-bottom: 4px;">₹ Paid to You</h3>
+          <div class="amount text-accent" id="refer-earn-cash-paid" style="font-size: 1.6rem;">₹0</div>
         </div>
       </div>
 
@@ -3885,6 +3967,7 @@
       document.getElementById('global-discount-6m').value = '';
       document.getElementById('global-discount-12m').value = '';
       document.getElementById('global-referral-days').value = '';
+      document.getElementById('global-referral-cash').value = '';
       try {
         const snap = await getDoc(doc(db, "system_config", "rentals"));
         if (snap.exists()) {
@@ -3895,6 +3978,7 @@
           document.getElementById('global-discount-6m').value = (d.discount6 !== undefined && d.discount6 !== null) ? d.discount6 : 10;
           document.getElementById('global-discount-12m').value = (d.discount12 !== undefined && d.discount12 !== null) ? d.discount12 : 15;
           document.getElementById('global-referral-days').value = (d.referralBonusDays !== undefined && d.referralBonusDays !== null) ? d.referralBonusDays : 3;
+          document.getElementById('global-referral-cash').value = (d.referralCashAmount !== undefined && d.referralCashAmount !== null) ? d.referralCashAmount : 50;
         } else {
           document.getElementById('global-reg-amount').value = 0;
           document.getElementById('global-rental-fee').value = 599;
@@ -3902,6 +3986,7 @@
           document.getElementById('global-discount-6m').value = 10;
           document.getElementById('global-discount-12m').value = 15;
           document.getElementById('global-referral-days').value = 3;
+          document.getElementById('global-referral-cash').value = 50;
         }
       } catch(err) {
         console.error(err);
@@ -3911,6 +3996,7 @@
         document.getElementById('global-discount-6m').value = 10;
         document.getElementById('global-discount-12m').value = 15;
         document.getElementById('global-referral-days').value = 3;
+        document.getElementById('global-referral-cash').value = 50;
       }
       window.previewGlobalRenewalPlans();
     };
@@ -3926,6 +4012,7 @@
       let discount6 = parseFloat(document.getElementById('global-discount-6m').value);
       let discount12 = parseFloat(document.getElementById('global-discount-12m').value);
       let referralBonusDays = parseFloat(document.getElementById('global-referral-days').value);
+      let referralCashAmount = parseFloat(document.getElementById('global-referral-cash').value);
 
       if (isNaN(rentalFee) || rentalFee <= 0) {
         alert("Please enter a valid 1 Month Plan Renewal Amount (₹) greater than 0.");
@@ -3937,6 +4024,7 @@
       if (isNaN(discount6)) discount6 = 0;
       if (isNaN(discount12)) discount12 = 0;
       if (isNaN(referralBonusDays) || referralBonusDays < 0) referralBonusDays = 0;
+      if (isNaN(referralCashAmount) || referralCashAmount < 0) referralCashAmount = 0;
 
       // Clamp discounts to a sane 0-100% range
       discount3 = Math.min(100, Math.max(0, discount3));
@@ -3951,6 +4039,7 @@
           discount6: discount6,
           discount12: discount12,
           referralBonusDays: referralBonusDays,
+          referralCashAmount: referralCashAmount,
           lastUpdated: new Date().toISOString()
         }, { merge: true });
 
@@ -3967,7 +4056,7 @@
           activeMemberProfile.rentalFee = rentalFee;
         }
 
-        alert(`✅ Renewal amount updated to ₹${rentalFee} and synced to all member portals.\n🎁 Referral bonus set to ${referralBonusDays} day(s) per successful referral.`);
+        alert(`✅ Renewal amount updated to ₹${rentalFee} and synced to all member portals.\n🎁 Referral bonus set to ${referralBonusDays} day(s) per successful referral.\n💵 Referral cash payout set to ₹${referralCashAmount} per successful referral.`);
         closeGlobalSettingsModal();
       } catch(err) {
         alert("Failed to save global settings: " + err.message);
@@ -4054,54 +4143,8 @@
             // and only once. Bonus day count is fully admin-controlled via
             // Global Settings (system_config/rentals -> referralBonusDays).
             let referralBonusMsg = "";
-            if (isNewMember && currentData.referredBy && !currentData.referralBonusApplied) {
-              try {
-                let bonusDays = 3;
-                try {
-                  const cfgSnap = await getDoc(doc(db, "system_config", "rentals"));
-                  if (cfgSnap.exists() && cfgSnap.data().referralBonusDays !== undefined && cfgSnap.data().referralBonusDays !== null) {
-                    bonusDays = parseFloat(cfgSnap.data().referralBonusDays) || 0;
-                  }
-                } catch(e) { console.log(e); }
-
-                if (bonusDays > 0) {
-                  const referrerRef = doc(db, "registered_members", currentData.referredBy);
-                  const referrerSnap = await getDoc(referrerRef);
-                  if (referrerSnap.exists()) {
-                    const referrerData = referrerSnap.data();
-                    let referrerBase = new Date();
-                    if (referrerData.subscriptionExpiry) {
-                      const refExp = new Date(referrerData.subscriptionExpiry);
-                      if (refExp > referrerBase) referrerBase = refExp;
-                    }
-                    referrerBase.setDate(referrerBase.getDate() + bonusDays);
-                    const referrerNewExpiry = referrerBase.toISOString();
-                    const referralHistory = referrerData.referralHistory || [];
-                    referralHistory.unshift({
-                      referredName: currentData.clinicName || currentData.doctorName || userTag,
-                      referredUid: targetUid,
-                      daysAwarded: bonusDays,
-                      date: paidTimestamp
-                    });
-
-                    await updateDoc(referrerRef, {
-                      subscriptionExpiry: referrerNewExpiry,
-                      referralCount: (referrerData.referralCount || 0) + 1,
-                      referralBonusDaysEarned: (referrerData.referralBonusDaysEarned || 0) + bonusDays,
-                      referralHistory: referralHistory
-                    });
-
-                    if (activeMemberProfile && activeMemberProfile.uid === currentData.referredBy) {
-                      activeMemberProfile.subscriptionExpiry = referrerNewExpiry;
-                    }
-                  }
-                }
-
-                await updateDoc(userRef, { referralBonusApplied: true });
-                referralBonusMsg = `\n\n🎁 Your referrer just earned ${bonusDays} bonus day(s) thanks to you joining!`;
-              } catch (refErr) {
-                console.log("Referral bonus crediting failed:", refErr);
-              }
+            if (isNewMember) {
+              referralBonusMsg = await creditReferralRewardsIfEligible(targetUid, currentData, userTag, paidTimestamp) || "";
             }
 
             document.getElementById('subscription-lock-overlay').classList.remove('active');
@@ -5554,7 +5597,16 @@
           paymentHistoryList: payHistory
         });
 
-        alert(`✅ Member subscription extended by ${daysToAdd} days successfully (Stacked from current expiry)!`);
+        // If this was the member's very first confirmed payment and they
+        // joined via a referral code, credit the referrer now (bonus days
+        // and/or the ₹ cash payout — see Global Settings).
+        let referralMsg = "";
+        const wasFirstPayment = (currentData.paymentHistoryList || []).length === 0 && !currentData.lastPaymentDate;
+        if (wasFirstPayment) {
+          referralMsg = await creditReferralRewardsIfEligible(targetUid, currentData, currentData.clinicName || currentData.doctorName || 'Member', paidTimestamp) || "";
+        }
+
+        alert(`✅ Member subscription extended by ${daysToAdd} days successfully (Stacked from current expiry)!${referralMsg}`);
         window.loadAllRegisteredUsers();
       } catch (err) {
         alert("Error: " + err.message);
@@ -5865,6 +5917,8 @@
         renderAdminTableFull();
         renderManagerTable();
         window.renderAdminAnalytics();
+        window.renderReferralPayoutsDue();
+        window.renderAdminFolder(adminActiveFolder);
         window.updateAdminReplyBadge();
       } catch (err) {
         console.error(err);
@@ -6087,6 +6141,14 @@
         return matchesQuery && matchesStatus;
       });
 
+      // Registration-date alignment: #1 (earliest joined) at the top,
+      // most recently registered member at the bottom.
+      filtered.sort((a, b) => {
+        const ta = a.registeredAt ? new Date(a.registeredAt).getTime() : 0;
+        const tb = b.registeredAt ? new Date(b.registeredAt).getTime() : 0;
+        return ta - tb;
+      });
+
       if (filtered.length === 0) {
         tableBody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:20px; color:var(--text-muted);">No rented business accounts found.</td></tr>`;
         return;
@@ -6186,6 +6248,183 @@
         tableBody.appendChild(tr);
       });
     }
+
+    // ---- 💰 Referral Payouts Due: flattens every member's unpaid cash
+    // referral entries into one admin-wide "who do I owe money to today"
+    // list. Nothing here is auto-transferred — the admin pays the referrer
+    // (Cash/UPI) themselves and taps "Mark Paid" to close it out. ----
+    window.renderReferralPayoutsDue = function() {
+      const body = document.getElementById('admin-referral-payouts-body');
+      const totalEl = document.getElementById('admin-referral-pending-total');
+      if (!body) return;
+
+      const pending = [];
+      allUsersList.forEach((usr) => {
+        (usr.referralPayouts || []).forEach((p) => {
+          if (!p.paid) {
+            pending.push({
+              referrerUid: usr.id,
+              referrerName: usr.doctorName || usr.clinicName || 'Member',
+              referrerMobile: usr.mobile || '',
+              payoutId: p.id,
+              referredName: p.referredName || 'New Member',
+              amount: parseFloat(p.amount) || 0,
+              date: p.date
+            });
+          }
+        });
+      });
+
+      // Oldest-owed first, so the admin clears longest-pending dues first.
+      pending.sort((a, b) => (a.date ? new Date(a.date).getTime() : 0) - (b.date ? new Date(b.date).getTime() : 0));
+
+      const total = pending.reduce((s, p) => s + p.amount, 0);
+      if (totalEl) totalEl.innerText = `₹${total.toLocaleString('en-IN')}`;
+
+      if (pending.length === 0) {
+        body.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:16px; color:var(--text-muted);">🎉 No referral payouts pending — everyone's been paid!</td></tr>`;
+        return;
+      }
+
+      body.innerHTML = pending.map((p) => {
+        const dateText = p.date ? new Date(p.date).toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' }) : '—';
+        return `
+          <tr>
+            <td>
+              <strong style="color:var(--text-main);">${p.referrerName}</strong><br>
+              <small style="color:var(--text-muted);">📞 ${p.referrerMobile || 'No Mobile'}</small>
+            </td>
+            <td>${p.referredName}</td>
+            <td><strong style="color:#06d6a0; font-size:0.95rem;">₹${p.amount}</strong></td>
+            <td><small style="color:#38bdf8; font-weight:700;">📅 ${dateText}</small></td>
+            <td>
+              <div style="display:flex; gap:4px; flex-wrap:wrap;">
+                <button class="btn btn-notify" style="padding:4px 8px; font-size:0.72rem;" onclick="markReferralPayoutPaid('${p.referrerUid}', '${p.payoutId}', 'Cash')">💵 Mark Paid (Cash)</button>
+                <button class="btn btn-primary" style="padding:4px 8px; font-size:0.72rem;" onclick="markReferralPayoutPaid('${p.referrerUid}', '${p.payoutId}', 'UPI')">⚡ Mark Paid (UPI)</button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    };
+
+    window.markReferralPayoutPaid = async function(referrerUid, payoutId, method) {
+      if (!confirm(`Confirm you have paid this referral reward via ${method}?`)) return;
+      try {
+        const referrerRef = doc(db, "registered_members", referrerUid);
+        const referrerSnap = await getDoc(referrerRef);
+        if (!referrerSnap.exists()) { alert("Referrer account not found."); return; }
+        const referrerData = referrerSnap.data();
+        const payouts = referrerData.referralPayouts || [];
+        const target = payouts.find(p => p.id === payoutId);
+        if (!target) { alert("This payout entry was not found (it may already be marked paid)."); return; }
+
+        target.paid = true;
+        target.paidAt = new Date().toISOString();
+        target.paidMethod = method;
+
+        const newPendingTotal = Math.max(0, (referrerData.referralCashPendingTotal || 0) - (parseFloat(target.amount) || 0));
+
+        await updateDoc(referrerRef, {
+          referralPayouts: payouts,
+          referralCashPendingTotal: newPendingTotal,
+          referralCashPaidTotal: (referrerData.referralCashPaidTotal || 0) + (parseFloat(target.amount) || 0)
+        });
+
+        alert(`✅ ₹${target.amount} marked as paid to ${referrerData.doctorName || referrerData.clinicName || 'the referrer'} via ${method}.`);
+        window.loadAllRegisteredUsers();
+      } catch (err) {
+        alert("Failed to mark payout as paid: " + err.message);
+      }
+    };
+
+    // ---- 📁 Member Folders: Renewal Due / Trial / Inactive, each sorted
+    // oldest-registered first, same as the main directory alignment. ----
+    let adminActiveFolder = 'renewal';
+
+    window.switchAdminFolder = function(folderKey, btnEl) {
+      adminActiveFolder = folderKey;
+      document.querySelectorAll('.folder-tab-btn').forEach(b => {
+        b.classList.remove('active', 'btn-notify');
+        b.classList.add('btn-secondary');
+      });
+      if (btnEl) {
+        btnEl.classList.remove('btn-secondary');
+        btnEl.classList.add('active', 'btn-notify');
+      }
+      window.renderAdminFolder(folderKey);
+    };
+
+    window.renderAdminFolder = function(folderKey) {
+      const body = document.getElementById('admin-folder-table-body');
+      if (!body) return;
+
+      const now = new Date();
+      const grouped = allUsersList.filter((usr) => {
+        const identity = (usr.identity || "").toLowerCase();
+        const isSuper = usr.role === 'super_admin' || identity === SUPER_ADMIN_EMAIL.toLowerCase();
+        const isManager = usr.role === 'manager' || identity === MANAGER_EMAIL.toLowerCase();
+        if (isSuper || isManager) return false;
+
+        const expiryDate = usr.subscriptionExpiry ? new Date(usr.subscriptionExpiry) : null;
+        const hasPaidHistory = (usr.paymentHistoryList && usr.paymentHistoryList.length > 0) || usr.lastPaymentDate;
+        const isOnTrial = usr.paymentStatus === 'trial' && expiryDate && expiryDate > now;
+        const isStopped = usr.paymentStatus === 'stopped';
+        const isExpired = !expiryDate || expiryDate < now || (!hasPaidHistory && !isOnTrial);
+        const isActivePaid = !isOnTrial && !isStopped && !isExpired;
+
+        if (folderKey === 'renewal') return isActivePaid;
+        if (folderKey === 'trial') return isOnTrial && !isStopped;
+        if (folderKey === 'inactive') return isStopped || (isExpired && !isOnTrial);
+        return false;
+      });
+
+      grouped.sort((a, b) => {
+        const ta = a.registeredAt ? new Date(a.registeredAt).getTime() : 0;
+        const tb = b.registeredAt ? new Date(b.registeredAt).getTime() : 0;
+        return ta - tb;
+      });
+
+      if (grouped.length === 0) {
+        const emptyText = folderKey === 'renewal' ? 'No members currently on an active paid plan.' : (folderKey === 'trial' ? 'No members currently on trial.' : 'No inactive members — great job!');
+        body.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:16px; color:var(--text-muted);">${emptyText}</td></tr>`;
+        return;
+      }
+
+      body.innerHTML = grouped.map((usr, idx) => {
+        const expiryDate = usr.subscriptionExpiry ? new Date(usr.subscriptionExpiry) : null;
+        const expiryText = expiryDate ? expiryDate.toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' }) : 'Not available';
+        const daysLeftNum = expiryDate ? Math.ceil((expiryDate.getTime() - now.getTime()) / (1000 * 3600 * 24)) : 0;
+        const categoryTag = (usr.businessCategory === 'parlor') ? '💇 Beauty Parlor' : '🏥 Physiotherapy';
+        const shortMemberUid = usr.id ? usr.id.slice(-6).toUpperCase() : "UID";
+
+        let statusText = '';
+        if (folderKey === 'renewal') statusText = `<span class="badge badge-cured" style="background:rgba(16,185,129,0.25); color:#10b981; font-weight:800;">🟢 ${daysLeftNum > 0 ? daysLeftNum + ' days left' : 'Renewal due'}</span>`;
+        else if (folderKey === 'trial') statusText = `<span class="badge badge-cured" style="background:rgba(245,158,11,0.25); color:#f59e0b; font-weight:800;">🕒 ${daysLeftNum > 0 ? daysLeftNum + ' trial days left' : 'Trial ending'}</span>`;
+        else statusText = `<span class="badge badge-not-cured" style="background:rgba(239,68,68,0.25); color:#fca5a5; font-weight:800;">🔴 ${usr.paymentStatus === 'stopped' ? 'Suspended' : 'Expired / Unpaid'}</span>`;
+
+        return `
+          <tr>
+            <td><strong style="color:var(--text-main);">${idx + 1}</strong></td>
+            <td>
+              <div class="member-bright-title">${usr.doctorName || 'Specialist'} <span class="uid-badge" style="font-size:0.75rem; margin-left:4px;">UID: ${shortMemberUid}</span></div>
+              <div class="member-bright-clinic" style="margin-top:3px;"><span style="color:#fbbf24; font-weight:800;">${categoryTag}</span> • <strong>${usr.clinicName || 'Center'}</strong></div>
+            </td>
+            <td class="member-bright-phone">📞 ${usr.mobile || 'No Mobile'}</td>
+            <td>${statusText}</td>
+            <td><strong style="color:var(--accent);">${expiryText}</strong></td>
+            <td>
+              <div style="display:flex; gap:4px; flex-wrap:wrap;">
+                <button class="btn btn-notify" style="padding: 4px 8px; font-size: 0.72rem;" onclick="loginAsMember('${usr.id}')">🔑 Login</button>
+                <button class="btn btn-secondary" style="padding: 4px 8px; font-size: 0.72rem;" onclick="extendUserRental('${usr.id}', 30, 'Cash')">💵 Cash</button>
+                <button class="btn btn-whatsapp" style="padding: 4px 8px; font-size: 0.72rem;" onclick="sendRenewalWhatsApp('${usr.mobile}', '${shortMemberUid}', ${daysLeftNum})">📲 WA</button>
+                <button class="btn btn-admin" style="padding: 4px 8px; font-size: 0.72rem;" onclick="openAdminEditModal('${usr.id}')">✏️ Edit</button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    };
 
     window.handleLoginSubmit = async function(e) {
       e.preventDefault();
@@ -7499,32 +7738,153 @@
     // first payment. Bonus day count is fully controlled by the admin via
     // Global Settings (system_config/rentals -> referralBonusDays). ----
 
+    // Shared by the self-checkout Razorpay handler AND the admin's manual
+    // Cash/UPI unlock button. Credits the referrer ONLY on the referred
+    // member's very first successful payment (gated by referralBonusApplied,
+    // set true exactly once), then never runs again for that member. Cash
+    // amounts are recorded as "owed" on the referrer's doc — never
+    // auto-transferred — so the admin can see & pay them under
+    // "💰 Referral Payouts Due" and mark them paid.
+    async function creditReferralRewardsIfEligible(targetUid, currentData, userTag, paidTimestamp) {
+      if (!currentData.referredBy || currentData.referralBonusApplied) return null;
+      try {
+        let bonusDays = 3;
+        let cashAmount = 50;
+        try {
+          const cfgSnap = await getDoc(doc(db, "system_config", "rentals"));
+          if (cfgSnap.exists()) {
+            const cfgData = cfgSnap.data();
+            if (cfgData.referralBonusDays !== undefined && cfgData.referralBonusDays !== null) {
+              bonusDays = parseFloat(cfgData.referralBonusDays) || 0;
+            }
+            if (cfgData.referralCashAmount !== undefined && cfgData.referralCashAmount !== null) {
+              cashAmount = parseFloat(cfgData.referralCashAmount) || 0;
+            }
+          }
+        } catch (e) { console.log(e); }
+
+        if (bonusDays > 0 || cashAmount > 0) {
+          const referrerRef = doc(db, "registered_members", currentData.referredBy);
+          const referrerSnap = await getDoc(referrerRef);
+          if (referrerSnap.exists()) {
+            const referrerData = referrerSnap.data();
+            const referrerUpdates = { referralCount: (referrerData.referralCount || 0) + 1 };
+
+            if (bonusDays > 0) {
+              let referrerBase = new Date();
+              if (referrerData.subscriptionExpiry) {
+                const refExp = new Date(referrerData.subscriptionExpiry);
+                if (refExp > referrerBase) referrerBase = refExp;
+              }
+              referrerBase.setDate(referrerBase.getDate() + bonusDays);
+              referrerUpdates.subscriptionExpiry = referrerBase.toISOString();
+              referrerUpdates.referralBonusDaysEarned = (referrerData.referralBonusDaysEarned || 0) + bonusDays;
+              if (activeMemberProfile && activeMemberProfile.uid === currentData.referredBy) {
+                activeMemberProfile.subscriptionExpiry = referrerUpdates.subscriptionExpiry;
+              }
+            }
+
+            if (cashAmount > 0) {
+              const referralPayouts = referrerData.referralPayouts || [];
+              referralPayouts.unshift({
+                id: `${targetUid}-${Date.now()}`,
+                referredName: currentData.clinicName || currentData.doctorName || userTag,
+                referredUid: targetUid,
+                amount: cashAmount,
+                date: paidTimestamp,
+                paid: false,
+                paidAt: null,
+                paidMethod: null
+              });
+              referrerUpdates.referralPayouts = referralPayouts;
+              referrerUpdates.referralCashPendingTotal = (referrerData.referralCashPendingTotal || 0) + cashAmount;
+            }
+
+            const referralHistory = referrerData.referralHistory || [];
+            referralHistory.unshift({
+              referredName: currentData.clinicName || currentData.doctorName || userTag,
+              referredUid: targetUid,
+              daysAwarded: bonusDays,
+              cashAwarded: cashAmount,
+              date: paidTimestamp
+            });
+            referrerUpdates.referralHistory = referralHistory;
+
+            await updateDoc(referrerRef, referrerUpdates);
+          }
+        }
+
+        await updateDoc(doc(db, "registered_members", targetUid), { referralBonusApplied: true });
+        const rewardParts = [];
+        if (bonusDays > 0) rewardParts.push(`${bonusDays} bonus day(s)`);
+        if (cashAmount > 0) rewardParts.push(`₹${cashAmount} cash (paid out by admin)`);
+        return rewardParts.length ? `\n\n🎁 Your referrer just earned ${rewardParts.join(' + ')} thanks to you joining!` : null;
+      } catch (refErr) {
+        console.log("Referral bonus crediting failed:", refErr);
+        return null;
+      }
+    }
+
     function getOwnReferralLink() {
-      const code = activeMemberProfile?.referralCode || (activeFirebaseUser?.uid ? activeFirebaseUser.uid.slice(-6).toUpperCase() : '');
+      const uid = getReferralTargetUid();
+      const code = activeMemberProfile?.referralCode || (uid ? uid.slice(-6).toUpperCase() : '');
       return `${window.location.origin}${window.location.pathname}?refcode=${code}`;
+    }
+
+    // Impersonation-aware: while the admin is viewing a member's portal via
+    // "🔑 Login", activeFirebaseUser is still the ADMIN's own Firebase Auth
+    // user (that session never actually switches) — the member being viewed
+    // is tracked separately in impersonatedMemberId. Every referral function
+    // must resolve against THIS, not activeFirebaseUser, or it silently
+    // operates on the wrong account.
+    function getReferralTargetUid() {
+      if (isImpersonating && impersonatedMemberId) return impersonatedMemberId;
+      return activeFirebaseUser ? activeFirebaseUser.uid : null;
+    }
+
+    // onAuthStateChanged is async — on a fresh page load (or right after
+    // login) there's a brief window where activeFirebaseUser is still null
+    // even though the dashboard is already visible. Opening "Refer & Earn"
+    // during that window used to fail silently (dashes + stuck "Loading...").
+    // This polls briefly for a resolvable identity instead of giving up
+    // immediately.
+    async function waitForReferralTargetUid(maxWaitMs = 4000) {
+      let uid = getReferralTargetUid();
+      if (uid) return uid;
+      const start = Date.now();
+      while (!uid && (Date.now() - start) < maxWaitMs) {
+        await new Promise(r => setTimeout(r, 150));
+        uid = getReferralTargetUid();
+      }
+      return uid;
     }
 
     // Ensures older accounts (created before the Refer & Earn feature) get a
     // referralCode assigned lazily, without breaking anything already saved.
-    async function ensureOwnReferralCode() {
+    // Takes the target uid + a freshly-fetched doc explicitly rather than
+    // trusting the possibly-stale activeMemberProfile global.
+    async function ensureOwnReferralCode(targetUid, freshData) {
       // Wrapped top-to-bottom: this must NEVER throw, or the caller
       // (openReferAndEarnModal) stops mid-way and the modal freezes on its
       // "Loading..." / "------" placeholders forever.
       try {
-        if (!activeFirebaseUser || !activeFirebaseUser.uid) return null;
-        if (activeMemberProfile && activeMemberProfile.referralCode) return activeMemberProfile.referralCode;
-        const code = activeFirebaseUser.uid.slice(-6).toUpperCase();
+        if (!targetUid) return null;
+        if (freshData && freshData.referralCode) return freshData.referralCode;
+        const code = targetUid.slice(-6).toUpperCase();
         try {
+          // setDoc + merge (not updateDoc): updateDoc THROWS if the doc
+          // doesn't exist yet (e.g. the master admin's own uid may have no
+          // registered_members doc) — merge just creates/patches it safely.
           await withTimeout(
-            updateDoc(doc(db, "registered_members", activeFirebaseUser.uid), { referralCode: code }),
+            setDoc(doc(db, "registered_members", targetUid), { referralCode: code }, { merge: true }),
             6000, "referralCode save"
           );
-          if (activeMemberProfile) activeMemberProfile.referralCode = code;
+          if (activeMemberProfile && getReferralTargetUid() === targetUid) activeMemberProfile.referralCode = code;
         } catch (e) { console.log("Could not assign referral code:", e); }
         return code;
       } catch (e) {
         console.log("ensureOwnReferralCode failed:", e);
-        return activeFirebaseUser?.uid ? activeFirebaseUser.uid.slice(-6).toUpperCase() : null;
+        return targetUid ? targetUid.slice(-6).toUpperCase() : null;
       }
     }
 
@@ -7584,6 +7944,37 @@
       const daysEl = document.getElementById('refer-earn-days');
       const banner = document.getElementById('refer-earn-info-banner');
       const historyEl = document.getElementById('refer-earn-history');
+      const cashPendingEl = document.getElementById('refer-earn-cash-pending');
+      const cashPaidEl = document.getElementById('refer-earn-cash-paid');
+
+      codeEl.innerText = '------';
+      countEl.innerText = '0';
+      daysEl.innerText = '0';
+      if (cashPendingEl) cashPendingEl.innerText = '₹0';
+      if (cashPaidEl) cashPaidEl.innerText = '₹0';
+      banner.innerText = "Loading your referral rewards...";
+      historyEl.innerHTML = `<p style="text-align:center; color:var(--text-muted); font-size:0.85rem; padding:14px 0;">Loading...</p>`;
+
+      // Resolve WHO we're showing this for (waits briefly if the auth check
+      // is still in flight — see waitForReferralTargetUid above) and pull a
+      // fresh copy of their doc directly from Firestore rather than trusting
+      // the possibly-stale/absent activeMemberProfile global.
+      const targetUid = await waitForReferralTargetUid();
+      if (!targetUid) {
+        codeEl.innerText = 'N/A';
+        banner.innerText = "⚠️ Couldn't confirm your login yet. Please close this, wait a moment for the page to finish loading, and try again.";
+        historyEl.innerHTML = `<p style="text-align:center; color:var(--text-muted); font-size:0.85rem; padding:14px 0;">—</p>`;
+        return;
+      }
+
+      let freshData = null;
+      try {
+        const snap = await withTimeout(getDoc(doc(db, "registered_members", targetUid)), 6000, "member profile fetch");
+        freshData = snap.exists() ? snap.data() : null;
+      } catch (e) {
+        console.log("Referral profile fetch failed, falling back to cached profile:", e);
+        freshData = (getReferralTargetUid() === targetUid) ? activeMemberProfile : null;
+      }
 
       // Each block below is independent: if one fails (e.g. a Firestore
       // permission error), it no longer takes the rest of the modal down
@@ -7592,13 +7983,19 @@
 
       let code = null;
       try {
-        code = await withTimeout(ensureOwnReferralCode(), 6000, "referral code fetch");
+        code = await withTimeout(ensureOwnReferralCode(targetUid, freshData), 6000, "referral code fetch");
       } catch (e) {
         console.log("Referral code fetch failed:", e);
       }
-      codeEl.innerText = code || (activeFirebaseUser?.uid ? activeFirebaseUser.uid.slice(-6).toUpperCase() : '------');
-      countEl.innerText = activeMemberProfile?.referralCount || 0;
-      daysEl.innerText = activeMemberProfile?.referralBonusDaysEarned || 0;
+      codeEl.innerText = code || targetUid.slice(-6).toUpperCase();
+      countEl.innerText = freshData?.referralCount || 0;
+      daysEl.innerText = freshData?.referralBonusDaysEarned || 0;
+
+      const payouts = freshData?.referralPayouts || [];
+      const pendingCash = payouts.filter(p => !p.paid).reduce((s, p) => s + (parseFloat(p.amount) || 0), 0);
+      const paidCash = payouts.filter(p => p.paid).reduce((s, p) => s + (parseFloat(p.amount) || 0), 0);
+      if (cashPendingEl) cashPendingEl.innerText = `₹${pendingCash}`;
+      if (cashPaidEl) cashPaidEl.innerText = `₹${paidCash}`;
 
       banner.innerText = "Loading your referral rewards...";
       try {
@@ -7606,9 +8003,14 @@
           getDoc(doc(db, "system_config", "rentals")),
           6000, "referral config fetch"
         );
-        const bonusDays = (cfgSnap.exists() && cfgSnap.data().referralBonusDays !== undefined) ? cfgSnap.data().referralBonusDays : 3;
-        if (bonusDays > 0) {
-          banner.innerText = `🎁 Earn ${bonusDays} free subscription day(s) for every friend who joins with your code and completes their first payment!`;
+        const cfgData = cfgSnap.exists() ? cfgSnap.data() : {};
+        const bonusDays = cfgData.referralBonusDays !== undefined ? cfgData.referralBonusDays : 3;
+        const cashAmount = cfgData.referralCashAmount !== undefined ? cfgData.referralCashAmount : 50;
+        const rewardBits = [];
+        if (bonusDays > 0) rewardBits.push(`${bonusDays} free subscription day(s)`);
+        if (cashAmount > 0) rewardBits.push(`₹${cashAmount} cash (paid to you by admin)`);
+        if (rewardBits.length) {
+          banner.innerText = `🎁 Earn ${rewardBits.join(' + ')} for every friend who joins with your code and completes their first payment!`;
         } else {
           banner.innerText = "The referral rewards program is currently paused by the admin.";
         }
@@ -7618,19 +8020,28 @@
       }
 
       try {
-        const history = activeMemberProfile?.referralHistory || [];
+        const history = freshData?.referralHistory || [];
         if (!history.length) {
           historyEl.innerHTML = `<p style="text-align:center; color:var(--text-muted); font-size:0.85rem; padding:14px 0;">No referrals yet. Share your code to get started!</p>`;
         } else {
-          historyEl.innerHTML = history.map(item => `
-            <div style="display:flex; justify-content:space-between; align-items:center; background:#0c1324; border:1px solid var(--border); border-radius:8px; padding:8px 10px;">
+          historyEl.innerHTML = history.map(item => {
+            const matchingPayout = payouts.find(p => p.referredUid === item.referredUid);
+            const cashBadge = (item.cashAwarded > 0)
+              ? `<span class="uid-badge" style="color:${matchingPayout && matchingPayout.paid ? '#38bdf8' : '#fbbf24'}; border-color:${matchingPayout && matchingPayout.paid ? 'rgba(56,189,248,0.4)' : 'rgba(251,191,36,0.4)'}; background:${matchingPayout && matchingPayout.paid ? 'rgba(56,189,248,0.12)' : 'rgba(251,191,36,0.12)'};">₹${item.cashAwarded} ${matchingPayout && matchingPayout.paid ? '✅ Paid' : '⏳ Pending'}</span>`
+              : '';
+            const daysBadge = (item.daysAwarded > 0)
+              ? `<span class="uid-badge" style="color:#10b981; border-color:rgba(16,185,129,0.4); background:rgba(16,185,129,0.12);">+${item.daysAwarded} days</span>`
+              : '';
+            return `
+            <div style="display:flex; justify-content:space-between; align-items:center; background:#0c1324; border:1px solid var(--border); border-radius:8px; padding:8px 10px; gap:8px; flex-wrap:wrap;">
               <div>
                 <strong style="font-size:0.85rem; color:var(--text-main);">${item.referredName || 'New Member'}</strong><br>
                 <small style="color:var(--text-muted); font-size:0.72rem;">${item.date ? new Date(item.date).toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' }) : ''}</small>
               </div>
-              <span class="uid-badge" style="color:#10b981; border-color:rgba(16,185,129,0.4); background:rgba(16,185,129,0.12);">+${item.daysAwarded || 0} days</span>
+              <div style="display:flex; gap:4px; flex-wrap:wrap; justify-content:flex-end;">${daysBadge}${cashBadge}</div>
             </div>
-          `).join('');
+          `;
+          }).join('');
         }
       } catch (e) {
         console.log("Referral history render failed:", e);
