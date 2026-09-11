@@ -107,6 +107,17 @@
       return `${year}-${month}-${day}`;
     };
 
+    // Returns the current LOCAL clock time as "HH:MM" (24hr, zero-padded).
+    // Used to timestamp exactly when a visit was logged / a client was
+    // marked visited, so the Self Time Tracker can show a real daily log
+    // instead of just a date.
+    window.getLocalTimeStr = function(d) {
+      const dateObj = d instanceof Date ? d : new Date();
+      const hh = String(dateObj.getHours()).padStart(2, '0');
+      const mm = String(dateObj.getMinutes()).padStart(2, '0');
+      return `${hh}:${mm}`;
+    };
+
     window.handleBizCategorySwitch = function(val) {
       const lblDoctor = document.getElementById('lbl-doctor-name');
       const lblClinic = document.getElementById('lbl-clinic-name');
@@ -1758,6 +1769,93 @@
       .theme-toggle { right: 12px; bottom: 12px; padding: 7px 11px; font-size: 0.7rem; }
       .theme-toggle span { display: none; }
     }
+
+    /* ---- Self Time Tracker: vertical timeline with connecting line ---- */
+    .tt-timeline {
+      position: relative;
+      padding-left: 40px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .tt-timeline::before {
+      content: "";
+      position: absolute;
+      left: 15px;
+      top: 6px;
+      bottom: 6px;
+      width: 2px;
+      background: linear-gradient(to bottom, var(--accent) 0%, var(--border) 85%, transparent 100%);
+      opacity: 0.55;
+    }
+    .tt-timeline-row { position: relative; }
+    .tt-timeline-dot {
+      position: absolute;
+      left: -32px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      border: 3px solid var(--folder-bg);
+      box-shadow: 0 0 0 1px var(--border);
+      z-index: 2;
+    }
+    .tt-timeline-dot.dot-free { background: #10b981; }
+    .tt-timeline-dot.dot-paid { background: var(--accent); }
+    .tt-timeline-dot.dot-unpaid { background: #ef4444; }
+    .tt-timeline-dot.dot-running {
+      background: #10b981;
+      box-shadow: 0 0 0 1px var(--border), 0 0 0 4px rgba(16,185,129,0.25);
+      animation: tt-pulse-dot 1.6s ease-in-out infinite;
+    }
+    @keyframes tt-pulse-dot {
+      0%, 100% { box-shadow: 0 0 0 1px var(--border), 0 0 0 4px rgba(16,185,129,0.25); }
+      50% { box-shadow: 0 0 0 1px var(--border), 0 0 0 7px rgba(16,185,129,0.12); }
+    }
+    .tt-timeline-card {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      border-radius: 12px;
+      padding: 11px 15px;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    .tt-timeline-card:hover {
+      transform: translateX(3px);
+      box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+    }
+    .tt-timeline-card.card-free {
+      background: rgba(16,185,129,0.07);
+      border: 1px solid rgba(16,185,129,0.32);
+    }
+    .tt-timeline-card.card-visit {
+      background: var(--folder-bg);
+      border: 1px solid var(--border);
+    }
+    .tt-timeline-time {
+      font-size: 0.68rem;
+      font-weight: 800;
+      letter-spacing: 0.3px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      white-space: nowrap;
+      min-width: 78px;
+      flex-shrink: 0;
+    }
+    .tt-timeline-label {
+      font-weight: 700;
+      font-size: 0.86rem;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .tt-timeline-sub {
+      font-size: 0.74rem;
+      color: var(--text-muted);
+      margin-top: 1px;
+    }
   </style>
 </head>
 <body>
@@ -2187,6 +2285,11 @@
           <span>Online Requests</span>
           <span class="nav-badge alert-badge" id="badge-requests-count">0</span>
         </div>
+
+        <div class="nav-item member-item" id="tour-nav-timetracker" onclick="switchPage('page-time-tracker', this)">
+          <span class="nav-icon">🕐</span>
+          <span>Self Time Tracker</span>
+        </div>
         
         <div class="nav-item member-item" id="tour-nav-revenue" onclick="switchPage('page-dashboard', this)">
           <span class="nav-icon">📊</span>
@@ -2306,6 +2409,31 @@
         </section>
 
         <section id="page-dashboard" class="page-view">
+          <div class="card" style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:20px; margin-bottom:22px; background:linear-gradient(135deg, rgba(37, 99, 235, 0.16) 0%, rgba(6, 214, 160, 0.08) 100%), var(--folder-bg); border:1px solid var(--border); position:relative; overflow:hidden;">
+            <div style="display:flex; align-items:center; gap:18px; z-index:1;">
+              <svg id="dash-live-clock" width="76" height="76" viewBox="0 0 100 100" style="flex-shrink:0; filter:drop-shadow(0 4px 14px rgba(6,214,160,0.25));">
+                <defs>
+                  <linearGradient id="dashClockFaceGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="var(--folder-bg)"/>
+                    <stop offset="100%" stop-color="rgba(6,214,160,0.08)"/>
+                  </linearGradient>
+                </defs>
+                <circle cx="50" cy="50" r="47" fill="url(#dashClockFaceGrad)" stroke="var(--accent)" stroke-width="2.5"/>
+                <circle cx="50" cy="50" r="2.8" fill="var(--accent)"/>
+                <line id="dash-clock-hour" x1="50" y1="50" x2="50" y2="28" stroke="var(--text-main)" stroke-width="4.5" stroke-linecap="round"/>
+                <line id="dash-clock-min" x1="50" y1="50" x2="50" y2="16" stroke="var(--text-main)" stroke-width="3" stroke-linecap="round"/>
+                <line id="dash-clock-sec" x1="50" y1="50" x2="50" y2="12" stroke="#f87171" stroke-width="1.4" stroke-linecap="round"/>
+                <circle cx="50" cy="12" r="4" fill="none" stroke="var(--accent)" stroke-width="0.8" stroke-dasharray="1 2" opacity="0.5"/>
+              </svg>
+              <div>
+                <div id="dash-greeting-text" style="font-size:0.82rem; color:var(--text-muted); font-weight:700; text-transform:uppercase; letter-spacing:0.5px;">🕐 Good Day</div>
+                <div id="dash-live-time-text" style="font-size:1.9rem; font-weight:800; color:var(--text-main); line-height:1.15; letter-spacing:0.5px;">--:--:--</div>
+                <div id="dash-live-date-text" style="font-size:0.82rem; color:var(--accent); font-weight:700; margin-top:2px;">Loading date…</div>
+              </div>
+            </div>
+            <button type="button" class="btn btn-secondary" style="z-index:1; font-size:0.82rem; flex-shrink:0;" onclick="switchPageById('page-time-tracker')">🕐 Open Self Time Tracker</button>
+          </div>
+
           <div class="top-pro-stats">
             <div class="pro-kpi-card kpi-received" style="cursor:pointer;" onclick="openKpiDetailModal('overallEarned')" title="Tap to see every client's payments">
               <h3>OVERALL TOTAL PAYMENT EARNED</h3>
@@ -2533,11 +2661,6 @@
               <h3>TOTAL ADVANCE</h3>
               <div class="amount" style="color:#38bdf8;" id="active-summary-advance">₹0.00</div>
             </div>
-            <div class="pro-kpi-card kpi-count" style="cursor:pointer;" onclick="openWorkingTimeModal()" title="Tap to see today's working-time schedule, and edit your clinic closing time">
-              <h3>FREE TIME TODAY</h3>
-              <div class="amount text-info" id="active-summary-free-hours">0h 0m</div>
-              <div style="font-size:0.72rem; color:var(--text-muted); margin-top:4px; font-weight:700;" id="active-summary-free-from">—</div>
-            </div>
           </div>
 
           <div class="card">
@@ -2583,6 +2706,57 @@
                 <tbody id="patient-table-body"></tbody>
               </table>
             </div>
+          </div>
+        </section>
+
+        <section id="page-time-tracker" class="page-view">
+          <div class="card" style="display:flex; flex-wrap:wrap; gap:22px; align-items:center; justify-content:space-between;">
+            <div style="display:flex; align-items:center; gap:16px;">
+              <svg id="tt-live-clock" width="64" height="64" viewBox="0 0 100 100" style="flex-shrink:0;">
+                <circle cx="50" cy="50" r="46" fill="var(--folder-bg)" stroke="var(--accent)" stroke-width="3"/>
+                <circle cx="50" cy="50" r="2.6" fill="var(--accent)"/>
+                <line id="tt-clock-hour" x1="50" y1="50" x2="50" y2="28" stroke="var(--text-main)" stroke-width="4.5" stroke-linecap="round"/>
+                <line id="tt-clock-min" x1="50" y1="50" x2="50" y2="18" stroke="var(--text-main)" stroke-width="3" stroke-linecap="round"/>
+                <line id="tt-clock-sec" x1="50" y1="50" x2="50" y2="14" stroke="#f87171" stroke-width="1.5" stroke-linecap="round"/>
+                <text x="50" y="12" text-anchor="middle" font-size="7" fill="var(--text-muted)" font-weight="700">12</text>
+                <text x="50" y="93" text-anchor="middle" font-size="7" fill="var(--text-muted)" font-weight="700">6</text>
+                <text x="10" y="53" text-anchor="middle" font-size="7" fill="var(--text-muted)" font-weight="700">9</text>
+                <text x="90" y="53" text-anchor="middle" font-size="7" fill="var(--text-muted)" font-weight="700">3</text>
+              </svg>
+              <div>
+                <div style="font-size:0.78rem; color:var(--text-muted); font-weight:700; text-transform:uppercase; letter-spacing:0.4px;">🕐 Right Now</div>
+                <div id="tt-live-time-text" style="font-size:1.5rem; font-weight:800; color:var(--text-main);">--:--:--</div>
+                <div id="tt-status-pill" style="margin-top:4px; display:inline-block; font-size:0.75rem; font-weight:800; padding:3px 10px; border-radius:999px; background:rgba(148,163,184,0.15); color:var(--text-muted);">Not clocked in</div>
+              </div>
+            </div>
+            <div style="text-align:right;">
+              <button type="button" id="tt-clock-btn" class="btn" style="font-size:0.95rem; padding:14px 26px;" onclick="window.toggleFreeTimeClock()">🟢 Clock In (I'm Free)</button>
+              <div id="tt-running-since" style="font-size:0.75rem; color:var(--text-muted); margin-top:6px;"></div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;">
+              <h2 style="margin:0;">🕐 Daily Time Records</h2>
+              <div style="display:flex; align-items:center; gap:8px;">
+                <input type="date" id="tt-date-input" onchange="window.renderTimeTrackerPage()" style="padding:8px 10px; border-radius:8px; border:1px solid var(--border); background:var(--folder-bg); color:var(--text-main);">
+                <button type="button" class="btn btn-secondary" style="font-size:0.78rem;" onclick="document.getElementById('tt-date-input').value = window.getLocalDateStr(); window.renderTimeTrackerPage();">Today</button>
+              </div>
+            </div>
+            <div style="font-size:0.75rem; color:var(--text-muted); margin-top:2px; margin-bottom:14px;">Self-tracked free time (clock in/out, logged by you) plus every client visit timestamp, merged into one chronological log for the selected day.</div>
+
+            <div class="top-pro-stats" style="margin-bottom:16px;">
+              <div class="pro-kpi-card kpi-count">
+                <h3>🕐 Free Time Logged</h3>
+                <div class="amount text-info" id="tt-summary-free-total">0h 0m</div>
+              </div>
+              <div class="pro-kpi-card kpi-today">
+                <h3>📌 Visits Logged</h3>
+                <div class="amount text-accent" id="tt-summary-visit-count">0</div>
+              </div>
+            </div>
+
+            <div id="tt-timeline-list" class="tt-timeline"></div>
           </div>
         </section>
 
@@ -3079,74 +3253,6 @@
     </div>
   </div>
 
-  <div class="modal-overlay" id="workingTimeModal">
-    <div class="modal-content" style="max-width: 520px;">
-      <div class="modal-header">
-        <div>
-          <h3 style="color: #38bdf8;">🕐 Working Time Schedule</h3>
-          <p id="wt-modal-subtitle" style="font-size: 0.78rem; color: var(--text-muted);"></p>
-        </div>
-        <button class="close-modal" onclick="closeWorkingTimeModal()">&times;</button>
-      </div>
-
-      <div style="background: var(--folder-bg); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; margin-bottom: 14px;">
-        <div style="font-size:0.78rem; color:var(--text-muted); font-weight:700; text-transform:uppercase; letter-spacing:0.4px;">Working Hours</div>
-        <div style="font-size:0.7rem; color:var(--text-muted); margin-top:2px; margin-bottom:10px;">Works for a clinic or a home-visiting doctor's daily rounds — set when your day starts and ends to work out free time accurately.</div>
-        <div style="display:flex; align-items:flex-end; gap:10px; flex-wrap:wrap;">
-          <div>
-            <label style="font-size:0.7rem; color:var(--text-muted); display:block; margin-bottom:4px;">Start Time</label>
-            <input type="time" id="wt-start-time-input" style="background:var(--bg-input); border:1px solid var(--border); color:var(--text-main); padding:7px 10px; border-radius:8px; font-size:0.85rem;">
-          </div>
-          <div>
-            <label style="font-size:0.7rem; color:var(--text-muted); display:block; margin-bottom:4px;">Closing Time</label>
-            <input type="time" id="wt-closing-time-input" style="background:var(--bg-input); border:1px solid var(--border); color:var(--text-main); padding:7px 10px; border-radius:8px; font-size:0.85rem;">
-          </div>
-          <button class="btn btn-primary" style="padding:8px 14px; font-size:0.8rem;" onclick="saveWorkingTimeClosingHour()">Save</button>
-        </div>
-      </div>
-
-      <div id="wt-schedule-list" style="display: flex; flex-direction: column; gap: 10px; max-height: 44vh; overflow-y: auto;"></div>
-
-      <div id="wt-add-break-row" style="margin-top: 10px;">
-        <button type="button" class="btn btn-secondary" style="width: 100%; font-size:0.82rem;" onclick="toggleAddBreakForm()">☕ Add Lunch / Other Break</button>
-      </div>
-
-      <div id="wt-add-break-form" style="display:none; margin-top: 10px; background: var(--folder-bg); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px;">
-        <div style="display:flex; align-items:flex-end; gap:10px; flex-wrap:wrap;">
-          <div>
-            <label style="font-size:0.7rem; color:var(--text-muted); display:block; margin-bottom:4px;">Break Type</label>
-            <select id="wt-break-type-select" style="background:var(--bg-input); border:1px solid var(--border); color:var(--text-main); padding:7px 10px; border-radius:8px; font-size:0.85rem;" onchange="document.getElementById('wt-break-custom-label').style.display = this.value === 'custom' ? '' : 'none';">
-              <option value="Lunch Break">🍽️ Lunch Break</option>
-              <option value="Tea Break">☕ Tea Break</option>
-              <option value="Personal Time">🧘 Personal Time</option>
-              <option value="custom">✏️ Something Else...</option>
-            </select>
-          </div>
-          <div id="wt-break-custom-label" style="display:none;">
-            <label style="font-size:0.7rem; color:var(--text-muted); display:block; margin-bottom:4px;">Label</label>
-            <input type="text" id="wt-break-custom-label-input" placeholder="e.g. Bank Visit" style="background:var(--bg-input); border:1px solid var(--border); color:var(--text-main); padding:7px 10px; border-radius:8px; font-size:0.85rem;">
-          </div>
-          <div>
-            <label style="font-size:0.7rem; color:var(--text-muted); display:block; margin-bottom:4px;">From</label>
-            <input type="time" id="wt-break-start-input" style="background:var(--bg-input); border:1px solid var(--border); color:var(--text-main); padding:7px 10px; border-radius:8px; font-size:0.85rem;">
-          </div>
-          <div>
-            <label style="font-size:0.7rem; color:var(--text-muted); display:block; margin-bottom:4px;">To</label>
-            <input type="time" id="wt-break-end-input" style="background:var(--bg-input); border:1px solid var(--border); color:var(--text-main); padding:7px 10px; border-radius:8px; font-size:0.85rem;">
-          </div>
-        </div>
-        <div style="display:flex; gap:8px; margin-top:10px;">
-          <button class="btn btn-primary" style="flex:1; padding:8px 14px; font-size:0.8rem;" onclick="addWorkingTimeBreak()">Add Break</button>
-          <button class="btn btn-secondary" style="padding:8px 14px; font-size:0.8rem;" onclick="toggleAddBreakForm(false)">Cancel</button>
-        </div>
-      </div>
-
-      <div id="wt-free-summary" style="margin-top: 14px; background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 10px; padding: 12px 14px; text-align:center;"></div>
-
-      <button class="btn btn-secondary" style="width: 100%; margin-top: 14px;" onclick="closeWorkingTimeModal()">Close</button>
-    </div>
-  </div>
-
   <!-- Lets the user switch the Active Works Ledger between automatic
        time-based ordering and a manual order they control themselves.
        Mode choice is remembered per login (via getSummaryStorageKey);
@@ -3173,41 +3279,6 @@
       <button class="btn btn-secondary" style="width: 100%; margin-top: 14px;" onclick="closeOrderSettingsModal()">Close</button>
     </div>
   </div>
-
-  <!-- Lightweight time-only editor, launched from "Edit Time"/"Set Time" inside
-       the Working Time Schedule modal. Deliberately just start/finish time —
-       not the full registration form — since that's the only thing that
-       needs changing here. Saving writes straight to p.reminderTime /
-       p.reminderEndTime and runs the same saveAndRender() used everywhere
-       else, so the Active Works Ledger, visit reminders/notifications, and
-       this schedule all pick up the new times automatically without any
-       separate updates. -->
-  <div class="modal-overlay" id="quickEditTimeModal">
-    <div class="modal-content" style="max-width: 340px;">
-      <div class="modal-header">
-        <div>
-          <h3 style="color: #38bdf8;">⏰ Edit Visit Time</h3>
-          <p id="qet-patient-name" style="font-size: 0.82rem; color: var(--text-muted); font-weight:700;"></p>
-        </div>
-        <button class="close-modal" onclick="closeQuickEditTimeModal()">&times;</button>
-      </div>
-      <div style="display:flex; gap:10px;">
-        <div style="flex:1;">
-          <label style="font-size:0.7rem; color:var(--text-muted); display:block; margin-bottom:4px;">Start Time</label>
-          <input type="time" id="qet-start-input" style="width:100%; background:var(--bg-input); border:1px solid var(--border); color:var(--text-main); padding:9px 10px; border-radius:8px; font-size:0.95rem;" onchange="window.qetSyncEndFromStart()">
-        </div>
-        <div style="flex:1;">
-          <label style="font-size:0.7rem; color:var(--text-muted); display:block; margin-bottom:4px;">Finish Time</label>
-          <input type="time" id="qet-end-input" style="width:100%; background:var(--bg-input); border:1px solid var(--border); color:var(--text-main); padding:9px 10px; border-radius:8px; font-size:0.95rem;">
-        </div>
-      </div>
-      <div style="display:flex; gap:8px; margin-top:16px;">
-        <button class="btn btn-primary" style="flex:1;" onclick="saveQuickEditTime()">Save Time</button>
-        <button class="btn btn-secondary" onclick="closeQuickEditTimeModal()">Cancel</button>
-      </div>
-    </div>
-  </div>
-
 
   <div class="modal-overlay" id="visitActionModal">
     <div class="modal-content" style="max-width: 380px;">
@@ -6937,6 +7008,7 @@
         'page-reminders': 'Morning WhatsApp Reminders',
         'page-registration': isParlor ? 'Manual Spa Client Registration' : 'Manual Patient Registration',
         'page-active-works': 'Active Works & Ongoing Appointments',
+        'page-time-tracker': 'Self Time Tracker — Free Time & Visit Log',
         'page-completed-works': 'Completed & Settled Records',
         'page-overall-directory': 'Overall Directory',
         'page-admin-portal': 'Rented Portals Directory & Management',
@@ -6952,6 +7024,7 @@
       if (pageId === 'page-completed-works') renderArchiveTable();
       if (pageId === 'page-reminders') { renderRemindersPage(); if (typeof window.renderDaySummarySettingsUI === 'function') window.renderDaySummarySettingsUI(); }
       if (pageId === 'page-manager-portal' && typeof window.filterManagerUsers === "function") window.filterManagerUsers();
+      if (pageId === 'page-time-tracker' && typeof window.renderTimeTrackerPage === "function") window.renderTimeTrackerPage();
 
       renderStats();
 
@@ -7033,375 +7106,6 @@
       if (els.unpaidBtn) els.unpaidBtn.style.display = state.showUnpaid ? '' : 'none';
     }
 
-    // ---- Working-time / free-time schedule ----
-    // Single source of truth for the "FREE TIME TODAY" KPI card AND the
-    // Working Time Schedule detail modal, so they never drift out of sync.
-    // Works equally for a fixed clinic OR a home-visiting doctor's daily
-    // rounds — it's just "start time -> close time", with each active
-    // patient occupying a FREE_TIME_HOURS_PER_PATIENT (1h 30m) slot
-    // starting at their own scheduled p.reminderTime. Finds when the LAST
-    // such slot finishes, and everything after that (up to closing time)
-    // counts as free.
-    const FREE_TIME_HOURS_PER_PATIENT = 1.5; // 1h 30m per patient visit
-
-    // Start/closing time are per-user settings editable from the Working
-    // Time Schedule modal — persisted in localStorage, keyed to the
-    // logged-in member so different clinics/doctors don't clash.
-    window.getWorkingTimeStartHour = function() {
-      const saved = localStorage.getItem(window.getSummaryStorageKey('working_time_start'));
-      return saved || '09:00'; // default 9:00 AM until the user sets their own
-    };
-    window.setWorkingTimeStartHour = function(hhmm) {
-      if (!hhmm) return;
-      localStorage.setItem(window.getSummaryStorageKey('working_time_start'), hhmm);
-    };
-    window.getWorkingTimeClosingHour = function() {
-      const saved = localStorage.getItem(window.getSummaryStorageKey('working_time_close'));
-      return saved || '20:00'; // default 8:00 PM until the user sets their own
-    };
-    window.setWorkingTimeClosingHour = function(hhmm) {
-      if (!hhmm) return;
-      localStorage.setItem(window.getSummaryStorageKey('working_time_close'), hhmm);
-    };
-
-    // Ad-hoc breaks (lunch, tea, personal time, or a custom label) that the
-    // user can carve out of today's free time directly from the Working
-    // Time Schedule modal. Stored per-day (keyed to today's date) so they
-    // don't carry over and silently block tomorrow's schedule too.
-    window.getWorkingTimeBreaksKey = function() {
-      return `${window.getSummaryStorageKey('working_time_breaks')}_${window.getLocalDateStr()}`;
-    };
-    window.getWorkingTimeBreaks = function() {
-      try {
-        const raw = localStorage.getItem(window.getWorkingTimeBreaksKey());
-        const parsed = raw ? JSON.parse(raw) : [];
-        return Array.isArray(parsed) ? parsed : [];
-      } catch (e) { return []; }
-    };
-    window.saveWorkingTimeBreaks = function(breaks) {
-      localStorage.setItem(window.getWorkingTimeBreaksKey(), JSON.stringify(breaks));
-    };
-    window.toggleAddBreakForm = function(show) {
-      const form = document.getElementById('wt-add-break-form');
-      if (!form) return;
-      const shouldShow = typeof show === 'boolean' ? show : form.style.display === 'none';
-      form.style.display = shouldShow ? '' : 'none';
-      if (shouldShow) {
-        const typeSel = document.getElementById('wt-break-type-select');
-        const customWrap = document.getElementById('wt-break-custom-label');
-        const customInput = document.getElementById('wt-break-custom-label-input');
-        const startInput = document.getElementById('wt-break-start-input');
-        const endInput = document.getElementById('wt-break-end-input');
-        if (typeSel) typeSel.value = 'Lunch Break';
-        if (customWrap) customWrap.style.display = 'none';
-        if (customInput) customInput.value = '';
-        if (startInput) startInput.value = '13:00';
-        if (endInput) endInput.value = '13:30';
-      }
-    };
-    window.addWorkingTimeBreak = function() {
-      const typeSel = document.getElementById('wt-break-type-select');
-      const customInput = document.getElementById('wt-break-custom-label-input');
-      const startInput = document.getElementById('wt-break-start-input');
-      const endInput = document.getElementById('wt-break-end-input');
-      let label = typeSel ? typeSel.value : 'Lunch Break';
-      if (label === 'custom') {
-        label = (customInput && customInput.value.trim()) || 'Break';
-      }
-      const startVal = startInput ? startInput.value : '';
-      const endVal = endInput ? endInput.value : '';
-      if (!startVal || !endVal) { alert('Please pick both a start and end time for the break.'); return; }
-      if (startVal >= endVal) { alert('Break start time must be earlier than its end time.'); return; }
-
-      const breaks = window.getWorkingTimeBreaks();
-      breaks.push({ label, start: startVal, end: endVal });
-      window.saveWorkingTimeBreaks(breaks);
-      window.toggleAddBreakForm(false);
-      window.renderWorkingTimeModal();
-      if (typeof renderStats === 'function') renderStats();
-    };
-    window.deleteWorkingTimeBreak = function(index) {
-      const breaks = window.getWorkingTimeBreaks();
-      breaks.splice(index, 1);
-      window.saveWorkingTimeBreaks(breaks);
-      window.renderWorkingTimeModal();
-      if (typeof renderStats === 'function') renderStats();
-    };
-
-    // Quick time-only editor for a patient's scheduled visit, launched from
-    // the Working Time Schedule modal's "Edit Time"/"Set Time" buttons.
-    // Keeps the working-time modal open underneath so editing a time feels
-    // like a quick in-place tweak rather than leaving the schedule view.
-    // Covers both start (p.reminderTime) and finish (p.reminderEndTime) so
-    // a patient's slot length can be adjusted, not just its start.
-    window.openQuickEditTimeModal = function(patientId) {
-      const p = patients.find(p => p.id === patientId);
-      if (!p) return;
-      const nameEl = document.getElementById('qet-patient-name');
-      const startInput = document.getElementById('qet-start-input');
-      const endInput = document.getElementById('qet-end-input');
-      const modal = document.getElementById('quickEditTimeModal');
-      const start = p.reminderTime || '09:00';
-      if (nameEl) nameEl.innerText = p.name;
-      if (startInput) startInput.value = start;
-      if (endInput) endInput.value = p.reminderEndTime || window.addMinutesToTime(start, FREE_TIME_HOURS_PER_PATIENT * 60);
-      if (modal) {
-        modal.dataset.patientId = patientId;
-        modal.classList.add('active');
-      }
-    };
-    window.closeQuickEditTimeModal = function() {
-      const modal = document.getElementById('quickEditTimeModal');
-      if (modal) modal.classList.remove('active');
-    };
-    // Keeps the default session length (1h 30m) when the user only moves
-    // the start time, instead of leaving a stale finish time behind. If
-    // they've already touched the finish field themselves this call is
-    // harmless to skip, but re-deriving it here is simplest and matches
-    // what most quick edits actually want.
-    window.qetSyncEndFromStart = function() {
-      const startInput = document.getElementById('qet-start-input');
-      const endInput = document.getElementById('qet-end-input');
-      if (!startInput || !endInput || !startInput.value) return;
-      endInput.value = window.addMinutesToTime(startInput.value, FREE_TIME_HOURS_PER_PATIENT * 60);
-    };
-    window.addMinutesToTime = function(hhmm, minutesToAdd) {
-      const [hh, mm] = (hhmm || '09:00').split(':').map(Number);
-      let total = (Number.isNaN(hh) ? 9 : hh) * 60 + (Number.isNaN(mm) ? 0 : mm) + minutesToAdd;
-      total = ((total % 1440) + 1440) % 1440; // wrap within a 24h day
-      const h = Math.floor(total / 60), m = Math.round(total % 60);
-      return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
-    };
-    window.saveQuickEditTime = function() {
-      const modal = document.getElementById('quickEditTimeModal');
-      const startInput = document.getElementById('qet-start-input');
-      const endInput = document.getElementById('qet-end-input');
-      const patientId = modal ? Number(modal.dataset.patientId) : null;
-      if (!patientId || !startInput || !endInput || !startInput.value || !endInput.value) {
-        alert('Please pick both a start and finish time.'); return;
-      }
-      if (startInput.value >= endInput.value) {
-        alert('Finish time must be later than the start time.'); return;
-      }
-      const p = patients.find(p => p.id === patientId);
-      if (!p) return;
-      p.reminderTime = startInput.value;
-      p.reminderEndTime = endInput.value;
-      // Single source of truth: saveAndRender() refreshes the Active Works
-      // Ledger, calendar, and stats together, and visit reminders/WhatsApp
-      // notifications read p.reminderTime live at send-time — so this one
-      // write is all that's needed for the new times to show up everywhere.
-      saveAndRender();
-      window.closeQuickEditTimeModal();
-      if (typeof window.renderWorkingTimeModal === 'function') window.renderWorkingTimeModal();
-    };
-
-    window.computeWorkingTimeSchedule = function() {
-      const activeList = patients.filter(p => !p.isFinished);
-      const startHHMM = window.getWorkingTimeStartHour();
-      const [startHH, startMM] = startHHMM.split(':').map(Number);
-      const dayStartMinutes = (Number.isNaN(startHH) ? 9 : startHH) * 60 + (Number.isNaN(startMM) ? 0 : startMM);
-
-      const closingHHMM = window.getWorkingTimeClosingHour();
-      const [closeHH, closeMM] = closingHHMM.split(':').map(Number);
-      const closingMinutes = (Number.isNaN(closeHH) ? 20 : closeHH) * 60 + (Number.isNaN(closeMM) ? 0 : closeMM);
-
-      const entries = [];
-      const noTimeEntries = [];
-      activeList.forEach(p => {
-        if (!p.reminderTime) { noTimeEntries.push(p); return; }
-        const [hh, mm] = p.reminderTime.split(':').map(Number);
-        if (Number.isNaN(hh) || Number.isNaN(mm)) { noTimeEntries.push(p); return; }
-        const startMinutes = hh * 60 + mm;
-        // Prefer an explicit finish time (p.reminderEndTime, set via the
-        // quick time editor) so a patient's slot can run longer or shorter
-        // than the default; fall back to the standard 1h30m slot when no
-        // finish time has been set yet.
-        let endMinutes = startMinutes + FREE_TIME_HOURS_PER_PATIENT * 60;
-        if (p.reminderEndTime) {
-          const [ehh, emm] = p.reminderEndTime.split(':').map(Number);
-          if (!Number.isNaN(ehh) && !Number.isNaN(emm)) {
-            const explicitEnd = ehh * 60 + emm;
-            if (explicitEnd > startMinutes) endMinutes = explicitEnd;
-          }
-        }
-        entries.push({ kind: 'visit', p, startMinutes, endMinutes });
-      });
-
-      // Ad-hoc breaks (lunch, tea, custom) block out time the same way a
-      // patient visit does, so they eat into free time and show up in the
-      // timeline in their own slot.
-      const breaksList = window.getWorkingTimeBreaks();
-      breaksList.forEach((b, breakIndex) => {
-        const [bhh, bmm] = (b.start || '').split(':').map(Number);
-        const [ehh, emm] = (b.end || '').split(':').map(Number);
-        if ([bhh, bmm, ehh, emm].some(Number.isNaN)) return;
-        const startMinutes = bhh * 60 + bmm;
-        const endMinutes = ehh * 60 + emm;
-        if (endMinutes <= startMinutes) return;
-        entries.push({ kind: 'break', label: b.label || 'Break', breakIndex, startMinutes, endMinutes });
-      });
-
-      entries.sort((a, b) => a.startMinutes - b.startMinutes);
-
-      const minsToHHMM = (mins) => {
-        const h = Math.floor(mins / 60) % 24;
-        const m = Math.round(mins % 60);
-        return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
-      };
-
-      // Walk the day chronologically and record every free GAP — between
-      // the working start time and the first visit, between two visits
-      // (e.g. an 8:30 finish and a 9:00 next appointment leaves a real
-      // 30-minute gap), and after the last visit up to closing time.
-      // Overlapping/back-to-back visits (two patients booked at the same
-      // time) correctly produce NO gap between them.
-      const timeline = [];
-      let cursor = entries.length ? Math.min(dayStartMinutes, entries[0].startMinutes) : dayStartMinutes;
-      const effectiveStart = cursor;
-
-      entries.forEach(e => {
-        if (e.startMinutes > cursor) {
-          timeline.push({ type: 'gap', startMinutes: cursor, endMinutes: e.startMinutes });
-        }
-        if (e.kind === 'break') {
-          timeline.push({ type: 'break', label: e.label, breakIndex: e.breakIndex, startMinutes: e.startMinutes, endMinutes: e.endMinutes });
-        } else {
-          timeline.push({ type: 'visit', p: e.p, startMinutes: e.startMinutes, endMinutes: e.endMinutes });
-        }
-        if (e.endMinutes > cursor) cursor = e.endMinutes;
-      });
-
-      if (closingMinutes > cursor) {
-        timeline.push({ type: 'gap', startMinutes: cursor, endMinutes: closingMinutes, trailing: true });
-      }
-
-      const gapItems = timeline.filter(t => t.type === 'gap');
-      const totalFreeMinutes = gapItems.reduce((sum, g) => sum + (g.endMinutes - g.startMinutes), 0);
-      const freeHrsWhole = Math.floor(totalFreeMinutes / 60);
-      const freeMinsWhole = Math.round(totalFreeMinutes % 60);
-      const freeHoursLabel = `${freeHrsWhole}h ${freeMinsWhole}m`;
-
-      // Headline subtext: what's the next (or current) free window from
-      // *right now*, rather than just a flat day total.
-      const now = new Date();
-      const nowMinutes = now.getHours() * 60 + now.getMinutes();
-      let freeFromLabel;
-      const upcoming = gapItems.find(g => g.endMinutes > nowMinutes);
-      if (entries.length === 0) {
-        freeFromLabel = totalFreeMinutes > 0
-          ? `Open all day from ${window.formatTimeLabel(minsToHHMM(effectiveStart))}`
-          : `⚠️ No working hours set today`;
-      } else if (!upcoming) {
-        freeFromLabel = `No more free time today`;
-      } else if (upcoming.startMinutes <= nowMinutes) {
-        freeFromLabel = `Free right now until ${window.formatTimeLabel(minsToHHMM(upcoming.endMinutes))}`;
-      } else {
-        freeFromLabel = `Next free: ${window.formatTimeLabel(minsToHHMM(upcoming.startMinutes))} – ${window.formatTimeLabel(minsToHHMM(upcoming.endMinutes))}`;
-      }
-
-      return { timeline, entries, noTimeEntries, effectiveStart, dayStartMinutes, closingMinutes, startHHMM, closingHHMM, freeMinutes: totalFreeMinutes, freeHoursLabel, freeFromLabel, minsToHHMM };
-    };
-
-    // Renders the Working Time Schedule modal's timeline (visits + the
-    // free gaps between/around them) + free-time summary, from the shared
-    // schedule computation above.
-    window.renderWorkingTimeModal = function() {
-      const schedule = window.computeWorkingTimeSchedule();
-      const listEl = document.getElementById('wt-schedule-list');
-      const summaryEl = document.getElementById('wt-free-summary');
-      const subtitleEl = document.getElementById('wt-modal-subtitle');
-      const startInput = document.getElementById('wt-start-time-input');
-      const closingInput = document.getElementById('wt-closing-time-input');
-      if (startInput) startInput.value = schedule.startHHMM;
-      if (closingInput) closingInput.value = schedule.closingHHMM;
-
-      const breakCount = schedule.entries.filter(e => e.kind === 'break').length;
-      const visitCount = schedule.entries.length - breakCount;
-      const breakSuffix = breakCount > 0 ? ` · ${breakCount} break${breakCount === 1 ? '' : 's'}` : '';
-      if (subtitleEl) subtitleEl.innerText = `${visitCount} scheduled session${visitCount === 1 ? '' : 's'} today · 1h 30m each${breakSuffix}`;
-
-      let html = '';
-      if (schedule.timeline.length === 0) {
-        html += `<p style="color:var(--text-muted); text-align:center; padding:14px 0;">No active patient has a scheduled time yet.</p>`;
-      } else {
-        schedule.timeline.forEach(item => {
-          const startLabel = window.formatTimeLabel(schedule.minsToHHMM(item.startMinutes));
-          const endLabel = window.formatTimeLabel(schedule.minsToHHMM(item.endMinutes));
-          if (item.type === 'gap') {
-            const mins = item.endMinutes - item.startMinutes;
-            const h = Math.floor(mins / 60), m = Math.round(mins % 60);
-            const durLabel = h > 0 ? `${h}h ${m}m` : `${m}m`;
-            html += `
-              <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; background:rgba(16, 185, 129, 0.08); border:1px dashed rgba(16, 185, 129, 0.45); border-radius:10px; padding:9px 14px;">
-                <div style="font-weight:700; color:#10b981; font-size:0.85rem;">🟢 Free · ${startLabel} – ${endLabel}</div>
-                <div style="font-weight:800; color:#10b981; font-size:0.8rem; flex-shrink:0;">${durLabel}</div>
-              </div>
-            `;
-          } else if (item.type === 'break') {
-            html += `
-              <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; background:rgba(245, 158, 11, 0.1); border:1px solid rgba(245, 158, 11, 0.4); border-radius:10px; padding:10px 14px;">
-                <div style="min-width:0;">
-                  <div style="font-weight:700; color:#f59e0b; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">☕ ${item.label}</div>
-                  <div style="font-size:0.76rem; color:var(--text-muted); margin-top:2px;">${startLabel} – ${endLabel}</div>
-                </div>
-                <button class="action-btn btn-del" style="flex-shrink:0;" onclick="deleteWorkingTimeBreak(${item.breakIndex})">Remove</button>
-              </div>
-            `;
-          } else {
-            html += `
-              <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; background:var(--folder-bg); border:1px solid var(--border); border-radius:10px; padding:10px 14px;">
-                <div style="min-width:0;">
-                  <div style="font-weight:700; color:var(--text-main); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${item.p.name}</div>
-                  <div style="font-size:0.76rem; color:var(--text-muted); margin-top:2px;">${startLabel} – ${endLabel}</div>
-                </div>
-                <button class="action-btn btn-edit" style="flex-shrink:0;" onclick="openQuickEditTimeModal(${item.p.id})">Edit Time</button>
-              </div>
-            `;
-          }
-        });
-      }
-
-      if (schedule.noTimeEntries.length > 0) {
-        html += `<div style="font-size:0.75rem; color:var(--text-muted); font-weight:800; text-transform:uppercase; margin-top:6px;">No Time Set (${schedule.noTimeEntries.length})</div>`;
-        schedule.noTimeEntries.forEach(p => {
-          html += `
-            <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; background:var(--folder-bg); border:1px dashed var(--border); border-radius:10px; padding:10px 14px;">
-              <div style="font-weight:700; color:var(--text-main);">${p.name}</div>
-              <button class="action-btn btn-edit" onclick="openQuickEditTimeModal(${p.id})">Set Time</button>
-            </div>
-          `;
-        });
-      }
-
-      if (listEl) listEl.innerHTML = html;
-      if (summaryEl) {
-        summaryEl.innerHTML = `
-          <div style="font-size:0.78rem; color:var(--text-muted); font-weight:700; text-transform:uppercase; letter-spacing:0.4px;">Free Time Today (Total)</div>
-          <div style="font-size:1.4rem; font-weight:800; color:#38bdf8; margin-top:2px;">${schedule.freeHoursLabel}</div>
-          <div style="font-size:0.8rem; color:var(--text-muted); margin-top:2px;">${schedule.freeFromLabel} · Day: ${window.formatTimeLabel(schedule.startHHMM)} – ${window.formatTimeLabel(schedule.closingHHMM)}</div>
-        `;
-      }
-    };
-
-    window.openWorkingTimeModal = function() {
-      window.renderWorkingTimeModal();
-      document.getElementById('workingTimeModal').classList.add('active');
-    };
-    window.closeWorkingTimeModal = function() {
-      document.getElementById('workingTimeModal').classList.remove('active');
-    };
-    window.saveWorkingTimeClosingHour = function() {
-      const startVal = document.getElementById('wt-start-time-input').value;
-      const closeVal = document.getElementById('wt-closing-time-input').value;
-      if (!startVal || !closeVal) { alert('Please pick both a start time and a closing time.'); return; }
-      if (startVal >= closeVal) { alert('Start time must be earlier than closing time.'); return; }
-      window.setWorkingTimeStartHour(startVal);
-      window.setWorkingTimeClosingHour(closeVal);
-      window.renderWorkingTimeModal(); // reanalyze immediately with the new working hours
-      if (typeof renderStats === 'function') renderStats(); // keep the dashboard card in sync too
-    };
-
     function renderStats() {
 
       const activeList = patients.filter(p => !p.isFinished);
@@ -7480,18 +7184,12 @@
       if (elActiveBilled) elActiveBilled.innerText = `₹${activeBilled.toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
       if (elActiveTodayBilled) elActiveTodayBilled.innerText = `₹${todayWorkedAmt.toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
 
-      // ---- Free-time estimate ----
-      // Shared with the "Working Time Schedule" detail modal (see
-      // window.computeWorkingTimeSchedule) so both stay in sync — one
-      // calculation, used everywhere, re-run automatically any time
-      // saveAndRender() fires (including right after registering a new
-      // patient with a scheduled time).
-      const wtSchedule = window.computeWorkingTimeSchedule();
-      const elFreeHours = document.getElementById('active-summary-free-hours');
-      const elFreeFrom = document.getElementById('active-summary-free-from');
-      if (elFreeHours) elFreeHours.innerText = wtSchedule.freeHoursLabel;
-      if (elFreeFrom) elFreeFrom.innerText = wtSchedule.freeFromLabel;
       if (elActiveAdvance) elActiveAdvance.innerText = `₹${totalAdvanceInHand.toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
+
+      // Keep the self-tracked Time Tracker page live if it's the one open.
+      if (document.getElementById('page-time-tracker')?.classList.contains('active-page') && typeof window.renderTimeTrackerPage === 'function') {
+        window.renderTimeTrackerPage();
+      }
 
       const elOverallEarned = document.getElementById('overall-total-earned');
       const elOverallBilled = document.getElementById('overall-total-billed');
@@ -8352,7 +8050,7 @@
       }
 
       p.daysVisited = (p.daysVisited || 0) + 1;
-      p.visitHistory.push({ date: visitDate, visitNum: p.daysVisited, status: visitStatus });
+      p.visitHistory.push({ date: visitDate, visitNum: p.daysVisited, status: visitStatus, time: window.getLocalTimeStr ? window.getLocalTimeStr() : undefined });
       if (visitStatus === 'paid') {
         if (!p.paymentHistory) p.paymentHistory = [];
         // Advance-first: only record a fresh payment if existing advance
@@ -8415,13 +8113,13 @@
       if (choice === 'collect') {
         // Existing advance covers part of it; record one more payment for
         // the shortfall to close this visit out fully as Paid.
-        p.visitHistory.push({ date: visitDate, visitNum: p.daysVisited, status: 'paid' });
+        p.visitHistory.push({ date: visitDate, visitNum: p.daysVisited, status: 'paid', time: window.getLocalTimeStr ? window.getLocalTimeStr() : undefined });
         p.paymentHistory.push({ date: visitDate, amount: shortfall, dueAmount: shortfall, advanceAmount: 0 });
       } else {
         // Use the advance as far as it goes and leave the rest as Due —
         // no new payment recorded, the existing advance already covers its
         // share and Billed-minus-Paid will correctly show the shortfall.
-        p.visitHistory.push({ date: visitDate, visitNum: p.daysVisited, status: 'unpaid' });
+        p.visitHistory.push({ date: visitDate, visitNum: p.daysVisited, status: 'unpaid', time: window.getLocalTimeStr ? window.getLocalTimeStr() : undefined });
       }
 
       const patientId = p.id;
@@ -8660,7 +8358,7 @@
         const alreadyVisited = p.visitHistory.some(v => v.date === todayStr);
         if (!alreadyVisited) {
           p.daysVisited = (p.daysVisited || 0) + 1;
-          p.visitHistory.push({ date: todayStr, visitNum: p.daysVisited, status: 'paid' });
+          p.visitHistory.push({ date: todayStr, visitNum: p.daysVisited, status: 'paid', time: window.getLocalTimeStr ? window.getLocalTimeStr() : undefined });
         }
       });
       saveAndRender();
@@ -9156,7 +8854,7 @@
         // actual recorded visit.
         if (p.dateMarkers) delete p.dateMarkers[dateStr];
         p.daysVisited = (p.daysVisited || 0) + 1;
-        p.visitHistory.push({ date: dateStr, visitNum: p.daysVisited, status: action });
+        p.visitHistory.push({ date: dateStr, visitNum: p.daysVisited, status: action, time: window.getLocalTimeStr ? window.getLocalTimeStr() : undefined });
         isNewVisitLogged = true;
         // Advance-first rule: any existing advance (Paid Total already
         // ahead of Billed Total — e.g. from a "Planned (Advance Paid)"
@@ -9387,7 +9085,7 @@
         } else {
           if (p.dateMarkers) delete p.dateMarkers[dateStr];
           p.daysVisited = (p.daysVisited || 0) + 1;
-          p.visitHistory.push({ date: dateStr, visitNum: p.daysVisited, status });
+          p.visitHistory.push({ date: dateStr, visitNum: p.daysVisited, status, time: window.getLocalTimeStr ? window.getLocalTimeStr() : undefined });
           // Same advance-first rule as the single-date flow: use any
           // existing advance to cover this visit before recording new cash.
           if (status === 'paid' && getPaidTotal(p) < getBilledTotal(p)) {
@@ -10021,6 +9719,312 @@
           try { window.toggleSidebarMenu(false); } catch (e) {}
         }
       };
+    })();
+  </script>
+
+  <!-- =============================================================
+       GLOBAL CLICK SOUND EFFECT
+       Plays a short, synthesized "click" tone whenever the user taps
+       any button / clickable element in the app. Uses the Web Audio
+       API so no external sound file needs to be hosted or loaded.
+       Self-contained — does not touch any existing app logic.
+  ============================================================= -->
+  <script>
+    (function () {
+      let audioCtx = null;
+
+      // Lazily create (and resume) the AudioContext. Browsers block audio
+      // until the first user gesture, so this is safe to call on every click.
+      function ensureAudioCtx() {
+        if (!audioCtx) {
+          try {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+          } catch (e) {
+            return null; // Web Audio not supported — fail silently
+          }
+        }
+        if (audioCtx.state === 'suspended') {
+          audioCtx.resume().catch(function () {});
+        }
+        return audioCtx;
+      }
+
+      // A soft, quick "tick" — a short sine tone that falls in pitch and
+      // fades out fast, so it reads as a click rather than a beep.
+      window.playClickSound = function () {
+        const ctx = ensureAudioCtx();
+        if (!ctx) return;
+        try {
+          const now = ctx.currentTime;
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(880, now);
+          osc.frequency.exponentialRampToValueAtTime(420, now + 0.08);
+
+          gain.gain.setValueAtTime(0.0001, now);
+          gain.gain.exponentialRampToValueAtTime(0.16, now + 0.006);
+          gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.09);
+
+          osc.connect(gain).connect(ctx.destination);
+          osc.start(now);
+          osc.stop(now + 0.1);
+        } catch (e) { /* ignore playback errors */ }
+      };
+
+      // Delegate a single listener on the document (capture phase) instead
+      // of attaching one to every button — this automatically covers every
+      // button added now or later (dynamically rendered rows, modals, etc).
+      const CLICKABLE_SELECTOR =
+        'button, [role="button"], input[type="submit"], input[type="button"], .btn, [onclick]';
+
+      document.addEventListener('click', function (e) {
+        const el = e.target.closest(CLICKABLE_SELECTOR);
+        if (el && !el.disabled) window.playClickSound();
+      }, true);
+    })();
+  </script>
+
+  <!-- =============================================================
+       SELF TIME TRACKER
+       Self-tracked free time (clock in/out) merged with visit history. The
+       logged-in member now tracks their own free time by tapping
+       Clock In / Clock Out, and every client visit already timestamps
+       itself (see window.getLocalTimeStr, used at every visitHistory
+       push). This section merges both into one daily log, browsable
+       by date, plus a small live clock face.
+       Self-contained — does not touch any existing app logic.
+  ============================================================= -->
+  <script>
+    (function () {
+      // ---- Storage helpers (per logged-in member, like the rest of the app) ----
+      function activeSessionKey() {
+        return (typeof window.getSummaryStorageKey === 'function')
+          ? window.getSummaryStorageKey('self_time_active_session')
+          : 'dharun_self_time_active_session';
+      }
+      function dayLogKey(dateStr) {
+        const base = (typeof window.getSummaryStorageKey === 'function')
+          ? window.getSummaryStorageKey('self_time_day_log')
+          : 'dharun_self_time_day_log';
+        return `${base}_${dateStr}`;
+      }
+
+      function getActiveSession() {
+        try {
+          const raw = localStorage.getItem(activeSessionKey());
+          return raw ? JSON.parse(raw) : null;
+        } catch (e) { return null; }
+      }
+      function setActiveSession(session) {
+        if (session) localStorage.setItem(activeSessionKey(), JSON.stringify(session));
+        else localStorage.removeItem(activeSessionKey());
+      }
+      function getDayFreeBlocks(dateStr) {
+        try {
+          const raw = localStorage.getItem(dayLogKey(dateStr));
+          const parsed = raw ? JSON.parse(raw) : [];
+          return Array.isArray(parsed) ? parsed : [];
+        } catch (e) { return []; }
+      }
+      function saveDayFreeBlocks(dateStr, blocks) {
+        localStorage.setItem(dayLogKey(dateStr), JSON.stringify(blocks));
+      }
+
+      // ---- Clock In / Clock Out ----
+      window.toggleFreeTimeClock = function () {
+        const session = getActiveSession();
+        const now = new Date();
+        if (!session) {
+          // Clock IN — start a free-time session right now.
+          setActiveSession({
+            startDate: window.getLocalDateStr(now),
+            startTime: window.getLocalTimeStr(now)
+          });
+        } else {
+          // Clock OUT — close the session and file it under the date it started.
+          const blocks = getDayFreeBlocks(session.startDate);
+          blocks.push({ start: session.startTime, end: window.getLocalTimeStr(now) });
+          saveDayFreeBlocks(session.startDate, blocks);
+          setActiveSession(null);
+        }
+        window.renderTimeTrackerPage();
+      };
+
+      function minutesBetween(startHHMM, endHHMM) {
+        const [sh, sm] = startHHMM.split(':').map(Number);
+        const [eh, em] = endHHMM.split(':').map(Number);
+        let mins = (eh * 60 + em) - (sh * 60 + sm);
+        if (mins < 0) mins += 24 * 60; // crossed midnight
+        return mins;
+      }
+      function formatDuration(totalMins) {
+        const h = Math.floor(totalMins / 60);
+        const m = Math.round(totalMins % 60);
+        return `${h}h ${m}m`;
+      }
+
+      // Gathers every client visit timestamped on the given date across all
+      // patients (active + completed), reading the same `patients` array /
+      // `time` field the rest of the app already writes on every visit.
+      function getVisitEntriesForDate(dateStr) {
+        if (typeof patients === 'undefined' || !Array.isArray(patients)) return [];
+        const out = [];
+        patients.forEach(p => {
+          (p.visitHistory || []).forEach(v => {
+            if (v.date === dateStr) {
+              out.push({ time: v.time || null, name: p.name, status: v.status });
+            }
+          });
+        });
+        return out;
+      }
+
+      // ---- Render the page: live clock + status pill + merged daily log ----
+      window.renderTimeTrackerPage = function () {
+        const dateInput = document.getElementById('tt-date-input');
+        if (!dateInput) return; // page markup not present yet
+        if (!dateInput.value) dateInput.value = window.getLocalDateStr();
+        const dateStr = dateInput.value;
+        const todayStr = window.getLocalDateStr();
+        const session = getActiveSession();
+
+        // Status pill + clock button
+        const btn = document.getElementById('tt-clock-btn');
+        const pill = document.getElementById('tt-status-pill');
+        const since = document.getElementById('tt-running-since');
+        if (session) {
+          if (btn) btn.innerHTML = '🔴 Clock Out (End Free Time)';
+          if (pill) { pill.innerText = '🟢 Currently Free'; pill.style.background = 'rgba(16,185,129,0.15)'; pill.style.color = '#10b981'; }
+          if (since) since.innerText = `Since ${window.formatTimeLabel ? window.formatTimeLabel(session.startTime) : session.startTime} on ${session.startDate}`;
+        } else {
+          if (btn) btn.innerHTML = '🟢 Clock In (I\'m Free)';
+          if (pill) { pill.innerText = 'Not clocked in'; pill.style.background = 'rgba(148,163,184,0.15)'; pill.style.color = 'var(--text-muted)'; }
+          if (since) since.innerText = '';
+        }
+
+        // Free blocks for the selected date (+ the still-running session,
+        // shown live, if it started on this date).
+        const blocks = getDayFreeBlocks(dateStr).slice();
+        let runningMins = 0;
+        if (session && session.startDate === dateStr) {
+          const nowLabel = window.getLocalTimeStr();
+          runningMins = minutesBetween(session.startTime, nowLabel);
+          blocks.push({ start: session.startTime, end: nowLabel, running: true });
+        }
+
+        const visits = getVisitEntriesForDate(dateStr);
+
+        // Totals
+        const totalFreeMins = blocks.reduce((sum, b) => sum + minutesBetween(b.start, b.end), 0);
+        const freeTotalEl = document.getElementById('tt-summary-free-total');
+        const visitCountEl = document.getElementById('tt-summary-visit-count');
+        if (freeTotalEl) freeTotalEl.innerText = formatDuration(totalFreeMins);
+        if (visitCountEl) visitCountEl.innerText = visits.length;
+
+        // Merge into one chronological timeline
+        const rows = [];
+        blocks.forEach(b => {
+          const startLabel = window.formatTimeLabel ? window.formatTimeLabel(b.start) : b.start;
+          const endLabel = window.formatTimeLabel ? window.formatTimeLabel(b.end) : b.end;
+          rows.push({
+            sortKey: b.start,
+            html: `
+            <div class="tt-timeline-row">
+              <span class="tt-timeline-dot ${b.running ? 'dot-running' : 'dot-free'}"></span>
+              <div class="tt-timeline-card card-free">
+                <div class="tt-timeline-time">${startLabel}</div>
+                <div style="min-width:0; flex:1;">
+                  <div class="tt-timeline-label" style="color:#10b981;">🕐 ${b.running ? 'Free Time (Running)' : 'Free Time'}</div>
+                  <div class="tt-timeline-sub">${startLabel} – ${endLabel}</div>
+                </div>
+                <div style="font-weight:800; color:#10b981; font-size:0.8rem; flex-shrink:0;">${formatDuration(minutesBetween(b.start, b.end))}</div>
+              </div>
+            </div>`
+          });
+        });
+        visits.forEach(v => {
+          const timeLabel = v.time ? (window.formatTimeLabel ? window.formatTimeLabel(v.time) : v.time) : '—';
+          const isUnpaid = v.status === 'unpaid';
+          rows.push({
+            sortKey: v.time || '00:00',
+            html: `
+            <div class="tt-timeline-row">
+              <span class="tt-timeline-dot ${isUnpaid ? 'dot-unpaid' : 'dot-paid'}"></span>
+              <div class="tt-timeline-card card-visit">
+                <div class="tt-timeline-time">${timeLabel}</div>
+                <div style="min-width:0; flex:1;">
+                  <div class="tt-timeline-label" style="color:var(--text-main);">📌 Visited: ${v.name}</div>
+                  ${v.time ? '' : '<div class="tt-timeline-sub">Time not recorded</div>'}
+                </div>
+                <span class="uid-badge" style="flex-shrink:0; font-size:0.7rem;">${isUnpaid ? '🔴 Unpaid' : '🟢 Paid'}</span>
+              </div>
+            </div>`
+          });
+        });
+
+        rows.sort((a, b) => a.sortKey.localeCompare(b.sortKey));
+
+        const listEl = document.getElementById('tt-timeline-list');
+        if (listEl) {
+          listEl.innerHTML = rows.length
+            ? rows.map(r => r.html).join('')
+            : `<p style="color:var(--text-muted); text-align:center; padding:18px 0;">No free-time or visit records for ${dateStr === todayStr ? 'today' : 'this day'} yet.</p>`;
+        }
+      };
+
+      // ---- Live analog clock face (updates every second) ----
+      function tickLiveClock() {
+        const now = new Date();
+        const h = now.getHours() % 12;
+        const m = now.getMinutes();
+        const s = now.getSeconds();
+        const hourDeg = (h * 30) + (m * 0.5);
+        const minDeg = m * 6;
+        const secDeg = s * 6;
+        const hourHand = document.getElementById('tt-clock-hour');
+        const minHand = document.getElementById('tt-clock-min');
+        const secHand = document.getElementById('tt-clock-sec');
+        if (hourHand) hourHand.setAttribute('transform', `rotate(${hourDeg} 50 50)`);
+        if (minHand) minHand.setAttribute('transform', `rotate(${minDeg} 50 50)`);
+        if (secHand) secHand.setAttribute('transform', `rotate(${secDeg} 50 50)`);
+        const textEl = document.getElementById('tt-live-time-text');
+        if (textEl) {
+          textEl.innerText = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
+        }
+        // Keep the running free-time session (if any) live too, but only
+        // while the Time Tracker page is actually open, to avoid needless work.
+        if (document.getElementById('page-time-tracker')?.classList.contains('active-page') && typeof window.renderTimeTrackerPage === 'function' && s % 15 === 0) {
+          window.renderTimeTrackerPage();
+        }
+
+        // Drive the small designed clock card on the 1-Click Revenue Hub
+        // dashboard too — same hand angles, its own set of element ids so
+        // it never fights with the Self Time Tracker's clock face.
+        const dashHourHand = document.getElementById('dash-clock-hour');
+        const dashMinHand = document.getElementById('dash-clock-min');
+        const dashSecHand = document.getElementById('dash-clock-sec');
+        if (dashHourHand) dashHourHand.setAttribute('transform', `rotate(${hourDeg} 50 50)`);
+        if (dashMinHand) dashMinHand.setAttribute('transform', `rotate(${minDeg} 50 50)`);
+        if (dashSecHand) dashSecHand.setAttribute('transform', `rotate(${secDeg} 50 50)`);
+        const dashTextEl = document.getElementById('dash-live-time-text');
+        if (dashTextEl) {
+          dashTextEl.innerText = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
+        }
+        const dashDateEl = document.getElementById('dash-live-date-text');
+        if (dashDateEl) {
+          dashDateEl.innerText = now.toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+        }
+        const dashGreetEl = document.getElementById('dash-greeting-text');
+        if (dashGreetEl) {
+          const hrs = now.getHours();
+          const greeting = hrs < 12 ? '🌅 Good Morning' : hrs < 17 ? '☀️ Good Afternoon' : hrs < 21 ? '🌇 Good Evening' : '🌙 Good Night';
+          dashGreetEl.innerText = greeting;
+        }
+      }
+      setInterval(tickLiveClock, 1000);
+      tickLiveClock();
     })();
   </script>
 </body>
