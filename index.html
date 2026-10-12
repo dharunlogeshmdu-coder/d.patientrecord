@@ -56,6 +56,7 @@
       if (forgotView) forgotView.style.display = 'none';
       const authTabHeader = document.getElementById('authTabHeader');
       if (authTabHeader) authTabHeader.style.display = 'flex';
+      ['login-msg', 'admin-login-msg', 'reg-msg'].forEach(id => { const m = document.getElementById(id); if (m) m.innerHTML = ''; });
       const btn = document.getElementById(`tab-btn-${tab}`);
       const form = document.getElementById(`${tab}-form`);
       if (btn) btn.classList.add('active');
@@ -1884,6 +1885,31 @@
         font-size: 0.82rem;
       }
     }
+
+    /* ---------------------------------------------------------------
+       🎡 Spin & Win — client reward wheel (owner-operated, no cash
+       payouts; prizes are discounts / loyalty points / free add-ons /
+       referral perks the clinic controls). Self-contained styling —
+       reuses existing tokens (--accent, --bg-card, --border, etc.) so
+       it matches every theme automatically.
+    ----------------------------------------------------------------*/
+    #spin-wheel-group { transform-origin: 160px 160px; transition: transform 4.4s cubic-bezier(0.15, 0.65, 0.15, 1); }
+    #spin-action-btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none !important; }
+    .spin-legend-pill { display: inline-flex; align-items: center; gap: 6px; background: var(--folder-bg); border: 1px solid var(--border); border-radius: 20px; padding: 5px 12px; font-size: 0.74rem; font-weight: 700; color: var(--text-main); }
+    .spin-legend-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+    .spin-type-tag { display: inline-block; padding: 3px 9px; border-radius: 20px; font-size: 0.7rem; font-weight: 800; white-space: nowrap; }
+    .spin-type-discount { background: rgba(6, 214, 160, 0.15); color: #06d6a0; border: 1px solid rgba(6, 214, 160, 0.4); }
+    .spin-type-loyalty { background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.4); }
+    .spin-type-addon { background: rgba(139, 92, 246, 0.15); color: #a78bfa; border: 1px solid rgba(139, 92, 246, 0.4); }
+    .spin-type-referral { background: rgba(249, 115, 22, 0.15); color: #fb923c; border: 1px solid rgba(249, 115, 22, 0.4); }
+    .spin-confetti-piece { position: absolute; top: -10px; width: 7px; height: 12px; border-radius: 2px; opacity: 0.95; animation: spinConfettiFall 2.1s ease-in forwards; }
+    @keyframes spinConfettiFall {
+      0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+      100% { transform: translateY(280px) rotate(var(--fall-rot, 540deg)); opacity: 0; }
+    }
+    @media (max-width: 480px) {
+      #spin-wheel-group { transition-duration: 3.8s; }
+    }
   </style>
 </head>
 <body>
@@ -2141,28 +2167,47 @@
       </div>
 
       <div class="auth-tabs" id="authTabHeader" style="position:relative;">
-        <button class="auth-tab-btn active" id="tab-btn-login" onclick="switchAuthTab('login')">Sign In</button>
-        <button class="auth-tab-btn" id="tab-btn-register" onclick="switchAuthTab('register')">Register Member Account</button>
+        <button class="auth-tab-btn active" id="tab-btn-login" onclick="switchAuthTab('login')">👤 Client Login</button>
+        <button class="auth-tab-btn" id="tab-btn-adminlogin" onclick="switchAuthTab('adminlogin')">👑 Admin Login</button>
+        <button class="auth-tab-btn" id="tab-btn-register" onclick="switchAuthTab('register')">📝 Register</button>
         <div id="auth-register-hint" class="auth-pointer-hint" style="display:none;">
           <span class="auth-pointer-hand">👆</span>
           <span class="auth-pointer-bubble">New user? Tap here to create your free account</span>
         </div>
       </div>
 
-      <form id="login-form" class="auth-form-section active" onsubmit="handleLoginSubmit(event)">
+      <form id="login-form" class="auth-form-section active" onsubmit="handleLoginSubmit(event)" autocomplete="on">
+        <div style="font-size:0.74rem; color:var(--text-muted); font-weight:700; margin-bottom:2px;">👤 Client / Member portal sign in</div>
         <div class="auth-input-group">
-          <label>Email ID / Admin ID</label>
-          <input type="text" id="login-email" required placeholder="Enter login email ID or 'admin'">
+          <label>Client Email ID</label>
+          <input type="text" id="login-email" required placeholder="Enter your login email ID" autocomplete="username">
         </div>
         <div class="auth-input-group">
           <label>Password</label>
-          <input type="password" id="login-password" required placeholder="••••••••">
+          <input type="password" id="login-password" required placeholder="••••••••" autocomplete="current-password">
         </div>
         <div style="display: flex; justify-content: flex-end; margin-top: -4px;">
           <button type="button" onclick="openForgotPasswordModal()" style="background:none; border:none; color: var(--accent); font-size: 0.78rem; font-weight: 700; cursor: pointer; padding: 2px 0;">Forgot Password?</button>
         </div>
         <div id="login-msg"></div>
-        <button type="submit" class="btn" style="width: 100%; margin-top: 6px;">Sign In to Portal</button>
+        <button type="submit" class="btn" style="width: 100%; margin-top: 6px;">Sign In as Client</button>
+      </form>
+
+      <form id="adminlogin-form" class="auth-form-section" onsubmit="handleAdminLoginSubmit(event)" autocomplete="on">
+        <div style="font-size:0.74rem; color:#f59e0b; font-weight:800; margin-bottom:2px;">👑 Owner / Manager access only</div>
+        <div class="auth-input-group">
+          <label>Admin ID / Email ID</label>
+          <input type="text" id="admin-login-email" required placeholder="Enter 'admin' or admin email ID" autocomplete="username">
+        </div>
+        <div class="auth-input-group">
+          <label>Admin Password</label>
+          <input type="password" id="admin-login-password" required placeholder="••••••••" autocomplete="current-password">
+        </div>
+        <div style="display: flex; justify-content: flex-end; margin-top: -4px;">
+          <button type="button" onclick="openForgotPasswordModal('adminlogin')" style="background:none; border:none; color: var(--accent); font-size: 0.78rem; font-weight: 700; cursor: pointer; padding: 2px 0;">Forgot Password?</button>
+        </div>
+        <div id="admin-login-msg"></div>
+        <button type="submit" class="btn btn-admin" style="width: 100%; margin-top: 6px;">Sign In as Admin</button>
       </form>
 
       <form id="register-form" class="auth-form-section" onsubmit="handleRegisterSubmit(event)">
@@ -2322,6 +2367,12 @@
         <div class="nav-item member-item" id="tour-nav-revenue" onclick="switchPage('page-dashboard', this)">
           <span class="nav-icon">📊</span>
           <span>1-Click Revenue Hub</span>
+        </div>
+
+        <div class="nav-item member-item" id="nav-spin-wheel" onclick="switchPage('page-spin-wheel', this)">
+          <span class="nav-icon">🎡</span>
+          <span>Spin & Win</span>
+          <span class="nav-badge" id="badge-spin-unredeemed" style="display:none;">0</span>
         </div>
         
         <div class="nav-item member-item" id="tour-nav-completed" onclick="switchPage('page-completed-works', this)">
@@ -2761,6 +2812,91 @@
           </div>
         </section>
 
+        <section id="page-spin-wheel" class="page-view">
+          <div class="top-pro-stats" style="margin-bottom: 22px;">
+            <div class="pro-kpi-card kpi-count">
+              <h3>TOTAL SPINS GIVEN</h3>
+              <div class="amount text-info" id="spin-summary-total">0</div>
+            </div>
+            <div class="pro-kpi-card kpi-purple">
+              <h3>REWARDS WAITING TO REDEEM</h3>
+              <div class="amount" style="color:#c084fc;" id="spin-summary-pending">0</div>
+            </div>
+            <div class="pro-kpi-card kpi-received">
+              <h3>REWARDS REDEEMED</h3>
+              <div class="amount text-success" id="spin-summary-redeemed">0</div>
+            </div>
+          </div>
+
+          <div class="card" style="text-align:center;">
+            <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; text-align:left; margin-bottom:6px;">
+              <h2 style="margin:0;">🎡 Spin & Win</h2>
+              <button type="button" class="btn btn-secondary" style="font-size:0.78rem;" onclick="window.openSpinSettingsModal()">⚙️ Customize Prizes</button>
+            </div>
+            <p style="font-size:0.84rem; color:var(--text-muted); text-align:left; margin-bottom:24px; max-width: 640px;">
+              No cash payouts — every spin wins a real perk you control: a discount, loyalty points, a free add-on, or a referral reward. Great to offer right after a client pays or finishes a visit, to keep them coming back.
+            </p>
+
+            <div style="max-width: 420px; margin: 0 auto 26px; text-align:left;">
+              <label style="font-size:0.8rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; margin-bottom:8px; display:block;">🎯 Who's Spinning?</label>
+              <div class="control-field">
+                <select id="spin-client-select" onchange="window.selectSpinClient(this.value)">
+                  <option value="">-- Choose a client --</option>
+                </select>
+              </div>
+            </div>
+
+            <div style="position:relative; width:min(340px, 88vw); margin:0 auto 18px;">
+              <div id="spin-confetti-layer" style="position:absolute; inset:-20px -20px auto -20px; height:300px; pointer-events:none; overflow:visible; z-index:5;"></div>
+              <div style="position:absolute; top:-4px; left:50%; transform:translateX(-50%); z-index:4; width:0; height:0; border-left:13px solid transparent; border-right:13px solid transparent; border-top:20px solid var(--accent); filter:drop-shadow(0 2px 4px rgba(0,0,0,0.5));"></div>
+              <svg id="spin-wheel-svg" viewBox="0 0 320 320" style="width:100%; display:block; filter: drop-shadow(0 12px 30px rgba(0,0,0,0.45));">
+                <g id="spin-wheel-group"></g>
+                <circle cx="160" cy="160" r="27" fill="var(--bg-card)" stroke="var(--border)" stroke-width="3"/>
+                <text x="160" y="168" text-anchor="middle" font-size="22">🎡</text>
+              </svg>
+            </div>
+
+            <div id="spin-legend" style="display:flex; flex-wrap:wrap; gap:8px; justify-content:center; max-width:560px; margin:0 auto 22px;"></div>
+
+            <button type="button" id="spin-action-btn" class="btn" style="font-size:1rem; padding:14px 40px; background:linear-gradient(135deg,#06d6a0 0%, #2563eb 100%); font-weight:800;" onclick="window.spinTheWheel()" disabled>
+              🎉 SPIN THE WHEEL
+            </button>
+            <div id="spin-hint-text" style="font-size:0.78rem; color:var(--text-muted); margin-top:10px;">Choose a client above to enable the wheel.</div>
+          </div>
+
+          <div class="card">
+            <h2>🏆 Reward History</h2>
+            <div class="controls-grid" style="grid-template-columns: 2fr 1fr;">
+              <div class="control-field">
+                <span style="margin-right: 12px; color: var(--accent);">🔍</span>
+                <input type="text" id="spin-history-search" placeholder="Search by client name..." oninput="window.renderSpinHistoryTable()">
+              </div>
+              <div class="control-field">
+                <select id="spin-history-filter" onchange="window.renderSpinHistoryTable()">
+                  <option value="all">⚡ All Rewards</option>
+                  <option value="pending">🎁 Waiting to Redeem</option>
+                  <option value="redeemed">✔ Redeemed</option>
+                </select>
+              </div>
+            </div>
+            <div class="table-container">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Client</th>
+                    <th>Prize</th>
+                    <th>Type</th>
+                    <th>Won On</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="spin-history-body"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
         <section id="page-time-tracker" class="page-view">
           <div class="card" style="display:flex; flex-wrap:wrap; gap:22px; align-items:center; justify-content:space-between;">
             <div style="display:flex; align-items:center; gap:16px;">
@@ -3126,6 +3262,40 @@
       <div class="modal-actions">
         <button class="btn btn-notify" style="flex: 1;" onclick="confirmChosenLocation()">✔ Confirm Location</button>
         <button class="btn btn-secondary" style="flex: 1;" onclick="closeLocationPickerModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="spinResultModal">
+    <div class="modal-content" style="max-width: 420px; text-align:center;">
+      <div class="modal-header" style="border-bottom:none; margin-bottom:0; padding-bottom:0; justify-content:flex-end;">
+        <button class="close-modal" onclick="window.closeSpinResultModal()">&times;</button>
+      </div>
+      <div style="font-size:3.2rem; margin-bottom:6px; line-height:1;">🎉</div>
+      <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:4px;" id="spin-result-name">—</p>
+      <h3 style="font-size:1.4rem; margin-bottom:10px; color:var(--text-main);" id="spin-result-label">—</h3>
+      <p style="font-size:0.88rem; color:var(--text-muted); margin-bottom:18px;" id="spin-result-detail">—</p>
+      <p style="font-size:0.76rem; color:var(--accent); font-weight:800; margin-bottom:20px;">✔ Saved to their rewards below</p>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" style="flex:1;" onclick="window.closeSpinResultModal()">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="spinSettingsModal">
+    <div class="modal-content" style="max-width: 660px;">
+      <div class="modal-header">
+        <h3 style="color: var(--accent);">⚙️ Customize Spin & Win Prizes</h3>
+        <button class="close-modal" onclick="window.closeSpinSettingsModal()">&times;</button>
+      </div>
+      <p style="font-size:0.82rem; color:var(--text-muted); margin-bottom:16px;">
+        Edit what clients can win and how rare each prize is. Turn off any prize you don't want on the wheel — keep at least 2 switched on.
+      </p>
+      <div id="spin-settings-rows" style="display:flex; flex-direction:column; gap:10px; max-height:52vh; overflow-y:auto; padding-right:4px;"></div>
+      <div class="modal-actions" style="margin-top:18px;">
+        <button class="btn btn-notify" style="flex:1;" onclick="window.saveSpinSettings()">✔ Save Prizes</button>
+        <button class="btn btn-secondary" onclick="window.restoreDefaultSpinSettings()">↺ Restore Defaults</button>
+        <button class="btn btn-secondary" onclick="window.closeSpinSettingsModal()">Cancel</button>
       </div>
     </div>
   </div>
@@ -3524,8 +3694,9 @@
         <input type="email" id="edit-member-email" required>
       </div>
       <div class="form-group" style="margin-bottom: 12px;" id="edit-member-password-group">
-        <label>Member Password *</label>
-        <input type="text" id="edit-member-password" required>
+        <label>Member Password</label>
+        <button type="button" class="btn btn-secondary" style="width:100%;" onclick="resetMemberPasswordByEmail()">📩 Send Password Reset Email</button>
+        <small style="color:var(--text-muted); display:block; margin-top:4px;">Passwords are never stored or shown. The member sets a new one from the emailed link.</small>
       </div>
       <div class="form-group" style="margin-bottom: 18px;">
         <label>Contact Mobile *</label>
@@ -3879,7 +4050,6 @@
     const DELETE_MEMBER_API = "https://REPLACE-WITH-YOUR-RENDER-URL.onrender.com/api/delete-member";
 
     const MANAGER_EMAIL = "dharun@gmail.com";
-    const MANAGER_PASSWORD = "232323";
     const APP_OWNER_PHONE = "8248090433"; 
     const APP_OWNER_UPI_ID = "dharunlogeshmdu-2@okicici"; 
     const RAZORPAY_KEY_ID = "rzp_live_TUPuy45h1NrJg4";
@@ -4008,21 +4178,25 @@
       document.getElementById('patient-self-reg-view').classList.remove('active');
     }
     
-    window.openForgotPasswordModal = function() {
+    window.openForgotPasswordModal = function(fromTab) {
       document.getElementById('authTabHeader').style.display = 'none';
       document.getElementById('login-form').classList.remove('active');
+      document.getElementById('adminlogin-form').classList.remove('active');
       document.getElementById('register-form').classList.remove('active');
+      window.__forgotReturnTab = fromTab === 'adminlogin' ? 'adminlogin' : 'login';
       document.getElementById('forgot-password-view').style.display = 'flex';
       document.getElementById('forgot-password-msg').innerHTML = '';
       const emailField = document.getElementById('forgot-password-email');
-      const loginEmailVal = document.getElementById('login-email').value.trim();
+      const loginEmailVal = (window.__forgotReturnTab === 'adminlogin'
+        ? document.getElementById('admin-login-email')
+        : document.getElementById('login-email')).value.trim();
       emailField.value = (loginEmailVal && loginEmailVal.includes('@')) ? loginEmailVal : '';
     };
 
     window.closeForgotPasswordModal = function() {
       document.getElementById('forgot-password-view').style.display = 'none';
       document.getElementById('authTabHeader').style.display = 'flex';
-      switchAuthTab('login');
+      switchAuthTab(window.__forgotReturnTab || 'login');
     };
 
     window.handleForgotPasswordSubmit = async function(e) {
@@ -5224,15 +5398,10 @@
       };
 
       try {
+        // Append-only write: the public booking page never reads the clinic
+        // document (it holds the clinic's patient list), it only adds one request.
         const clinicDocRef = doc(db, "clinics", publicClinicUid);
-        const clinicSnap = await getDoc(clinicDocRef);
-        let existingRequests = [];
-        if (clinicSnap.exists() && Array.isArray(clinicSnap.data().patientRequests)) {
-          existingRequests = clinicSnap.data().patientRequests;
-        }
-        existingRequests.unshift(newRequest);
-
-        await setDoc(clinicDocRef, { patientRequests: existingRequests }, { merge: true });
+        await setDoc(clinicDocRef, { patientRequests: arrayUnion(newRequest) }, { merge: true });
         document.getElementById('public-reg-msg').innerHTML = `<div class="auth-msg success">✅ Your appointment request & map location have been submitted!</div>`;
         document.getElementById('public-booking-form').reset();
         document.getElementById('public-patient-location').value = '';
@@ -5911,7 +6080,6 @@
       document.getElementById('edit-member-rental-fee').value = user.rentalFee || 599; 
       
       document.getElementById('edit-member-email').value = user.identity || '';
-      document.getElementById('edit-member-password').value = user.plainPassword || '';
       document.getElementById('edit-member-mobile').value = user.mobile || '';
 
       // Managers can edit member details but should never see a member's
@@ -5949,6 +6117,17 @@
       document.getElementById('adminEditMemberModal').classList.remove('active');
     };
 
+    window.resetMemberPasswordByEmail = async function() {
+      const email = document.getElementById('edit-member-email').value.trim().toLowerCase();
+      if (!email) { alert('No login email on this member.'); return; }
+      try {
+        await sendPasswordResetEmail(auth, email);
+        alert('✅ Password reset link sent to ' + email);
+      } catch (err) {
+        alert('Could not send reset email: ' + err.message);
+      }
+    };
+
     window.saveMemberDetailsAdmin = async function() {
       const targetUid = document.getElementById('edit-member-uid').value;
       const siteName = document.getElementById('edit-member-site-name').value.trim().toUpperCase();
@@ -5959,7 +6138,6 @@
       const rentalFee = parseFloat(document.getElementById('edit-member-rental-fee').value) || 599; 
       
       const email = document.getElementById('edit-member-email').value.trim().toLowerCase().replace(/\.com[a-zA-Z]*$/, '.com'); 
-      const pwd = document.getElementById('edit-member-password').value.trim();
       const mobile = document.getElementById('edit-member-mobile').value.trim();
 
       try {
@@ -5972,7 +6150,6 @@
           regAmount: regAmount,
           rentalFee: rentalFee,
           identity: email,
-          plainPassword: pwd,
           mobile: mobile,
           lastUpdated: new Date().toISOString()
         });
@@ -6361,7 +6538,6 @@
           </td>
           <td>
             <div class="member-bright-phone" style="font-size:0.9rem;">📞 ${usr.mobile || 'No Mobile'}</div>
-            <div class="password-badge-pill">🔑 <strong>${usr.plainPassword || '••••••'}</strong></div>
           </td>
           <td>${statusBadge}</td>
           <td style="min-width: 200px;">${paymentHistoryDisplay}</td>
@@ -6549,45 +6725,44 @@
       }).join('');
     };
 
+    // ---- CLIENT login: member accounts only. No admin shortcut, no manager
+    // provisioning, no super-admin auto-create. Staff accounts are rejected
+    // (in onAuthStateChanged) and pointed to the Admin Login tab.
     window.handleLoginSubmit = async function(e) {
       e.preventDefault();
-      let rawEmail = document.getElementById('login-email').value.trim().toLowerCase();
-      
-      if (rawEmail === "admin" || rawEmail === "dharun") {
-        rawEmail = SUPER_ADMIN_EMAIL.toLowerCase();
-      }
-      
+      const rawEmail = document.getElementById('login-email').value.trim().toLowerCase();
       const cleanEmail = rawEmail.includes('@') ? rawEmail.replace(/\.com[a-zA-Z]*$/, '.com') : (rawEmail + '@gmail.com');
       const cleanPassword = document.getElementById('login-password').value.trim();
 
+      window.__loginIntent = 'client';
       try {
-        // The manager account is provisioned on first sign-in, so the owner
-        // does not need to manually create a Firebase Auth user first.
-        if (cleanEmail === MANAGER_EMAIL && cleanPassword === MANAGER_PASSWORD) {
-          let managerCredential;
-          try {
-            managerCredential = await signInWithEmailAndPassword(auth, cleanEmail, cleanPassword);
-          } catch (managerAuthErr) {
-            if (managerAuthErr.code !== 'auth/user-not-found' && managerAuthErr.code !== 'auth/invalid-credential') {
-              throw managerAuthErr;
-            }
-            managerCredential = await createUserWithEmailAndPassword(auth, cleanEmail, cleanPassword);
-          }
-          await setDoc(doc(db, "registered_members", managerCredential.user.uid), {
-            uid: managerCredential.user.uid,
-            identity: MANAGER_EMAIL,
-            displayName: "Dharun Manager",
-            doctorName: "Dharun Manager",
-            clinicName: "Physio Accounting Assistant",
-            doctorRole: "Manager",
-            mobile: APP_OWNER_PHONE,
-            role: "manager",
-            paymentStatus: "manager_access",
-            registeredAt: new Date().toISOString()
-          }, { merge: true });
-          return;
+        await signInWithEmailAndPassword(auth, cleanEmail, cleanPassword);
+      } catch (err) {
+        window.__loginIntent = null;
+        let msg = err.message;
+        if (err.code === 'auth/invalid-credential' || err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password') {
+          msg = 'Incorrect email ID or password. Please try again, or register a new account.';
         }
+        showAuthMsg('login-msg', msg, 'error');
+      }
+    };
 
+    // ---- ADMIN login: Master Owner (super admin) and Manager only.
+    // Client/member accounts are rejected (in onAuthStateChanged) and pointed
+    // to the Client Login tab.
+    window.handleAdminLoginSubmit = async function(e) {
+      e.preventDefault();
+      let rawEmail = document.getElementById('admin-login-email').value.trim().toLowerCase();
+
+      if (rawEmail === "admin" || rawEmail === "dharun") {
+        rawEmail = SUPER_ADMIN_EMAIL.toLowerCase();
+      }
+
+      const cleanEmail = rawEmail.includes('@') ? rawEmail.replace(/\.com[a-zA-Z]*$/, '.com') : (rawEmail + '@gmail.com');
+      const cleanPassword = document.getElementById('admin-login-password').value.trim();
+
+      window.__loginIntent = 'admin';
+      try {
         try {
           await signInWithEmailAndPassword(auth, cleanEmail, cleanPassword);
         } catch (authErr) {
@@ -6602,7 +6777,6 @@
               doctorRole: "Master Owner Admin",
               displayName: "DHARUN RENTALS",
               mobile: APP_OWNER_PHONE,
-              plainPassword: cleanPassword,
               role: 'super_admin',
               subscriptionExpiry: new Date(2099, 1, 1).toISOString(),
               paymentStatus: 'free_admin',
@@ -6613,7 +6787,12 @@
           }
         }
       } catch (err) {
-        showAuthMsg('login-msg', err.message, 'error');
+        window.__loginIntent = null;
+        let msg = err.message;
+        if (err.code === 'auth/invalid-credential' || err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password') {
+          msg = 'Incorrect admin ID or password. Please try again.';
+        }
+        showAuthMsg('admin-login-msg', msg, 'error');
       }
     };
 
@@ -6723,7 +6902,6 @@
           doctorRole: doctorRole,
           displayName: clinicName,
           mobile: mobile,
-          plainPassword: password,
           regAmount: defaultRegAmt,
           rentalFee: defaultRentalFee,
           role: isSuper ? 'super_admin' : 'member',
@@ -6751,7 +6929,7 @@
       document.getElementById('btn-return-admin').style.display = 'none';
       document.getElementById('subscription-lock-overlay').classList.remove('active');
       document.getElementById('auth-screen-overlay').classList.remove('hidden');
-      switchAuthTab('login');
+      switchAuthTab((activeUserRole === 'super_admin' || activeUserRole === 'manager') ? 'adminlogin' : 'login');
       await signOut(auth);
     };
 
@@ -6768,6 +6946,7 @@
           patients: patients,
           patientRequests: incomingRequests,
           patientCount: patients.length,
+          spinWheelConfig: (typeof spinWheelSegments !== 'undefined' && Array.isArray(spinWheelSegments)) ? spinWheelSegments : [],
           lastUpdated: new Date().toISOString()
         }, { merge: true });
 
@@ -6811,9 +6990,13 @@
           const d = snap.data();
           patients = Array.isArray(d.patients) ? d.patients : [];
           incomingRequests = Array.isArray(d.patientRequests) ? d.patientRequests : [];
+          if (typeof window.setSpinWheelConfig === 'function') {
+            window.setSpinWheelConfig(Array.isArray(d.spinWheelConfig) && d.spinWheelConfig.length ? d.spinWheelConfig : null);
+          }
         } else {
           patients = [];
           incomingRequests = [];
+          if (typeof window.setSpinWheelConfig === 'function') window.setSpinWheelConfig(null);
         }
         window.renderRequestsPage();
         saveAndRender(false);
@@ -6912,12 +7095,32 @@
       const navSectionTitle = document.getElementById('nav-section-title');
       
       if (user) {
-        document.getElementById('auth-screen-overlay').classList.add('hidden');
         const memberSnap = await getDoc(doc(db, "registered_members", user.uid));
         const memberData = memberSnap.exists() ? memberSnap.data() : null;
         let userRole = memberData?.role ||
           ((user.email?.toLowerCase() === SUPER_ADMIN_EMAIL.toLowerCase()) ? "super_admin" :
           (user.email?.toLowerCase() === MANAGER_EMAIL.toLowerCase() ? "manager" : "member"));
+
+        // Keep Admin and Client logins separate: whichever tab the person
+        // signed in from must match the account type. (A restored session on
+        // page reload has no intent and is simply allowed through.)
+        const loginIntent = window.__loginIntent;
+        window.__loginIntent = null;
+        if (loginIntent) {
+          const isStaffAccount = (userRole === 'super_admin' || userRole === 'manager');
+          if (loginIntent === 'client' && isStaffAccount) {
+            await signOut(auth);
+            showAuthMsg('login-msg', '🚫 This is an Admin / Manager account. Please use the <strong>Admin Login</strong> tab.', 'error');
+            return;
+          }
+          if (loginIntent === 'admin' && !isStaffAccount) {
+            await signOut(auth);
+            showAuthMsg('admin-login-msg', '🚫 This is a Client account. Please use the <strong>Client Login</strong> tab.', 'error');
+            return;
+          }
+        }
+
+        document.getElementById('auth-screen-overlay').classList.add('hidden');
         activeUserRole = userRole;
         activeMemberProfile = memberData;
 
@@ -7060,6 +7263,7 @@
         'page-reminders': 'Morning WhatsApp Reminders',
         'page-registration': isParlor ? 'Manual Spa Client Registration' : 'Manual Patient Registration',
         'page-active-works': 'Active Works & Ongoing Appointments',
+        'page-spin-wheel': 'Spin & Win Rewards',
         'page-time-tracker': 'Self Time Tracker — Free Time & Visit Log',
         'page-completed-works': 'Completed & Settled Records',
         'page-overall-directory': 'Overall Directory',
@@ -7077,6 +7281,7 @@
       if (pageId === 'page-reminders') { renderRemindersPage(); if (typeof window.renderDaySummarySettingsUI === 'function') window.renderDaySummarySettingsUI(); }
       if (pageId === 'page-manager-portal' && typeof window.filterManagerUsers === "function") window.filterManagerUsers();
       if (pageId === 'page-time-tracker' && typeof window.renderTimeTrackerPage === "function") window.renderTimeTrackerPage();
+      if (pageId === 'page-spin-wheel' && typeof window.renderSpinWheelPage === "function") window.renderSpinWheelPage();
 
       renderStats();
 
@@ -7265,6 +7470,7 @@
 
       renderRevenueTrendChart();
       if (typeof window.renderDashboardExtras === 'function') window.renderDashboardExtras();
+      if (typeof window.updateSpinSummaryStats === 'function') window.updateSpinSummaryStats();
     }
 
     // Builds one clickable row for the KPI detail modal. Clicking a row
@@ -7896,6 +8102,7 @@
                <button class="action-btn btn-extra" onclick="openExtraModal(${p.id})">+ Extra</button>
                <button class="action-btn btn-pay" onclick="openPayModal(${p.id})">+ Paid</button>
                <button class="action-btn btn-ledger" onclick="openPatientLedgerModal(${p.id})">📅 Ledger</button>
+               <button class="action-btn" style="background:linear-gradient(135deg,#06d6a0 0%, #2563eb 100%); color:#fff;" onclick="window.quickSpinForClient(${p.id})" title="Spin the reward wheel for ${p.name}">🎡 Spin</button>
              </div>
              ${(p.extraCharges && p.extraCharges.length > 0) ? `
                <div style="margin-top:6px;">
@@ -10194,6 +10401,424 @@
         }
       };
     })();
+  </script>
+
+  <!-- ==========================================================================
+       🎡 SPIN & WIN — client reward wheel, operated from the owner/clinic
+       dashboard (there is no separate client login in this app, so the
+       clinic runs the spin for the client in person — e.g. right after a
+       paid visit). No real-money payouts: every prize is a discount,
+       loyalty points, a free add-on, or a referral perk the clinic fully
+       controls and can rename/retire in "⚙️ Customize Prizes".
+       Self-contained — does not touch any existing app logic. It reads the
+       shared `patients` array and calls the existing saveAndRender() /
+       syncToCloud() hooks the same way the rest of the app does, and each
+       clinic's own prize list travels with their account via
+       window.setSpinWheelConfig(), called from loadFromCloud().
+  ==========================================================================-->
+  <script>
+    const SPIN_SETTINGS_KEY = 'raghav_physio_spinwheel_v1';
+    const SPIN_TYPE_ICON = { discount: '💸', loyalty: '⭐', addon: '🎁', referral: '🤝' };
+    const SPIN_TYPE_LABEL = { discount: '💸 Discount', loyalty: '⭐ Loyalty Pts', addon: '🎁 Free Add-on', referral: '🤝 Referral' };
+    const SPIN_RARITY_WEIGHTS = { common: 20, uncommon: 12, rare: 6, jackpot: 4 };
+
+    function getDefaultSpinSegments() {
+      return [
+        { id: 1, type: 'discount', label: '10% OFF',      detail: '10% off their next session.',                              color: '#06d6a0', weight: 20, active: true },
+        { id: 2, type: 'loyalty',  label: '20 Points',    detail: '20 loyalty points added to their account.',                color: '#38bdf8', weight: 20, active: true },
+        { id: 3, type: 'discount', label: '5% OFF',       detail: '5% off their next session.',                               color: '#f59e0b', weight: 20, active: true },
+        { id: 4, type: 'addon',    label: 'Free Add-on',  detail: 'One free 15-minute add-on treatment.',                     color: '#8b5cf6', weight: 12, active: true },
+        { id: 5, type: 'loyalty',  label: '50 Points',    detail: '50 loyalty points added to their account.',                color: '#ec4899', weight: 12, active: true },
+        { id: 6, type: 'referral', label: 'Refer & Save', detail: "10% off for them and the friend they refer this month.",   color: '#3b82f6', weight: 12, active: true },
+        { id: 7, type: 'addon',    label: 'Free Consult', detail: 'One free consultation added to their account.',            color: '#f97316', weight: 6,  active: true },
+        { id: 8, type: 'discount', label: 'Jackpot!',     detail: 'One full session, completely free.',                       color: '#facc15', weight: 4,  active: true }
+      ];
+    }
+
+    function weightToRarity(weight) {
+      if (weight <= 5) return 'jackpot';
+      if (weight <= 9) return 'rare';
+      if (weight <= 16) return 'uncommon';
+      return 'common';
+    }
+
+    let spinWheelSegments = (function () {
+      try {
+        const cached = JSON.parse(localStorage.getItem(SPIN_SETTINGS_KEY));
+        return (Array.isArray(cached) && cached.length) ? cached : getDefaultSpinSegments();
+      } catch (e) {
+        return getDefaultSpinSegments();
+      }
+    })();
+    let currentSpinClientId = null;
+    let wheelTotalRotation = 0;
+
+    // Called from loadFromCloud() once this clinic's own doc has loaded, so
+    // each clinic's customized prize list follows their account across
+    // devices instead of only living in this browser's localStorage.
+    window.setSpinWheelConfig = function (configOrNull) {
+      spinWheelSegments = (configOrNull && configOrNull.length) ? configOrNull : getDefaultSpinSegments();
+      try { localStorage.setItem(SPIN_SETTINGS_KEY, JSON.stringify(spinWheelSegments)); } catch (e) {}
+      const pageEl = document.getElementById('page-spin-wheel');
+      if (pageEl && pageEl.classList.contains('active-page') && typeof window.renderSpinWheelPage === 'function') {
+        window.renderSpinWheelPage();
+      }
+    };
+
+    // ---- Wheel geometry -----------------------------------------------
+    // Slice angle is proportional to weight, so what LOOKS more likely on
+    // the wheel really is more likely — no mismatch between the visual and
+    // the odds. Angle 0 = 12 o'clock, increasing clockwise.
+    function computeWheelLayout() {
+      const active = spinWheelSegments.filter(s => s.active !== false);
+      const total = active.reduce((sum, s) => sum + (s.weight || 1), 0) || 1;
+      let cursor = 0;
+      return active.map(seg => {
+        const sweep = (seg.weight || 1) / total * 360;
+        const layout = { seg: seg, startAngle: cursor, endAngle: cursor + sweep };
+        cursor += sweep;
+        return layout;
+      });
+    }
+
+    function spinPolarToCartesian(cx, cy, r, angleDeg) {
+      const a = (angleDeg - 90) * Math.PI / 180;
+      return { x: cx + r * Math.cos(a), y: cy + r * Math.sin(a) };
+    }
+
+    function spinDescribeSlice(cx, cy, r, startAngle, endAngle) {
+      const start = spinPolarToCartesian(cx, cy, r, startAngle);
+      const end = spinPolarToCartesian(cx, cy, r, endAngle);
+      const largeArc = (endAngle - startAngle) > 180 ? 1 : 0;
+      return `M ${cx} ${cy} L ${start.x.toFixed(2)} ${start.y.toFixed(2)} A ${r} ${r} 0 ${largeArc} 1 ${end.x.toFixed(2)} ${end.y.toFixed(2)} Z`;
+    }
+
+    function buildSpinWheelSVG(layoutIn) {
+      const group = document.getElementById('spin-wheel-group');
+      if (!group) return [];
+      const layout = layoutIn || computeWheelLayout();
+      const cx = 160, cy = 160, r = 155;
+      const iconR = r * 0.68;
+      let svg = '';
+      layout.forEach(function (entry) {
+        svg += `<path d="${spinDescribeSlice(cx, cy, r, entry.startAngle, entry.endAngle)}" fill="${entry.seg.color}" stroke="#0a0f1d" stroke-width="2"></path>`;
+        const midAngle = (entry.startAngle + entry.endAngle) / 2;
+        const iconPos = spinPolarToCartesian(cx, cy, iconR, midAngle);
+        const icon = SPIN_TYPE_ICON[entry.seg.type] || '🎉';
+        // Size the icon to the chord width actually available in this slice at
+        // the icon's radius, so a rare/thin slice's icon never bleeds past its
+        // own borders into a neighboring color.
+        const span = entry.endAngle - entry.startAngle;
+        const chordWidth = 2 * iconR * Math.sin((span / 2) * Math.PI / 180);
+        const fontSize = Math.max(12, Math.min(24, chordWidth * 0.6));
+        svg += `<text x="${iconPos.x.toFixed(2)}" y="${iconPos.y.toFixed(2)}" text-anchor="middle" dominant-baseline="middle" font-size="${fontSize.toFixed(1)}">${icon}</text>`;
+      });
+      group.innerHTML = svg;
+      return layout;
+    }
+
+    function renderSpinLegend() {
+      const el = document.getElementById('spin-legend');
+      if (!el) return;
+      const active = spinWheelSegments.filter(s => s.active !== false);
+      el.innerHTML = active.map(function (seg) {
+        return `<span class="spin-legend-pill"><span class="spin-legend-dot" style="background:${seg.color};"></span>${SPIN_TYPE_ICON[seg.type] || '🎉'} ${seg.label}</span>`;
+      }).join('');
+    }
+
+    // ---- Client picker ---------------------------------------------------
+    function populateSpinClientDropdown() {
+      const select = document.getElementById('spin-client-select');
+      if (!select) return;
+      const activeClients = patients.filter(p => !p.isFinished).slice().sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+      select.innerHTML = '<option value="">-- Choose a client --</option>' +
+        activeClients.map(p => `<option value="${p.id}">${p.name} — ${p.uid}</option>`).join('');
+    }
+
+    window.selectSpinClient = function (idVal) {
+      const id = Number(idVal);
+      const patient = (id && !isNaN(id)) ? patients.find(p => p.id === id && !p.isFinished) : null;
+      currentSpinClientId = patient ? id : null;
+
+      const select = document.getElementById('spin-client-select');
+      const wantValue = currentSpinClientId ? String(currentSpinClientId) : '';
+      if (select && select.value !== wantValue) select.value = wantValue;
+
+      const btn = document.getElementById('spin-action-btn');
+      const hint = document.getElementById('spin-hint-text');
+      if (btn) btn.disabled = !patient;
+      if (hint) hint.innerText = patient ? `Spinning for ${patient.name}. Good luck! 🍀` : 'Choose a client above to enable the wheel.';
+    };
+
+    // Jumped to from the "🎡 Spin" quick button on an Active Works row.
+    window.quickSpinForClient = function (id) {
+      currentSpinClientId = Number(id);
+      switchPageById('page-spin-wheel');
+    };
+
+    // ---- Spinning ----------------------------------------------------
+    window.spinTheWheel = function () {
+      if (!currentSpinClientId) return;
+      const btn = document.getElementById('spin-action-btn');
+      if (!btn || btn.disabled) return;
+      const patient = patients.find(p => p.id === currentSpinClientId && !p.isFinished);
+      if (!patient) return;
+
+      btn.disabled = true;
+      const originalBtnHtml = btn.innerHTML;
+      btn.innerHTML = '🎡 Spinning...';
+
+      const layout = buildSpinWheelSVG();
+      if (!layout.length) { btn.disabled = false; btn.innerHTML = originalBtnHtml; return; }
+
+      const rawAngle = Math.random() * 360;
+      let chosen = layout[layout.length - 1];
+      for (let i = 0; i < layout.length; i++) {
+        if (rawAngle < layout[i].endAngle) { chosen = layout[i]; break; }
+      }
+      const span = chosen.endAngle - chosen.startAngle;
+      const pad = Math.min(span * 0.2, 6);
+      const landingAngle = (span > pad * 2)
+        ? (chosen.startAngle + pad + Math.random() * (span - pad * 2))
+        : ((chosen.startAngle + chosen.endAngle) / 2);
+
+      const extraSpins = 6 + Math.floor(Math.random() * 2);
+      const currentMod = ((wheelTotalRotation % 360) + 360) % 360;
+      let delta = (360 - landingAngle) - currentMod;
+      while (delta <= 10) delta += 360;
+      wheelTotalRotation += delta + extraSpins * 360;
+
+      const group = document.getElementById('spin-wheel-group');
+      group.style.transform = `rotate(${wheelTotalRotation}deg)`;
+
+      let settled = false;
+      function settle() {
+        if (settled) return;
+        settled = true;
+        group.removeEventListener('transitionend', onEnd);
+        finishSpin(patient, chosen.seg);
+        btn.disabled = false;
+        btn.innerHTML = originalBtnHtml;
+      }
+      function onEnd(e) { if (e.target === group) settle(); }
+      group.addEventListener('transitionend', onEnd);
+      setTimeout(settle, 5000); // safety net if transitionend doesn't fire
+    };
+
+    function finishSpin(patient, seg) {
+      if (!Array.isArray(patient.spinRewards)) patient.spinRewards = [];
+      patient.spinRewards.unshift({
+        id: Date.now(),
+        label: seg.label,
+        type: seg.type,
+        detail: seg.detail,
+        wonDate: (typeof window.getLocalDateStr === 'function') ? window.getLocalDateStr() : new Date().toISOString().slice(0, 10),
+        redeemed: false,
+        redeemedDate: null
+      });
+      saveAndRender();
+      spawnSpinConfetti();
+      showSpinResultModal(patient, seg);
+      window.renderSpinHistoryTable();
+      updateSpinSummaryStats();
+    }
+
+    function showSpinResultModal(patient, seg) {
+      const nameEl = document.getElementById('spin-result-name');
+      const labelEl = document.getElementById('spin-result-label');
+      const detailEl = document.getElementById('spin-result-detail');
+      if (nameEl) nameEl.innerText = `${patient.name} spun and won...`;
+      if (labelEl) labelEl.innerText = seg.label;
+      if (detailEl) detailEl.innerText = seg.detail;
+      const modal = document.getElementById('spinResultModal');
+      if (modal) modal.classList.add('active');
+    }
+
+    window.closeSpinResultModal = function () {
+      const modal = document.getElementById('spinResultModal');
+      if (modal) modal.classList.remove('active');
+    };
+
+    function spawnSpinConfetti() {
+      const layer = document.getElementById('spin-confetti-layer');
+      if (!layer) return;
+      layer.innerHTML = '';
+      const colors = spinWheelSegments.map(s => s.color);
+      for (let i = 0; i < 28; i++) {
+        const el = document.createElement('div');
+        el.className = 'spin-confetti-piece';
+        el.style.background = colors[Math.floor(Math.random() * colors.length)] || '#06d6a0';
+        el.style.left = `${Math.random() * 100}%`;
+        el.style.animationDelay = `${(Math.random() * 0.3).toFixed(2)}s`;
+        el.style.setProperty('--fall-rot', `${(Math.random() > 0.5 ? 1 : -1) * (480 + Math.random() * 240)}deg`);
+        layer.appendChild(el);
+      }
+      setTimeout(() => { layer.innerHTML = ''; }, 2400);
+    }
+
+    // ---- Reward history ------------------------------------------------
+    window.renderSpinHistoryTable = function () {
+      const tbody = document.getElementById('spin-history-body');
+      if (!tbody) return;
+      const searchVal = (document.getElementById('spin-history-search')?.value || '').toLowerCase();
+      const filterVal = document.getElementById('spin-history-filter')?.value || 'all';
+
+      const rows = [];
+      patients.forEach(p => {
+        (p.spinRewards || []).forEach(rw => rows.push({ patient: p, reward: rw }));
+      });
+      rows.sort((a, b) => b.reward.id - a.reward.id);
+
+      const filtered = rows.filter(({ patient, reward }) => {
+        const matchesSearch = (patient.name || '').toLowerCase().includes(searchVal);
+        const matchesFilter = filterVal === 'all'
+          || (filterVal === 'pending' && !reward.redeemed)
+          || (filterVal === 'redeemed' && reward.redeemed);
+        return matchesSearch && matchesFilter;
+      });
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:var(--text-muted); padding:20px;">No spins yet — pick a client above and spin the wheel!</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = filtered.map(({ patient, reward }) => `
+        <tr>
+          <td><strong>${patient.name}</strong></td>
+          <td>${reward.label}</td>
+          <td><span class="spin-type-tag spin-type-${reward.type}">${SPIN_TYPE_LABEL[reward.type] || reward.type}</span></td>
+          <td>${reward.wonDate}</td>
+          <td>${reward.redeemed
+              ? `<span style="color:var(--success); font-weight:800;">✔ Redeemed${reward.redeemedDate ? ' ' + reward.redeemedDate : ''}</span>`
+              : `<span style="color:#f59e0b; font-weight:800;">🎁 Waiting</span>`}</td>
+          <td>${reward.redeemed
+              ? `<button type="button" class="action-btn btn-secondary" onclick="window.markSpinRewardRedeemed(${patient.id}, ${reward.id}, false)">Undo</button>`
+              : `<button type="button" class="action-btn btn-pay" onclick="window.markSpinRewardRedeemed(${patient.id}, ${reward.id}, true)">Mark Redeemed</button>`}</td>
+        </tr>
+      `).join('');
+    };
+
+    window.markSpinRewardRedeemed = function (patientId, rewardId, redeemed) {
+      const patient = patients.find(p => p.id === patientId);
+      if (!patient || !Array.isArray(patient.spinRewards)) return;
+      const reward = patient.spinRewards.find(r => r.id === rewardId);
+      if (!reward) return;
+      reward.redeemed = !!redeemed;
+      reward.redeemedDate = redeemed ? ((typeof window.getLocalDateStr === 'function') ? window.getLocalDateStr() : new Date().toISOString().slice(0, 10)) : null;
+      saveAndRender();
+      window.renderSpinHistoryTable();
+      updateSpinSummaryStats();
+    };
+
+    window.updateSpinSummaryStats = function () {
+      let total = 0, pending = 0, redeemed = 0;
+      patients.forEach(p => {
+        (p.spinRewards || []).forEach(r => {
+          total++;
+          if (r.redeemed) redeemed++; else pending++;
+        });
+      });
+      const elTotal = document.getElementById('spin-summary-total');
+      const elPending = document.getElementById('spin-summary-pending');
+      const elRedeemed = document.getElementById('spin-summary-redeemed');
+      if (elTotal) elTotal.innerText = total;
+      if (elPending) elPending.innerText = pending;
+      if (elRedeemed) elRedeemed.innerText = redeemed;
+
+      const badge = document.getElementById('badge-spin-unredeemed');
+      if (badge) {
+        badge.innerText = pending;
+        badge.style.display = pending > 0 ? 'inline-block' : 'none';
+      }
+    };
+
+    // ---- Prize settings ---------------------------------------------
+    window.openSpinSettingsModal = function () {
+      const container = document.getElementById('spin-settings-rows');
+      if (!container) return;
+      container.innerHTML = spinWheelSegments.map(seg => `
+        <div style="display:flex; align-items:center; gap:8px; background:var(--folder-bg); border:1px solid var(--border); border-radius:10px; padding:10px 12px; flex-wrap:wrap;">
+          <span style="width:14px; height:14px; border-radius:50%; background:${seg.color}; flex-shrink:0;"></span>
+          <span class="spin-type-tag spin-type-${seg.type}" style="flex-shrink:0;">${SPIN_TYPE_LABEL[seg.type] || seg.type}</span>
+          <input type="text" value="${seg.label}" data-seg="${seg.id}" data-field="label" placeholder="Prize name" style="flex:1; min-width:110px; background:var(--bg-input); color:var(--text-main); border:1px solid var(--border); padding:8px 10px; border-radius:8px; font-size:0.85rem;">
+          <input type="text" value="${seg.detail}" data-seg="${seg.id}" data-field="detail" placeholder="What it means" style="flex:2; min-width:160px; background:var(--bg-input); color:var(--text-main); border:1px solid var(--border); padding:8px 10px; border-radius:8px; font-size:0.85rem;">
+          <select data-seg="${seg.id}" data-field="rarity" style="background:var(--bg-input); color:var(--text-main); border:1px solid var(--border); padding:8px 10px; border-radius:8px; font-size:0.8rem;">
+            ${['common', 'uncommon', 'rare', 'jackpot'].map(r => `<option value="${r}" ${weightToRarity(seg.weight) === r ? 'selected' : ''}>${r.charAt(0).toUpperCase() + r.slice(1)}</option>`).join('')}
+          </select>
+          <label style="display:flex; align-items:center; gap:5px; font-size:0.76rem; color:var(--text-muted); font-weight:700; white-space:nowrap;">
+            <input type="checkbox" data-seg="${seg.id}" data-field="active" ${seg.active !== false ? 'checked' : ''}> On
+          </label>
+        </div>
+      `).join('');
+      const modal = document.getElementById('spinSettingsModal');
+      if (modal) modal.classList.add('active');
+    };
+
+    window.closeSpinSettingsModal = function () {
+      const modal = document.getElementById('spinSettingsModal');
+      if (modal) modal.classList.remove('active');
+    };
+
+    window.saveSpinSettings = function () {
+      const container = document.getElementById('spin-settings-rows');
+      if (!container) return;
+      const updates = {};
+      container.querySelectorAll('[data-seg]').forEach(el => {
+        const segId = Number(el.getAttribute('data-seg'));
+        const field = el.getAttribute('data-field');
+        if (!updates[segId]) updates[segId] = {};
+        updates[segId][field] = (field === 'active') ? el.checked : el.value;
+      });
+
+      const activeCount = Object.keys(updates).filter(k => updates[k].active).length;
+      if (activeCount < 2) {
+        alert('⚠️ Keep at least 2 prizes switched on so the wheel makes sense.');
+        return;
+      }
+
+      spinWheelSegments = spinWheelSegments.map(seg => {
+        const u = updates[seg.id];
+        if (!u) return seg;
+        const newLabel = (u.label || '').trim();
+        const newDetail = (u.detail || '').trim();
+        return Object.assign({}, seg, {
+          label: newLabel || seg.label,
+          detail: newDetail || seg.detail,
+          weight: SPIN_RARITY_WEIGHTS[u.rarity] || seg.weight,
+          active: !!u.active
+        });
+      });
+
+      try { localStorage.setItem(SPIN_SETTINGS_KEY, JSON.stringify(spinWheelSegments)); } catch (e) {}
+      if (typeof window.syncToCloud === 'function') window.syncToCloud();
+
+      buildSpinWheelSVG();
+      renderSpinLegend();
+      window.closeSpinSettingsModal();
+      alert('✅ Spin & Win prizes updated!');
+    };
+
+    window.restoreDefaultSpinSettings = function () {
+      spinWheelSegments = getDefaultSpinSegments();
+      try { localStorage.setItem(SPIN_SETTINGS_KEY, JSON.stringify(spinWheelSegments)); } catch (e) {}
+      if (typeof window.syncToCloud === 'function') window.syncToCloud();
+      buildSpinWheelSVG();
+      renderSpinLegend();
+      window.openSpinSettingsModal();
+    };
+
+    // ---- Page entry point (hooked into the existing switchPage) -------
+    window.renderSpinWheelPage = function () {
+      if (!Array.isArray(spinWheelSegments) || !spinWheelSegments.length) {
+        spinWheelSegments = getDefaultSpinSegments();
+      }
+      populateSpinClientDropdown();
+      buildSpinWheelSVG();
+      renderSpinLegend();
+      window.renderSpinHistoryTable();
+      updateSpinSummaryStats();
+      window.selectSpinClient(currentSpinClientId || '');
+    };
   </script>
 </body>
 </html>
